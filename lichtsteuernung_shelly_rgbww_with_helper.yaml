@@ -1,0 +1,146 @@
+alias: Shelly Button RGBWW Control
+description: ""
+mode: restart
+
+trigger:
+  - platform: state
+    entity_id: event.schalter_wohnzimmer_eingang_0
+    id: shelly_event
+
+variables:
+  light_entity: light.wohnzimmerlicht
+  dim_direction_helper: input_boolean.shelly_dimmrichtung_hoch_wz
+
+  hold_delay: 500
+  dim_step: 2
+  dim_interval: 500
+
+  warm_white_kelvin: 2700
+
+action:
+  - choose:
+
+      #######################################################################
+      # Einfachdruck
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.to_state.attributes.event_type == 'single_push' }}
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ is_state(light_entity, 'off') }}"
+                sequence:
+                  - service: light.turn_on
+                    target:
+                      entity_id: "{{ light_entity }}"
+
+                  - service: input_boolean.turn_off
+                    target:
+                      entity_id: "{{ dim_direction_helper }}"
+
+            default:
+              - service: light.turn_off
+                target:
+                  entity_id: "{{ light_entity }}"
+
+      #######################################################################
+      # Doppeldruck -> 100% Helligkeit
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.to_state.attributes.event_type == 'double_push' }}
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: "{{ light_entity }}"
+            data:
+              brightness_pct: 100
+
+          - service: input_boolean.turn_off
+            target:
+              entity_id: "{{ dim_direction_helper }}"
+
+      #######################################################################
+      # Dreifachdruck -> Warmweiß 100%
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.to_state.attributes.event_type == 'triple_push' }}
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: "{{ light_entity }}"
+            data:
+              brightness_pct: 100
+              color_temp_kelvin: "{{ warm_white_kelvin }}"
+
+          - service: input_boolean.turn_off
+            target:
+              entity_id: "{{ dim_direction_helper }}"
+
+      #######################################################################
+      # Taste gedrückt halten -> abwechselnd hoch/runter dimmen
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.to_state.attributes.event_type == 'btn_down' }}
+        sequence:
+          - delay:
+              milliseconds: "{{ hold_delay }}"
+
+          - variables:
+              dim_up: "{{ is_state(dim_direction_helper, 'on') }}"
+
+          - service: input_boolean.toggle
+            target:
+              entity_id: "{{ dim_direction_helper }}"
+
+          - repeat:
+              while:
+                - condition: template
+                  value_template: >
+                    {% set brightness = state_attr(light_entity, 'brightness') | int(0) %}
+                    {% set brightness_pct = (brightness / 255 * 100) | round(0) | int %}
+                    {{ is_state(light_entity, 'on')
+                       and (
+                         (dim_up and brightness_pct < 100)
+                         or
+                         ((not dim_up) and brightness_pct > 1)
+                       )
+                    }}
+
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ light_entity }}"
+                  data:
+                    brightness_pct: >
+                      {% set brightness = state_attr(light_entity, 'brightness') | int(0) %}
+                      {% set brightness_pct = (brightness / 255 * 100) | round(0) | int %}
+                      {% if dim_up %}
+                        {{ [brightness_pct + dim_step, 100] | min }}
+                      {% else %}
+                        {{ [brightness_pct - dim_step, 1] | max }}
+                      {% endif %}
+                    transition: 0.4
+
+                - delay:
+                    milliseconds: "{{ dim_interval }}"
+
+      #######################################################################
+      # Taste losgelassen
+      #
+      # Keine Aktion nötig.
+      # Durch mode: restart wird die laufende Dimm-Schleife beendet.
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.to_state.attributes.event_type == 'btn_up' }}
+        sequence: []

@@ -1,0 +1,142 @@
+alias: Badezimmerschalter Lichtsteuerung
+description: ""
+mode: restart
+
+trigger:
+  - platform: state
+    entity_id:
+      - event.badezimmerlicht_eingang_1
+      - event.badezimmerlicht_eingang_2
+    id: shelly_event
+
+variables:
+  main_light: light.badezimmerlicht_2
+  background_light: light.badezimmerlicht_hintergrundbeleuchtung
+
+  hold_delay: 500
+  dim_step: 2
+  dim_interval: 400
+
+action:
+  - choose:
+
+      #######################################################################
+      # EINGANG 1 - KURZ
+      # Badezimmerlicht einschalten
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.entity_id == 'event.badezimmerlicht_eingang_1'
+                 and trigger.to_state.attributes.event_type == 'single_push' }}
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: "{{ main_light }}"
+
+      #######################################################################
+      # EINGANG 2 - KURZ
+      # Badezimmerlicht ausschalten
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.entity_id == 'event.badezimmerlicht_eingang_2'
+                 and trigger.to_state.attributes.event_type == 'single_push' }}
+        sequence:
+          - service: light.turn_off
+            target:
+              entity_id: "{{ main_light }}"
+
+      #######################################################################
+      # EINGANG 1 ODER 2 - DREIFACH
+      # Hintergrundbeleuchtung ein/ausschalten
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.to_state.attributes.event_type == 'triple_push' }}
+        sequence:
+          - service: light.toggle
+            target:
+              entity_id: "{{ background_light }}"
+
+      #######################################################################
+      # EINGANG 1 - LANG / GEDRÜCKT HALTEN
+      # Badezimmerlicht hochdimmen bis 100%
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.entity_id == 'event.badezimmerlicht_eingang_1'
+                 and trigger.to_state.attributes.event_type == 'btn_down' }}
+        sequence:
+          - delay:
+              milliseconds: "{{ hold_delay }}"
+
+          - repeat:
+              while:
+                - condition: template
+                  value_template: >
+                    {% set brightness = state_attr(main_light, 'brightness') | int(0) %}
+                    {% set brightness_pct = (brightness / 255 * 100) | round(0) | int %}
+                    {{ is_state(main_light, 'on') and brightness_pct < 100 }}
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ main_light }}"
+                  data:
+                    brightness_pct: >
+                      {% set brightness = state_attr(main_light, 'brightness') | int(0) %}
+                      {% set brightness_pct = (brightness / 255 * 100) | round(0) | int %}
+                      {{ [brightness_pct + dim_step, 100] | min }}
+                    transition: 0.3
+
+                - delay:
+                    milliseconds: "{{ dim_interval }}"
+
+      #######################################################################
+      # EINGANG 2 - LANG / GEDRÜCKT HALTEN
+      # Badezimmerlicht runterdimmen bis 1%
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.entity_id == 'event.badezimmerlicht_eingang_2'
+                 and trigger.to_state.attributes.event_type == 'btn_down' }}
+        sequence:
+          - delay:
+              milliseconds: "{{ hold_delay }}"
+
+          - repeat:
+              while:
+                - condition: template
+                  value_template: >
+                    {% set brightness = state_attr(main_light, 'brightness') | int(0) %}
+                    {% set brightness_pct = (brightness / 255 * 100) | round(0) | int %}
+                    {{ is_state(main_light, 'on') and brightness_pct > 1 }}
+              sequence:
+                - service: light.turn_on
+                  target:
+                    entity_id: "{{ main_light }}"
+                  data:
+                    brightness_pct: >
+                      {% set brightness = state_attr(main_light, 'brightness') | int(0) %}
+                      {% set brightness_pct = (brightness / 255 * 100) | round(0) | int %}
+                      {{ [brightness_pct - dim_step, 1] | max }}
+                    transition: 0.3
+
+                - delay:
+                    milliseconds: "{{ dim_interval }}"
+
+      #######################################################################
+      # LOSLASSEN
+      #
+      # Keine Aktion nötig.
+      # btn_up startet die Automation neu und beendet dadurch die Dimm-Schleife.
+      #######################################################################
+      - conditions:
+          - condition: template
+            value_template: >
+              {{ trigger.to_state.attributes.event_type == 'btn_up' }}
+        sequence: []
