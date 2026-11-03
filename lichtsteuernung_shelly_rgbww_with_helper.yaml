@@ -5,8 +5,11 @@ mode: restart
 trigger:
   - platform: state
     entity_id: event.schalter_wohnzimmer_eingang_0
-    # Shelly kommt wieder online -> letzter Tastendruck wird wiederhergestellt, kein echter Druck
+    # Shelly geht offline/kommt wieder online -> kein echter Tastendruck
     not_from:
+      - unavailable
+      - unknown
+    not_to:
       - unavailable
       - unknown
     id: shelly_event

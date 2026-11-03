@@ -22,6 +22,9 @@ triggers:
   not_from:
   - unavailable
   - unknown
+  not_to:
+  - unavailable
+  - unknown
 conditions:
 - condition: template
   value_template: '{{ states(main_light) not in [''unavailable'', ''unknown''] }}'
