@@ -1,0 +1,82 @@
+alias: Heizung nach Anwesenheit (HmIP Urlaubsmodus)
+description: Beide abwesend + Wohnungstür verriegelt (10 min) -> HmIP Urlaubsmodus. Eine Person wieder zu Hause ->
+  Urlaubsmodus aus, Heizprofile laufen wieder (Automatik). Fernanheizen über input_boolean.heizung_anheizen (Helfer,
+  muss existieren); der Schalter verhindert das erneute Aktivieren und wird beim Heimkommen zurückgesetzt.
+mode: queued
+variables:
+  persons:
+  - person.sauerm
+  - person.sarah
+  door_lock: lock.wohnungstur
+  preheat_switch: input_boolean.heizung_anheizen
+  vacation_temperature: 16
+  vacation_days: 30
+triggers:
+- trigger: state
+  entity_id:
+  - person.sauerm
+  - person.sarah
+  to: not_home
+  for: 00:10:00
+  id: weg
+- trigger: state
+  entity_id: lock.wohnungstur
+  to: locked
+  for: 00:10:00
+  id: weg
+- trigger: state
+  entity_id:
+  - person.sauerm
+  - person.sarah
+  to: home
+  id: da
+- trigger: state
+  entity_id: input_boolean.heizung_anheizen
+  to: 'on'
+  id: anheizen
+- trigger: state
+  entity_id: input_boolean.heizung_anheizen
+  to: 'off'
+  id: weg
+- trigger: homeassistant
+  event: start
+  id: start
+conditions: []
+actions:
+- variables:
+    someone_home: '{{ persons | select(''is_state'', ''home'') | list | count > 0 }}'
+- choose:
+  - alias: Fernanheizen -> Urlaubsmodus aus
+    conditions:
+    - condition: trigger
+      id: anheizen
+    sequence:
+    - action: homematicip_cloud.deactivate_vacation
+      data: {}
+  - alias: Jemand zu Hause -> Automatik, Anheizen-Schalter zurücksetzen
+    conditions:
+    - condition: trigger
+      id:
+      - da
+      - start
+    - condition: template
+      value_template: '{{ someone_home }}'
+    sequence:
+    - action: homematicip_cloud.deactivate_vacation
+      data: {}
+    - action: input_boolean.turn_off
+      target:
+        entity_id: '{{ preheat_switch }}'
+  - alias: Keiner zu Hause, Tür zu, kein Anheizen -> Urlaubsmodus
+    conditions:
+    - condition: trigger
+      id:
+      - weg
+      - start
+    - condition: template
+      value_template: '{{ not someone_home and is_state(door_lock, ''locked'') and is_state(preheat_switch, ''off'') }}'
+    sequence:
+    - action: homematicip_cloud.activate_vacation
+      data:
+        temperature: '{{ vacation_temperature }}'
+        endtime: '{{ (now() + timedelta(days=vacation_days)).strftime(''%Y-%m-%d %H:%M'') }}'
