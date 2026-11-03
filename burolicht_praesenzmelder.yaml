@@ -1,12 +1,10 @@
 alias: Bürolicht mit Präsenzmelder
-description: Präsenz im Büro -> Ambilight an, aber nur bei Dunkelheit (unter max_lux) und wenn jemand zu Hause ist. Keine
-  Präsenz mehr -> aus. Hintergrund für die Bedingungen und die gesenkte Melder-Empfindlichkeit (Bewegung 7, Stillstand
-  6, Reichweite 4 m) waren Fehlalarme, während niemand zu Hause war.
+description: Präsenz im Büro -> Ambilight an, aber nur wenn jemand zu Hause ist (unabhängig von der Helligkeit). Keine
+  Präsenz mehr -> aus. Hintergrund für die Bedingung und die gesenkte Melder-Empfindlichkeit (Bewegung 7, Stillstand 6,
+  Reichweite 4 m) waren Fehlalarme, während niemand zu Hause war.
 mode: restart
 variables:
   office_light: light.ambilight_buro
-  illuminance_sensor: sensor.prasenzmelder_buro_illuminance
-  max_lux: 50
   persons:
   - person.sauerm
   - person.sarah
@@ -29,8 +27,6 @@ actions:
   - conditions:
     - condition: trigger
       id: presence_on
-    - condition: template
-      value_template: '{{ states(illuminance_sensor) | float(0) < max_lux }}'
     - condition: template
       value_template: '{{ persons | select(''is_state'', ''home'') | list | count > 0 }}'
     sequence:
