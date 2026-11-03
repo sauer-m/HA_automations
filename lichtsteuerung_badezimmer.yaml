@@ -19,6 +19,9 @@ triggers:
   entity_id:
   - event.badezimmer_lichtschalter_badezimmer_eingang_0
   - event.badezimmer_lichtschalter_badezimmer_eingang_1
+  not_from:
+  - unavailable
+  - unknown
 conditions:
 - condition: template
   value_template: '{{ states(main_light) not in [''unavailable'', ''unknown''] }}'
