@@ -1,0 +1,55 @@
+# In configuration.yaml einbinden mit:
+# light: !include light_groups.yaml
+# Falls bereits ein "light:"-Abschnitt existiert, nur den Inhalt dort ergänzen.
+
+- platform: group
+  name: Wohnzimmer Gesamt
+  unique_id: wohnzimmer_gesamt
+  entities:
+    - light.wohnzimmerlicht
+    - light.stehlampe
+    - light.ecklampe_wohnzimmer
+
+- platform: group
+  name: Schlafzimmer Gesamt
+  unique_id: schlafzimmer_gesamt
+  entities:
+    - light.schlafzimmerlicht
+    - light.nachttischlampe
+
+- platform: group
+  name: Badezimmer Gesamt
+  unique_id: badezimmer_gesamt
+  entities:
+    - light.badezimmerlicht
+    - light.badezimmerlicht_hintergrundbeleuchtung
+
+- platform: group
+  name: Küche Gesamt
+  unique_id: kuche_gesamt
+  entities:
+    - light.kuche_schaltausgang_kuchenlicht
+
+- platform: group
+  name: Esszimmer Gesamt
+  unique_id: esszimmer_gesamt
+  entities:
+    - light.esszimmerlicht
+
+- platform: group
+  name: Flur Gesamt
+  unique_id: flur_gesamt
+  entities:
+    - light.schalter_flurlicht
+
+- platform: group
+  name: Büro Gesamt
+  unique_id: buro_gesamt
+  entities:
+    - light.ambilight_buro
+
+- platform: group
+  name: Terrasse Gesamt
+  unique_id: terrasse_gesamt
+  entities:
+    - light.terrassenlicht

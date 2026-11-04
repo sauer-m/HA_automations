@@ -1,0 +1,2530 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.dashboard_beleuctung",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "type": "sections",
+          "title": "Beleuchtung",
+          "max_columns": 4,
+          "sections": [
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Übersicht",
+                  "heading_style": "title",
+                  "icon": "mdi:lightbulb-multiple"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{% if on|count == 0 %}Alle Lichter aus{% elif on|count == 1 %}1 Licht an{% else %}{{ on|count }} Lichter an{% endif %}",
+                  "secondary": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{{ on | join(', ') if on|count > 0 else 'Alles dunkel' }}",
+                  "icon": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{{ 'mdi:lightbulb-on' if on|count > 0 else 'mdi:lightbulb-off-outline' }}",
+                  "icon_color": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{{ 'amber' if on|count > 0 else 'grey' }}",
+                  "multiline_secondary": true,
+                  "tap_action": {
+                    "action": "none"
+                  },
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 8
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Alle aus",
+                  "icon": "mdi:power",
+                  "icon_color": "red",
+                  "layout": "vertical",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "light.turn_off",
+                    "target": {
+                      "entity_id": [
+                        "light.wohnzimmerlicht",
+                        "light.stehlampe",
+                        "light.ecklampe_wohnzimmer",
+                        "light.schlafzimmerlicht",
+                        "light.nachttischlampe",
+                        "light.badezimmerlicht",
+                        "light.badezimmerlicht_hintergrundbeleuchtung",
+                        "light.kuche_schaltausgang_kuchenlicht",
+                        "light.esszimmerlicht",
+                        "light.schalter_flurlicht",
+                        "light.ambilight_buro",
+                        "light.terrassenlicht"
+                      ]
+                    },
+                    "confirmation": {
+                      "text": "Alle Lichter ausschalten?"
+                    }
+                  },
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 4
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Wohnzimmer",
+                  "heading_style": "title",
+                  "icon": "mdi:sofa",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "light.wohnzimmer_gesamt",
+                      "show_icon": true,
+                      "show_state": true,
+                      "state_content": "state",
+                      "color": "amber",
+                      "icon": "mdi:lightbulb-group",
+                      "tap_action": {
+                        "action": "toggle"
+                      },
+                      "hold_action": {
+                        "action": "more-info"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.wohnzimmerlicht",
+                  "name": "Wohnzimmerlicht",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.stehlampe",
+                  "name": "Stehlampe",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.ecklampe_wohnzimmer",
+                  "name": "Ecklampe",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Schlafzimmer",
+                  "heading_style": "title",
+                  "icon": "mdi:bed-king",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "light.schlafzimmer_gesamt",
+                      "show_icon": true,
+                      "show_state": true,
+                      "state_content": "state",
+                      "color": "amber",
+                      "icon": "mdi:lightbulb-group",
+                      "tap_action": {
+                        "action": "toggle"
+                      },
+                      "hold_action": {
+                        "action": "more-info"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.schlafzimmerlicht",
+                  "name": "Schlafzimmerlicht",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.nachttischlampe",
+                  "name": "Nachttischlampe",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Badezimmer",
+                  "heading_style": "title",
+                  "icon": "mdi:shower",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "light.badezimmer_gesamt",
+                      "show_icon": true,
+                      "show_state": true,
+                      "state_content": "state",
+                      "color": "amber",
+                      "icon": "mdi:lightbulb-group",
+                      "tap_action": {
+                        "action": "toggle"
+                      },
+                      "hold_action": {
+                        "action": "more-info"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.badezimmerlicht",
+                  "name": "Badezimmer",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  },
+                  "fill_container": false
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.badezimmerlicht_hintergrundbeleuchtung",
+                  "name": "Bad Ambilight",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Küche",
+                  "heading_style": "title",
+                  "icon": "mdi:fridge"
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.kuche_schaltausgang_kuchenlicht",
+                  "name": "Küchenlicht",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Esszimmer",
+                  "heading_style": "title",
+                  "icon": "mdi:silverware-fork-knife"
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.esszimmerlicht",
+                  "name": "Esszimmerlicht",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Flur",
+                  "heading_style": "title",
+                  "icon": "mdi:coat-rack"
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.schalter_flurlicht",
+                  "name": "Flurlicht",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Büro",
+                  "heading_style": "title",
+                  "icon": "mdi:chair-rolling"
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.ambilight_buro",
+                  "name": "Ambilight Büro",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Terrasse",
+                  "heading_style": "title",
+                  "icon": "mdi:balcony"
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.terrassenlicht",
+                  "name": "Terrassenlicht",
+                  "use_light_color": true,
+                  "show_brightness_control": true,
+                  "show_color_temp_control": true,
+                  "show_color_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            }
+          ],
+          "cards": []
+        },
+        {
+          "title": "Klima",
+          "path": "klima",
+          "type": "sections",
+          "max_columns": 4,
+          "sections": [
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Wohnung",
+                  "heading_style": "title",
+                  "icon": "mdi:home-thermometer"
+                },
+                {
+                  "type": "custom:mushroom-entity-card",
+                  "entity": "input_boolean.abwesenheit",
+                  "name": "Abwesenheit",
+                  "icon": "mdi:home-export-outline",
+                  "icon_color": "blue",
+                  "tap_action": {
+                    "action": "toggle"
+                  },
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-entity-card",
+                  "entity": "input_boolean.heizung_anheizen",
+                  "name": "Vorheizen",
+                  "icon": "mdi:radiator",
+                  "icon_color": "deep-orange",
+                  "tap_action": {
+                    "action": "toggle"
+                  },
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "climate.wohnzimmer",
+                  "primary": "{{ 'Urlaubsmodus aktiv' if is_state_attr('climate.wohnzimmer','preset_mode','away') else 'Heizprofile aktiv' }}",
+                  "secondary": "{% if is_state_attr('climate.wohnzimmer','preset_mode','away') %}{{ state_attr('climate.wohnzimmer','temperature') }} °C bis {{ as_timestamp(state_attr('climate.wohnzimmer','preset_end_time')) | timestamp_custom('%d.%m. %H:%M') }}{% else %}Automatik nach Zeitprofil{% endif %}",
+                  "icon": "{{ 'mdi:airplane' if is_state_attr('climate.wohnzimmer','preset_mode','away') else 'mdi:calendar-clock' }}",
+                  "icon_color": "{{ 'blue' if is_state_attr('climate.wohnzimmer','preset_mode','away') else 'green' }}",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "---\n",
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:mushroom-chips-card",
+                  "alignment": "center",
+                  "chips": [
+                    {
+                      "type": "weather",
+                      "entity": "weather.weather_23554_lubeck_deutschland",
+                      "show_conditions": true,
+                      "show_temperature": true
+                    },
+                    {
+                      "type": "template",
+                      "entity": "person.sauerm",
+                      "icon": "{{ 'mdi:home-account' if is_state('person.sauerm','home') else 'mdi:account-arrow-right' }}",
+                      "icon_color": "{{ 'green' if is_state('person.sauerm','home') else 'grey' }}",
+                      "content": "Marcel · {{ 'da' if is_state('person.sauerm','home') else 'weg' }}",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    },
+                    {
+                      "type": "template",
+                      "entity": "person.sarah",
+                      "icon": "{{ 'mdi:home-account' if is_state('person.sarah','home') else 'mdi:account-arrow-right' }}",
+                      "icon_color": "{{ 'green' if is_state('person.sarah','home') else 'grey' }}",
+                      "content": "Sarah · {{ 'da' if is_state('person.sarah','home') else 'weg' }}",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    },
+                    {
+                      "type": "template",
+                      "entity": "lock.wohnungstur",
+                      "icon": "{{ 'mdi:lock' if is_state('lock.wohnungstur','locked') else 'mdi:lock-open-variant' }}",
+                      "icon_color": "{{ 'green' if is_state('lock.wohnungstur','locked') else 'orange' }}",
+                      "content": "Tür {{ 'zu' if is_state('lock.wohnungstur','locked') else 'offen' }}",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    },
+                    {
+                      "type": "entity",
+                      "entity": "automation.heizung_nach_anwesenheit_hmip_urlaubsmodus",
+                      "icon": "mdi:robot",
+                      "content_info": "none"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Wohnzimmer",
+                  "heading_style": "title",
+                  "icon": "mdi:sofa"
+                },
+                {
+                  "type": "custom:mushroom-climate-card",
+                  "entity": "climate.wohnzimmer",
+                  "name": "Wohnzimmer",
+                  "show_temperature_control": true,
+                  "hvac_modes": [
+                    "auto",
+                    "heat"
+                  ],
+                  "collapsible_controls": false,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-chips-card",
+                  "chips": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.wohnzimmerthermostat_temperature",
+                      "icon": "mdi:thermometer",
+                      "content_info": "state"
+                    },
+                    {
+                      "type": "entity",
+                      "entity": "sensor.wohnzimmerthermostat_humidity",
+                      "icon": "mdi:water-percent",
+                      "content_info": "state"
+                    },
+                    {
+                      "type": "template",
+                      "entity": "binary_sensor.wohnzimmerfenster",
+                      "icon": "{{ 'mdi:window-open-variant' if is_state('binary_sensor.wohnzimmerfenster','on') else 'mdi:window-closed-variant' }}",
+                      "icon_color": "{{ 'red' if is_state('binary_sensor.wohnzimmerfenster','on') else 'green' }}",
+                      "content": "{{ 'offen' if is_state('binary_sensor.wohnzimmerfenster','on') else 'zu' }}",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    },
+                    {
+                      "type": "template",
+                      "entity": "sensor.heizkorperthermostat_wohnzimmer_heating",
+                      "icon": "mdi:radiator",
+                      "icon_color": "{{ 'deep-orange' if states('sensor.heizkorperthermostat_wohnzimmer_heating')|int(0) > 0 else 'grey' }}",
+                      "content": "Ventil {{ states('sensor.heizkorperthermostat_wohnzimmer_heating') }} %",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "content": "---\n",
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:mushroom-entity-card",
+                  "entity": "sensor.pflanze_monstera_wohnzimmer_soil_moisture",
+                  "name": "Monstera Bodenfeuchte",
+                  "icon": "mdi:sprout",
+                  "icon_color": "green",
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Esszimmer",
+                  "heading_style": "title",
+                  "icon": "mdi:silverware-fork-knife"
+                },
+                {
+                  "type": "custom:mushroom-entity-card",
+                  "entity": "sensor.heizkorperthermostat_esszimmer_temperature",
+                  "name": "Temperatur",
+                  "icon": "mdi:thermometer",
+                  "icon_color": "orange",
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-chips-card",
+                  "chips": [
+                    {
+                      "type": "template",
+                      "entity": "binary_sensor.esszimmerfenster",
+                      "icon": "{{ 'mdi:window-open-variant' if is_state('binary_sensor.esszimmerfenster','on') else 'mdi:window-closed-variant' }}",
+                      "icon_color": "{{ 'red' if is_state('binary_sensor.esszimmerfenster','on') else 'green' }}",
+                      "content": "{{ 'offen' if is_state('binary_sensor.esszimmerfenster','on') else 'zu' }}",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    },
+                    {
+                      "type": "template",
+                      "entity": "sensor.heizkorperthermostat_esszimmer_heating",
+                      "icon": "mdi:radiator",
+                      "icon_color": "{{ 'deep-orange' if states('sensor.heizkorperthermostat_esszimmer_heating')|int(0) > 0 else 'grey' }}",
+                      "content": "Ventil {{ states('sensor.heizkorperthermostat_esszimmer_heating') }} %",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Schlafzimmer",
+                  "heading_style": "title",
+                  "icon": "mdi:bed-king"
+                },
+                {
+                  "type": "custom:mushroom-climate-card",
+                  "entity": "climate.schlafzimmer",
+                  "name": "Schlafzimmer",
+                  "show_temperature_control": true,
+                  "hvac_modes": [
+                    "auto",
+                    "heat"
+                  ],
+                  "collapsible_controls": false,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-chips-card",
+                  "chips": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.heizkorperthermostat_schlafzimmer_temperature",
+                      "icon": "mdi:thermometer",
+                      "content_info": "state"
+                    },
+                    {
+                      "type": "entity",
+                      "entity": "sensor.0x348d13fffe52a975_humidity",
+                      "icon": "mdi:water-percent",
+                      "content_info": "state"
+                    },
+                    {
+                      "type": "template",
+                      "entity": "binary_sensor.schlafzimmerfenster",
+                      "icon": "{{ 'mdi:window-open-variant' if is_state('binary_sensor.schlafzimmerfenster','on') else 'mdi:window-closed-variant' }}",
+                      "icon_color": "{{ 'red' if is_state('binary_sensor.schlafzimmerfenster','on') else 'green' }}",
+                      "content": "{{ 'offen' if is_state('binary_sensor.schlafzimmerfenster','on') else 'zu' }}",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    },
+                    {
+                      "type": "template",
+                      "entity": "sensor.heizkorperthermostat_schlafzimmer_heating",
+                      "icon": "mdi:radiator",
+                      "icon_color": "{{ 'deep-orange' if states('sensor.heizkorperthermostat_schlafzimmer_heating')|int(0) > 0 else 'grey' }}",
+                      "content": "Ventil {{ states('sensor.heizkorperthermostat_schlafzimmer_heating') }} %",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "content": "---\n",
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:mushroom-fan-card",
+                  "entity": "fan.luftreiniger_schlafzimmer",
+                  "name": "Luftreiniger",
+                  "show_percentage_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-chips-card",
+                  "chips": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.0x348d13fffe52a975_pm25",
+                      "icon": "mdi:blur",
+                      "content_info": "state",
+                      "name": "PM2,5 Raum"
+                    },
+                    {
+                      "type": "entity",
+                      "entity": "sensor.luftreiniger_schlafzimmer_pm25",
+                      "icon": "mdi:air-filter",
+                      "content_info": "state",
+                      "name": "PM2,5 Reiniger"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Badezimmer",
+                  "heading_style": "title",
+                  "icon": "mdi:shower"
+                },
+                {
+                  "type": "custom:mushroom-climate-card",
+                  "entity": "climate.badezimmer",
+                  "name": "Badezimmer",
+                  "show_temperature_control": true,
+                  "hvac_modes": [
+                    "auto",
+                    "heat"
+                  ],
+                  "collapsible_controls": false,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-chips-card",
+                  "chips": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.heizkorperthermostat_badezimmer_temperature",
+                      "icon": "mdi:thermometer",
+                      "content_info": "state"
+                    },
+                    {
+                      "type": "template",
+                      "entity": "binary_sensor.badezimmerfenster",
+                      "icon": "{{ 'mdi:window-open-variant' if is_state('binary_sensor.badezimmerfenster','on') else 'mdi:window-closed-variant' }}",
+                      "icon_color": "{{ 'red' if is_state('binary_sensor.badezimmerfenster','on') else 'green' }}",
+                      "content": "{{ 'offen' if is_state('binary_sensor.badezimmerfenster','on') else 'zu' }}",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    },
+                    {
+                      "type": "template",
+                      "entity": "sensor.heizkorperthermostat_badezimmer_heating",
+                      "icon": "mdi:radiator",
+                      "icon_color": "{{ 'deep-orange' if states('sensor.heizkorperthermostat_badezimmer_heating')|int(0) > 0 else 'grey' }}",
+                      "content": "Ventil {{ states('sensor.heizkorperthermostat_badezimmer_heating') }} %",
+                      "tap_action": {
+                        "action": "more-info"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "content": "---\n",
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:mushroom-entity-card",
+                  "entity": "switch.badezimmerlufter",
+                  "name": "Lüfter",
+                  "icon": "mdi:fan",
+                  "icon_color": "cyan",
+                  "tap_action": {
+                    "action": "toggle"
+                  },
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Verlauf",
+                  "heading_style": "title",
+                  "icon": "mdi:chart-line"
+                },
+                {
+                  "type": "history-graph",
+                  "title": "Temperatur 24 h",
+                  "hours_to_show": 24,
+                  "entities": [
+                    {
+                      "entity": "sensor.wohnzimmerthermostat_temperature",
+                      "name": "Wohnzimmer"
+                    },
+                    {
+                      "entity": "sensor.heizkorperthermostat_esszimmer_temperature",
+                      "name": "Esszimmer"
+                    },
+                    {
+                      "entity": "sensor.heizkorperthermostat_schlafzimmer_temperature",
+                      "name": "Schlafzimmer"
+                    },
+                    {
+                      "entity": "sensor.heizkorperthermostat_badezimmer_temperature",
+                      "name": "Badezimmer"
+                    }
+                  ],
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "history-graph",
+                  "title": "Luftfeuchtigkeit 24 h",
+                  "hours_to_show": 24,
+                  "entities": [
+                    {
+                      "entity": "sensor.wohnzimmerthermostat_humidity",
+                      "name": "Wohnzimmer"
+                    },
+                    {
+                      "entity": "sensor.0x348d13fffe52a975_humidity",
+                      "name": "Schlafzimmer"
+                    }
+                  ],
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "sections",
+          "max_columns": 4,
+          "title": "Sicherheit",
+          "path": "sicherheit",
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Wohnzimmer",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "picture-glance",
+                  "entities": [
+                    {
+                      "entity": "camera.cam_wohnzimmer_profile000",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.cam_wohnzimmer_profile000",
+                          "pan": "LEFT",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Pan Left",
+                      "show_state": false,
+                      "icon": "mdi:arrow-left",
+                      "show_icon": true
+                    },
+                    {
+                      "entity": "camera.cam_wohnzimmer_profile000",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.cam_wohnzimmer_profile000",
+                          "tilt": "UP",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Tilt Up",
+                      "icon": "mdi:arrow-up"
+                    },
+                    {
+                      "entity": "camera.cam_wohnzimmer_profile000",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.cam_wohnzimmer_profile000",
+                          "tilt": "DOWN",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Tilt Down",
+                      "icon": "mdi:arrow-down"
+                    },
+                    {
+                      "entity": "camera.cam_wohnzimmer_profile000",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.cam_wohnzimmer_profile000",
+                          "pan": "RIGHT",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Pan Right",
+                      "icon": "mdi:arrow-right",
+                      "show_icon": true
+                    }
+                  ],
+                  "camera_image": "camera.cam_wohnzimmer_profile000",
+                  "camera_view": "live"
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.cam_wohnzimmer_wischer",
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 2
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Terrasse",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "picture-glance",
+                  "entities": [
+                    {
+                      "entity": "camera.cam_terrasse_profile001",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.cam_terrasse_profile001",
+                          "pan": "LEFT",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Pan Left",
+                      "show_state": false,
+                      "icon": "mdi:arrow-left",
+                      "show_icon": true
+                    },
+                    {
+                      "entity": "camera.cam_terrasse_profile001",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.cam_terrasse_profile001",
+                          "tilt": "UP",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Tilt Up",
+                      "icon": "mdi:arrow-up"
+                    },
+                    {
+                      "entity": "camera.cam_terrasse_profile001",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.cam_terrasse_profile001",
+                          "tilt": "DOWN",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Tilt Down",
+                      "icon": "mdi:arrow-down"
+                    },
+                    {
+                      "entity": "camera.cam_terrasse_profile001",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.cam_terrasse_profile001",
+                          "pan": "RIGHT",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Pan Right",
+                      "icon": "mdi:arrow-right",
+                      "show_icon": true
+                    }
+                  ],
+                  "camera_image": "camera.cam_terrasse_profile001",
+                  "camera_view": "live"
+                },
+                {
+                  "type": "picture-glance",
+                  "entities": [
+                    {
+                      "entity": "camera.cam_terrasse_profile101"
+                    }
+                  ],
+                  "camera_image": "camera.cam_terrasse_profile101",
+                  "camera_view": "live"
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.cam_terrasse_wischer",
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.cam_terrasse_ir_lampe",
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Drucker",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "picture-glance",
+                  "entities": [
+                    {
+                      "entity": "camera.tapo_c200c_prusa_xl_hd_stream",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.tapo_c200c_prusa_xl_hd_stream",
+                          "pan": "LEFT",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Pan Left",
+                      "show_state": false,
+                      "icon": "mdi:arrow-left",
+                      "show_icon": true
+                    },
+                    {
+                      "entity": "camera.tapo_c200c_prusa_xl_hd_stream",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.tapo_c200c_prusa_xl_hd_stream",
+                          "tilt": "UP",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Tilt Up",
+                      "icon": "mdi:arrow-up"
+                    },
+                    {
+                      "entity": "camera.tapo_c200c_prusa_xl_hd_stream",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.tapo_c200c_prusa_xl_hd_stream",
+                          "tilt": "DOWN",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Tilt Down",
+                      "icon": "mdi:arrow-down"
+                    },
+                    {
+                      "entity": "camera.tapo_c200c_prusa_xl_hd_stream",
+                      "tap_action": {
+                        "action": "call-service",
+                        "service": "onvif.ptz",
+                        "service_data": {
+                          "entity_id": "camera.tapo_c200c_prusa_xl_hd_stream",
+                          "pan": "RIGHT",
+                          "speed": 1,
+                          "distance": 0.3,
+                          "move_mode": "ContinuousMove"
+                        }
+                      },
+                      "name": "Pan Right",
+                      "icon": "mdi:arrow-right",
+                      "show_icon": true
+                    }
+                  ],
+                  "camera_image": "camera.tapo_c200c_prusa_xl_hd_stream",
+                  "camera_view": "live"
+                },
+                {
+                  "type": "tile",
+                  "entity": "light.tapo_c200c_prusa_xl_floodlight_timed",
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Landroid M500",
+                  "heading_style": "title"
+                },
+                {
+                  "camera_view": "live",
+                  "fit_mode": "cover",
+                  "type": "picture-glance",
+                  "entities": [
+                    {
+                      "entity": "camera.landroid_kamera_landroid_kamera"
+                    }
+                  ],
+                  "camera_image": "camera.landroid_kamera_landroid_kamera"
+                },
+                {
+                  "type": "tile",
+                  "entity": "light.landroid_kamera_led",
+                  "features": [
+                    {
+                      "type": "light-brightness"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 2
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Haustür",
+                  "heading_style": "title",
+                  "icon": "mdi:door"
+                },
+                {
+                  "type": "tile",
+                  "entity": "lock.haustur",
+                  "name": "Haustür öffnen",
+                  "icon": "mdi:door-open",
+                  "vertical": false,
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "lock.unlock",
+                    "target": {
+                      "entity_id": "lock.haustur"
+                    },
+                    "confirmation": {
+                      "text": "Haustür öffnen?"
+                    }
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "lock.unlock",
+                    "target": {
+                      "entity_id": "lock.haustur"
+                    },
+                    "confirmation": {
+                      "text": "Haustür öffnen?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "more-info"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "sections",
+          "max_columns": 4,
+          "title": "Media Control",
+          "path": "media-control",
+          "icon": "mdi:remote",
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Heimkino",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "grid",
+                  "columns": 2,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "switch.heimkino",
+                      "name": "Heimkino",
+                      "icon": "mdi:movie-open",
+                      "color": "deep-purple",
+                      "vertical": true,
+                      "tap_action": {
+                        "action": "toggle"
+                      },
+                      "hold_action": {
+                        "action": "more-info"
+                      }
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "switch.switch",
+                      "name": "Switch",
+                      "icon": "mdi:nintendo-switch",
+                      "color": "red",
+                      "vertical": true,
+                      "tap_action": {
+                        "action": "toggle"
+                      },
+                      "hold_action": {
+                        "action": "more-info"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "entities",
+                  "title": "Heimkino-Status",
+                  "show_header_toggle": false,
+                  "entities": [
+                    {
+                      "entity": "input_boolean.heimkino_aktiv",
+                      "name": "Anlage aktiv",
+                      "icon": "mdi:projector-screen"
+                    },
+                    {
+                      "entity": "input_select.heimkino_quelle",
+                      "name": "Aktiver Modus",
+                      "icon": "mdi:video-input-hdmi"
+                    },
+                    {
+                      "entity": "sensor.benq_tk850i_benq_tk850i_betriebszustand",
+                      "name": "Beamer"
+                    },
+                    {
+                      "entity": "select.benq_tk850i_benq_tk850i_quelle",
+                      "name": "Beamer-Eingang"
+                    },
+                    {
+                      "entity": "media_player.denon_avr_x1200w",
+                      "name": "Denon AVR"
+                    },
+                    {
+                      "entity": "media_player.fire_tv_cube_2",
+                      "name": "Fire TV Cube"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "columns": 1,
+              "square": false,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Heimkino Schlafzimmer",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "grid",
+                  "columns": 1,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "switch.heimkino_schlafzimmer",
+                      "name": "Heimkino Schlafzimmer",
+                      "icon": "mdi:projector-screen",
+                      "color": "deep-purple",
+                      "vertical": true,
+                      "tap_action": {
+                        "action": "toggle"
+                      },
+                      "hold_action": {
+                        "action": "more-info"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "entities",
+                  "title": "Heimkino-Status",
+                  "show_header_toggle": false,
+                  "entities": [
+                    {
+                      "entity": "input_boolean.heimkino_schlafzimmer_aktiv",
+                      "name": "Heimkino aktiv",
+                      "icon": "mdi:projector-screen"
+                    },
+                    {
+                      "entity": "media_player.schlafzimmer_xgimi_halo_adb",
+                      "name": "XGIMI Halo",
+                      "icon": "mdi:projector"
+                    },
+                    {
+                      "entity": "media_player.schlafzimmer_fire_tv_stick",
+                      "name": "Fire TV Stick (ADB)",
+                      "icon": "mdi:television-play"
+                    },
+                    {
+                      "entity": "cover.rollo_schlafzimmer",
+                      "name": "Rollo",
+                      "icon": "mdi:roller-shade"
+                    },
+                    {
+                      "entity": "light.schlafzimmerlicht",
+                      "name": "Schlafzimmerlicht",
+                      "icon": "mdi:ceiling-light"
+                    },
+                    {
+                      "entity": "light.nachttischlampe",
+                      "name": "Nachttischlampe",
+                      "icon": "mdi:lamp"
+                    },
+                    {
+                      "entity": "input_boolean.heimkino_schlafzimmer_nachttisch_automatik",
+                      "name": "Nachttisch-Automatik",
+                      "icon": "mdi:lightbulb-auto"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading_style": "title",
+                  "heading": "XGIMI Halo+"
+                },
+                {
+                  "type": "vertical-stack",
+                  "cards": [
+                    {
+                      "type": "grid",
+                      "columns": 3,
+                      "square": false,
+                      "cards": [
+                        {
+                          "type": "button",
+                          "name": "Ein",
+                          "icon": "mdi:power",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "button.press",
+                            "target": {
+                              "entity_id": "button.xgimi_halo_remote_xgimi_projector_wakeup"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "show_name": false,
+                          "show_icon": false
+                        },
+                        {
+                          "type": "button",
+                          "name": "Aus",
+                          "icon": "mdi:power-off",
+                          "tap_action": {
+                            "action": "call-service",
+                            "confirmation": {
+                              "text": "Beamer wirklich ausschalten?"
+                            },
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": [
+                                "POWER"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Menü",
+                          "icon": "mdi:menu",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.schlafzimmer_xgimi_halo_adb"
+                            },
+                            "data": {
+                              "command": "input keyevent 3"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "HDMI",
+                          "icon": "mdi:video-input-hdmi",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "script.turn_on",
+                            "target": {
+                              "entity_id": "script.heimkino_schlafzimmer_xgimi_hdmi"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Settings",
+                          "icon": "mdi:cog",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.schlafzimmer_xgimi_halo_adb"
+                            },
+                            "data": {
+                              "command": "input keyevent 2105"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Autofokus",
+                          "icon": "mdi:focus-auto",
+                          "tap_action": {
+                            "action": "call-service",
+                            "confirmation": {
+                              "text": "Autofokus wirklich starten?"
+                            },
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.schlafzimmer_xgimi_halo_adb"
+                            },
+                            "data": {
+                              "command": "input keyevent 2103"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Fokus -",
+                          "icon": "mdi:focus-field-horizontal",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.schlafzimmer_xgimi_halo_adb"
+                            },
+                            "data": {
+                              "command": "input keyevent 2097"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Fokus +",
+                          "icon": "mdi:focus-field",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.schlafzimmer_xgimi_halo_adb"
+                            },
+                            "data": {
+                              "command": "input keyevent 2098"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "grid",
+                      "columns": 3,
+                      "square": true,
+                      "cards": [
+                        {
+                          "type": "button",
+                          "show_name": false,
+                          "show_icon": false
+                        },
+                        {
+                          "type": "button",
+                          "icon": "mdi:chevron-up",
+                          "name": "Hoch",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": "DPAD_UP"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "show_name": false,
+                          "show_icon": false
+                        },
+                        {
+                          "type": "button",
+                          "icon": "mdi:chevron-left",
+                          "name": "Links",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": "DPAD_LEFT"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "icon": "mdi:checkbox-blank-circle-outline",
+                          "name": "OK",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": "DPAD_CENTER"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "icon": "mdi:chevron-right",
+                          "name": "Rechts",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": "DPAD_RIGHT"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "icon": "mdi:keyboard-return",
+                          "name": "Zurück",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": "BACK"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "icon": "mdi:chevron-down",
+                          "name": "Runter",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": "DPAD_DOWN"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "icon": "mdi:home",
+                          "name": "Home",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": "HOME"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "grid",
+                      "columns": 3,
+                      "square": false,
+                      "cards": [
+                        {
+                          "type": "button",
+                          "icon": "mdi:volume-minus",
+                          "name": "Leiser",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": "VOLUME_DOWN"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "icon": "mdi:volume-mute",
+                          "name": "Mute",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": "VOLUME_MUTE"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "icon": "mdi:volume-plus",
+                          "name": "Lauter",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "remote.send_command",
+                            "target": {
+                              "entity_id": "remote.xgimi_halo"
+                            },
+                            "data": {
+                              "command": "VOLUME_UP"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "BENQ TK850i",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "vertical-stack",
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "sensor.benq_tk850i_benq_tk850i_betriebszustand",
+                      "name": "BenQ TK850i",
+                      "icon": "mdi:projector"
+                    },
+                    {
+                      "type": "grid",
+                      "columns": 3,
+                      "square": false,
+                      "cards": [
+                        {
+                          "type": "button",
+                          "name": "Ein",
+                          "icon": "mdi:power",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "switch.turn_on",
+                            "target": {
+                              "entity_id": "switch.benq_tk850i_benq_tk850i_power"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Status",
+                          "icon": "mdi:refresh",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "button.press",
+                            "target": {
+                              "entity_id": "button.benq_tk850i_benq_tk850i_status_aktualisieren"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Aus",
+                          "icon": "mdi:power-off",
+                          "tap_action": {
+                            "action": "call-service",
+                            "confirmation": {
+                              "text": "Beamer wirklich ausschalten?"
+                            },
+                            "service": "script.turn_on",
+                            "target": {
+                              "entity_id": "script.benq_beamer_ausschalten"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "grid",
+                      "columns": 2,
+                      "square": false,
+                      "cards": [
+                        {
+                          "type": "button",
+                          "name": "HDMI 1",
+                          "icon": "mdi:video-input-hdmi",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "select.select_option",
+                            "target": {
+                              "entity_id": "select.benq_tk850i_benq_tk850i_quelle"
+                            },
+                            "data": {
+                              "option": "HDMI 1"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "HDMI 2",
+                          "icon": "mdi:video-input-hdmi",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "select.select_option",
+                            "target": {
+                              "entity_id": "select.benq_tk850i_benq_tk850i_quelle"
+                            },
+                            "data": {
+                              "option": "HDMI 2"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "entities",
+                      "entities": [
+                        {
+                          "entity": "select.benq_tk850i_benq_tk850i_quelle",
+                          "name": "Quelle"
+                        },
+                        {
+                          "entity": "select.benq_tk850i_benq_tk850i_lampenmodus",
+                          "name": "Lampenmodus"
+                        },
+                        {
+                          "entity": "number.benq_tk850i_benq_tk850i_lautstarke",
+                          "name": "Lautstärke"
+                        },
+                        {
+                          "entity": "switch.benq_tk850i_benq_tk850i_mute",
+                          "name": "Stumm"
+                        },
+                        {
+                          "entity": "sensor.benq_tk850i_benq_tk850i_lampenstunden",
+                          "name": "Lampenstunden"
+                        },
+                        {
+                          "entity": "sensor.wohnzimmer_benq_tk850i_benq_tk850i_letzter_rs232_fehler",
+                          "name": "Letzter RS232-Fehler"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "grid",
+                      "columns": 3,
+                      "square": false,
+                      "cards": [
+                        {
+                          "type": "button",
+                          "name": "Leiser",
+                          "icon": "mdi:volume-minus",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "button.press",
+                            "target": {
+                              "entity_id": "button.benq_tk850i_benq_tk850i_lautstarke_2"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Stumm",
+                          "icon": "mdi:volume-mute",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "switch.toggle",
+                            "target": {
+                              "entity_id": "switch.benq_tk850i_benq_tk850i_mute"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Lauter",
+                          "icon": "mdi:volume-plus",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "button.press",
+                            "target": {
+                              "entity_id": "button.benq_tk850i_benq_tk850i_lautstarke"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "FireTV Cube",
+                  "heading_style": "title"
+                },
+                {
+                  "type": "vertical-stack",
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "media_player.wohnzimmer_fire_tv_cube",
+                      "name": "Fire TV Cube",
+                      "icon": "mdi:television-play"
+                    },
+                    {
+                      "type": "grid",
+                      "columns": 3,
+                      "square": false,
+                      "cards": [
+                        {
+                          "type": "button",
+                          "name": "Ein",
+                          "icon": "mdi:power",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "script.fire_tv_cube_wecken"
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Home",
+                          "icon": "mdi:home",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "HOME"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Standby",
+                          "icon": "mdi:power-sleep",
+                          "tap_action": {
+                            "action": "call-service",
+                            "confirmation": {
+                              "text": "Fire TV Cube wirklich in Standby versetzen?"
+                            },
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "SLEEP"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "grid",
+                      "columns": 3,
+                      "square": true,
+                      "cards": [
+                        {
+                          "type": "button",
+                          "show_name": false,
+                          "show_icon": false
+                        },
+                        {
+                          "type": "button",
+                          "name": "Hoch",
+                          "icon": "mdi:chevron-up",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "UP"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "show_name": false,
+                          "show_icon": false
+                        },
+                        {
+                          "type": "button",
+                          "name": "Links",
+                          "icon": "mdi:chevron-left",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "LEFT"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "OK",
+                          "icon": "mdi:checkbox-blank-circle-outline",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "CENTER"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Rechts",
+                          "icon": "mdi:chevron-right",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "RIGHT"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Zurück",
+                          "icon": "mdi:keyboard-return",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "BACK"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Runter",
+                          "icon": "mdi:chevron-down",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "DOWN"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Menü",
+                          "icon": "mdi:menu",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "MENU"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "grid",
+                      "columns": 3,
+                      "square": false,
+                      "cards": [
+                        {
+                          "type": "button",
+                          "name": "Zurückspulen",
+                          "icon": "mdi:rewind",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "input keyevent 89"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Play/Pause",
+                          "icon": "mdi:play-pause",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "input keyevent 85"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Vorspulen",
+                          "icon": "mdi:fast-forward",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "input keyevent 90"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "grid",
+                      "columns": 3,
+                      "square": false,
+                      "cards": [
+                        {
+                          "type": "button",
+                          "name": "Leiser",
+                          "icon": "mdi:volume-minus",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "VOLUME_DOWN"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Stumm",
+                          "icon": "mdi:volume-mute",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "MUTE"
+                            }
+                          }
+                        },
+                        {
+                          "type": "button",
+                          "name": "Lauter",
+                          "icon": "mdi:volume-plus",
+                          "tap_action": {
+                            "action": "call-service",
+                            "service": "androidtv.adb_command",
+                            "target": {
+                              "entity_id": "media_player.wohnzimmer_fire_tv_cube"
+                            },
+                            "data": {
+                              "command": "VOLUME_UP"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "FireTV Stick",
+                  "heading_style": "title",
+                  "icon": "mdi:remote"
+                },
+                {
+                  "type": "vertical-stack",
+                  "cards": [
+                    {
+                      "type": "vertical-stack",
+                      "cards": [
+                        {
+                          "type": "tile",
+                          "entity": "media_player.schlafzimmer_fire_tv_stick",
+                          "name": "Fire TV Stick",
+                          "icon": "mdi:television-play"
+                        },
+                        {
+                          "type": "grid",
+                          "columns": 3,
+                          "square": false,
+                          "cards": [
+                            {
+                              "type": "button",
+                              "name": "Ein",
+                              "icon": "mdi:power",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "script.heimkino_schlafzimmer_firetv_wecken"
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "Home",
+                              "icon": "mdi:home",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "HOME"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "Standby",
+                              "icon": "mdi:power-sleep",
+                              "tap_action": {
+                                "action": "call-service",
+                                "confirmation": {
+                                  "text": "Fire TV Stick wirklich in Standby versetzen?"
+                                },
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "SLEEP"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "grid",
+                          "columns": 3,
+                          "square": true,
+                          "cards": [
+                            {
+                              "type": "button",
+                              "show_name": false,
+                              "show_icon": false
+                            },
+                            {
+                              "type": "button",
+                              "name": "Hoch",
+                              "icon": "mdi:chevron-up",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "UP"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "show_name": false,
+                              "show_icon": false
+                            },
+                            {
+                              "type": "button",
+                              "name": "Links",
+                              "icon": "mdi:chevron-left",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "LEFT"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "OK",
+                              "icon": "mdi:checkbox-blank-circle-outline",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "CENTER"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "Rechts",
+                              "icon": "mdi:chevron-right",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "RIGHT"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "Zurück",
+                              "icon": "mdi:keyboard-return",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "BACK"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "Runter",
+                              "icon": "mdi:chevron-down",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "DOWN"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "Menü",
+                              "icon": "mdi:menu",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "MENU"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "grid",
+                          "columns": 3,
+                          "square": false,
+                          "cards": [
+                            {
+                              "type": "button",
+                              "name": "Zurückspulen",
+                              "icon": "mdi:rewind",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "input keyevent 89"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "Play/Pause",
+                              "icon": "mdi:play-pause",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "input keyevent 85"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "Vorspulen",
+                              "icon": "mdi:fast-forward",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "input keyevent 90"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "grid",
+                          "columns": 3,
+                          "square": false,
+                          "cards": [
+                            {
+                              "type": "button",
+                              "name": "Leiser",
+                              "icon": "mdi:volume-minus",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "VOLUME_DOWN"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "Stumm",
+                              "icon": "mdi:volume-mute",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "MUTE"
+                                }
+                              }
+                            },
+                            {
+                              "type": "button",
+                              "name": "Lauter",
+                              "icon": "mdi:volume-plus",
+                              "tap_action": {
+                                "action": "call-service",
+                                "service": "androidtv.adb_command",
+                                "target": {
+                                  "entity_id": "media_player.schlafzimmer_fire_tv_stick"
+                                },
+                                "data": {
+                                  "command": "VOLUME_UP"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "show_icon_and_title": true,
+          "cards": []
+        }
+      ]
+    }
+  }
+}

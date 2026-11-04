@@ -1,0 +1,108 @@
+
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+
+homeassistant:
+
+  packages: !include_dir_named packages
+
+  allowlist_external_dirs:
+    - /config/temp_snapshots
+    - /config/www/landroid
+
+shell_command:
+  upload_prusa_snapshot: !secret prusa_upload_snapshot_cmd
+
+###############################################################################
+
+###############################################################################
+# HOME ASSISTANT URLS
+###############################################################################
+#
+# Zweck:
+# -----------------------------------------------------------------------------
+# Definiert die interne und externe URL von Home Assistant.
+#
+# Wichtig für:
+# - iOS / Android Companion App
+# - OAuth Login
+# - Remote Zugriff
+# - WebSocket-Verbindungen
+# - Reverse Proxy Betrieb
+#
+###############################################################################
+
+
+###############################################################################
+# HOME ASSISTANT includes
+###############################################################################
+
+automation ui: !include automations.yaml
+automation landroid: !include www/landroid/landroid_automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+###############################################################################
+
+###############################################################################
+# HOME ASSISTANT lights
+###############################################################################
+
+light: !include light_groups.yaml
+
+
+###############################################################################
+# TEMPLATE ENTITIES
+###############################################################################
+#
+# Zweck:
+# -----------------------------------------------------------------------------
+# Diese Sektion enthält virtuelle/template-basierte Entitäten.
+#
+# Hier werden Geräte logisch korrekt in Home Assistant abgebildet,
+# auch wenn die originale Integration einen ungeeigneten Gerätetyp liefert.
+#
+# Beispiel:
+# - Ein PWM-gesteuerter Brunnen erscheint technisch als light.*
+# - Semantisch handelt es sich jedoch um eine regelbare Motor-/Pumpensteuerung
+# - Deshalb wird daraus hier ein fan.*
+#
+###############################################################################
+# TEMPLATE FANS
+###############################################################################
+
+template:
+  - fan:
+      - name: "Wohnzimmerbrunnen"
+        unique_id: wz_brunnen_wohnzimmerbrunnen_fan
+
+        state: >
+          {{ is_state('light.wz_brunnen_wohnzimmerbrunnen', 'on') }}
+
+        percentage: >
+          {% set b = state_attr('light.wz_brunnen_wohnzimmerbrunnen', 'brightness') %}
+          {{ 0 if b is none else (b / 255 * 100) | round(0) }}
+
+        turn_on:
+          action: light.turn_on
+          target:
+            entity_id: light.wz_brunnen_wohnzimmerbrunnen
+          data:
+            brightness_pct: 100
+
+        turn_off:
+          action: light.turn_off
+          target:
+            entity_id: light.wz_brunnen_wohnzimmerbrunnen
+
+        set_percentage:
+          action: light.turn_on
+          target:
+            entity_id: light.wz_brunnen_wohnzimmerbrunnen
+          data:
+            brightness_pct: "{{ percentage }}"

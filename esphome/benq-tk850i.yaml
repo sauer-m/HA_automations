@@ -1,0 +1,855 @@
+substitutions:
+  device_name: benq-tk850i
+  friendly_name: BenQ TK850i
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+
+  on_boot:
+    priority: -100
+    then:
+      - delay: 5s
+      - script.execute: benq_poll
+
+esp8266:
+  board: esp12e
+
+
+# ============================================================
+# LOGGER / HOME ASSISTANT / OTA / WLAN
+# ============================================================
+
+# GPIO3 wird als UART-RX verwendet.
+# Daher serielle Logausgabe deaktivieren.
+# Netzwerk-Logs funktionieren weiterhin.
+logger:
+  baud_rate: 0
+  level: DEBUG
+
+api:
+  encryption:
+    key: !secret benq_tk850i__encryption_key
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: !secret fallback_password
+
+captive_portal:
+
+
+# ============================================================
+# INTERNE ZUSTÄNDE
+# ============================================================
+
+globals:
+  - id: benq_power_on
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+  - id: benq_muted
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+  - id: benq_volume_value
+    type: int
+    restore_value: no
+    initial_value: "0"
+
+  - id: benq_poll_counter
+    type: int
+    restore_value: no
+    initial_value: "0"
+
+
+# ============================================================
+# UART
+# ============================================================
+
+uart:
+  id: benq_uart
+
+  # Belegung des zuvor funktionierenden Arduino-Aufbaus
+  tx_pin: GPIO2
+  rx_pin: GPIO3
+
+  baud_rate: 9600
+  data_bits: 8
+  parity: NONE
+  stop_bits: 1
+  rx_buffer_size: 256
+
+  debug:
+    direction: RX
+    dummy_receiver: true
+
+    after:
+      delimiter: "\r"
+      timeout: 400ms
+
+    sequence:
+      - lambda: |-
+          std::string response(bytes.begin(), bytes.end());
+
+          ESP_LOGD("benq", "RX roh: %s", response.c_str());
+
+          // Kopie für eine von Groß-/Kleinschreibung unabhängige
+          // Auswertung erzeugen.
+          std::string normalized = response;
+
+          for (size_t i = 0; i < normalized.size(); i++) {
+            normalized[i] = static_cast<char>(
+              std::toupper(
+                static_cast<unsigned char>(normalized[i])
+              )
+            );
+          }
+
+          // --------------------------------------------------
+          // POWER
+          // --------------------------------------------------
+
+          if (normalized.find("*POW=ON#") != std::string::npos) {
+            id(benq_power_on) = true;
+
+            id(benq_power_switch).publish_state(true);
+            id(benq_power_binary).publish_state(true);
+            id(benq_operating_state).publish_state("An");
+          }
+
+          else if (
+            normalized.find("*POW=OFF#") != std::string::npos
+          ) {
+            id(benq_power_on) = false;
+
+            id(benq_power_switch).publish_state(false);
+            id(benq_power_binary).publish_state(false);
+            id(benq_operating_state).publish_state("Aus");
+          }
+
+          else if (
+            normalized.find("*POW=OFF2ON#") != std::string::npos ||
+            normalized.find("*POW=WARMING#") != std::string::npos
+          ) {
+            id(benq_power_on) = true;
+
+            id(benq_power_switch).publish_state(true);
+            id(benq_power_binary).publish_state(true);
+            id(benq_operating_state).publish_state("Startet");
+          }
+
+          else if (
+            normalized.find("*POW=ON2OFF#") != std::string::npos ||
+            normalized.find("*POW=COOLING#") != std::string::npos
+          ) {
+            // Während des Abkühlens gilt der Projektor noch nicht
+            // als vollständig ausgeschaltet.
+            id(benq_power_on) = true;
+
+            id(benq_power_switch).publish_state(true);
+            id(benq_power_binary).publish_state(true);
+            id(benq_operating_state).publish_state("Kühlt ab");
+          }
+
+
+          // --------------------------------------------------
+          // QUELLE
+          // --------------------------------------------------
+
+          size_t source_start = normalized.find("*SOUR=");
+
+          if (source_start != std::string::npos) {
+            size_t value_start = source_start + 6;
+            size_t value_end =
+              normalized.find("#", value_start);
+
+            if (value_end != std::string::npos) {
+              std::string source = normalized.substr(
+                value_start,
+                value_end - value_start
+              );
+
+              id(benq_source_raw).publish_state(source);
+
+              if (
+                source == "HDMI" ||
+                source == "HDMI1"
+              ) {
+                id(benq_source_select).publish_state(
+                  "HDMI 1"
+                );
+              }
+
+              else if (source == "HDMI2") {
+                id(benq_source_select).publish_state(
+                  "HDMI 2"
+                );
+              }
+
+              else if (
+                source == "USBREADER" ||
+                source == "USB"
+              ) {
+                id(benq_source_select).publish_state(
+                  "USB Reader"
+                );
+              }
+
+              else {
+                id(benq_source_select).publish_state(
+                  "Unbekannt"
+                );
+              }
+            }
+          }
+
+
+          // --------------------------------------------------
+          // LAUTSTÄRKE
+          // --------------------------------------------------
+
+          size_t volume_start = normalized.find("*VOL=");
+
+          if (volume_start != std::string::npos) {
+            size_t value_start = volume_start + 5;
+            size_t value_end =
+              normalized.find("#", value_start);
+
+            if (value_end != std::string::npos) {
+              std::string volume_text =
+                normalized.substr(
+                  value_start,
+                  value_end - value_start
+                );
+
+              int volume = atoi(volume_text.c_str());
+
+              if (volume >= 0 && volume <= 10) {
+                id(benq_volume_value) = volume;
+
+                id(benq_volume_number).publish_state(
+                  volume
+                );
+
+                id(benq_volume_sensor).publish_state(
+                  volume
+                );
+              }
+            }
+          }
+
+
+          // --------------------------------------------------
+          // MUTE
+          // --------------------------------------------------
+
+          if (
+            normalized.find("*MUTE=ON#") != std::string::npos
+          ) {
+            id(benq_muted) = true;
+            id(benq_mute_switch).publish_state(true);
+          }
+
+          else if (
+            normalized.find("*MUTE=OFF#") != std::string::npos
+          ) {
+            id(benq_muted) = false;
+            id(benq_mute_switch).publish_state(false);
+          }
+
+
+          // --------------------------------------------------
+          // LAMPENMODUS
+          // --------------------------------------------------
+
+          size_t lamp_mode_start =
+            normalized.find("*LAMPM=");
+
+          if (lamp_mode_start != std::string::npos) {
+            size_t value_start = lamp_mode_start + 7;
+            size_t value_end =
+              normalized.find("#", value_start);
+
+            if (value_end != std::string::npos) {
+              std::string lamp_mode =
+                normalized.substr(
+                  value_start,
+                  value_end - value_start
+                );
+
+              id(benq_lamp_mode_raw).publish_state(
+                lamp_mode
+              );
+
+              if (lamp_mode == "LNOR") {
+                id(benq_lamp_mode_select).publish_state(
+                  "Normal"
+                );
+              }
+
+              else if (lamp_mode == "ECO") {
+                id(benq_lamp_mode_select).publish_state(
+                  "Eco"
+                );
+              }
+
+              else if (lamp_mode == "SECO") {
+                id(benq_lamp_mode_select).publish_state(
+                  "SmartEco"
+                );
+              }
+
+              else {
+                id(benq_lamp_mode_select).publish_state(
+                  "Unbekannt"
+                );
+              }
+            }
+          }
+
+
+          // --------------------------------------------------
+          // LAMPENSTUNDEN
+          // --------------------------------------------------
+
+          size_t lamp_hours_start =
+            normalized.find("*LTIM=");
+
+          if (lamp_hours_start != std::string::npos) {
+            size_t value_start = lamp_hours_start + 6;
+            size_t value_end =
+              normalized.find("#", value_start);
+
+            if (value_end != std::string::npos) {
+              std::string hours_text =
+                normalized.substr(
+                  value_start,
+                  value_end - value_start
+                );
+
+              int lamp_hours = atoi(hours_text.c_str());
+
+              if (lamp_hours >= 0) {
+                id(benq_lamp_hours).publish_state(
+                  lamp_hours
+                );
+              }
+            }
+          }
+
+
+          // --------------------------------------------------
+          // FEHLERANTWORTEN
+          // --------------------------------------------------
+
+          if (
+            normalized.find("ILLEGALFORMAT")
+              != std::string::npos
+          ) {
+            id(benq_last_error).publish_state(
+              "Ungültiges Befehlsformat"
+            );
+
+            ESP_LOGW(
+              "benq",
+              "Ungültiges Befehlsformat"
+            );
+          }
+
+          else if (
+            normalized.find("UNSUPPORTEDITEM")
+              != std::string::npos
+          ) {
+            id(benq_last_error).publish_state(
+              "Befehl nicht unterstützt"
+            );
+
+            ESP_LOGW(
+              "benq",
+              "Befehl wird vom TK850i nicht unterstützt"
+            );
+          }
+
+          else if (
+            normalized.find("BLOCKITEM")
+              != std::string::npos
+          ) {
+            id(benq_last_error).publish_state(
+              "Befehl derzeit blockiert"
+            );
+
+            ESP_LOGW(
+              "benq",
+              "Befehl ist im aktuellen Zustand blockiert"
+            );
+          }
+
+
+# ============================================================
+# STATUSENTITÄTEN
+# ============================================================
+
+binary_sensor:
+  - platform: template
+    name: "${friendly_name} eingeschaltet"
+    id: benq_power_binary
+    device_class: power
+
+
+text_sensor:
+  - platform: template
+    name: "${friendly_name} Betriebszustand"
+    id: benq_operating_state
+    icon: mdi:projector
+
+  - platform: template
+    name: "${friendly_name} Quelle Rohwert"
+    id: benq_source_raw
+    icon: mdi:video-input-hdmi
+    entity_category: diagnostic
+
+  - platform: template
+    name: "${friendly_name} Lampenmodus Rohwert"
+    id: benq_lamp_mode_raw
+    icon: mdi:lightbulb-outline
+    entity_category: diagnostic
+
+  - platform: template
+    name: "${friendly_name} Letzter RS232-Fehler"
+    id: benq_last_error
+    icon: mdi:alert-circle-outline
+    entity_category: diagnostic
+
+
+sensor:
+  - platform: template
+    name: "${friendly_name} Lautstärke Istwert"
+    id: benq_volume_sensor
+    icon: mdi:volume-high
+    accuracy_decimals: 0
+    update_interval: never
+    entity_category: diagnostic
+
+  - platform: template
+    name: "${friendly_name} Lampenstunden"
+    id: benq_lamp_hours
+    icon: mdi:timer-outline
+    unit_of_measurement: h
+    accuracy_decimals: 0
+    state_class: total_increasing
+    update_interval: never
+
+
+# ============================================================
+# POWER UND MUTE
+# ============================================================
+
+switch:
+  - platform: template
+    name: "${friendly_name} Power"
+    id: benq_power_switch
+    icon: mdi:projector
+    restore_mode: DISABLED
+    optimistic: false
+
+    lambda: |-
+      return id(benq_power_on);
+
+    turn_on_action:
+      - script.stop: benq_poll
+
+      - uart.write:
+          id: benq_uart
+          data: "\r*pow=on#\r"
+
+      - delay: 2s
+      - script.execute: benq_query_power
+
+      - delay: 5s
+      - script.execute: benq_query_power
+
+      - delay: 8s
+      - script.execute: benq_query_power
+
+      - delay: 5s
+      - script.execute: benq_poll
+
+    turn_off_action:
+      - script.stop: benq_poll
+
+      - uart.write:
+          id: benq_uart
+          data: "\r*pow=off#\r"
+
+      - delay: 2s
+      - script.execute: benq_query_power
+
+      - delay: 5s
+      - script.execute: benq_query_power
+
+      - delay: 8s
+      - script.execute: benq_query_power
+
+  - platform: template
+    name: "${friendly_name} Mute"
+    id: benq_mute_switch
+    icon: mdi:volume-mute
+    restore_mode: DISABLED
+    optimistic: false
+
+    lambda: |-
+      return id(benq_muted);
+
+    turn_on_action:
+      - uart.write:
+          id: benq_uart
+          data: "\r*mute=on#\r"
+
+      - delay: 800ms
+      - script.execute: benq_query_mute
+
+    turn_off_action:
+      - uart.write:
+          id: benq_uart
+          data: "\r*mute=off#\r"
+
+      - delay: 800ms
+      - script.execute: benq_query_mute
+
+
+# ============================================================
+# QUELLE UND LAMPENMODUS
+# ============================================================
+
+select:
+  - platform: template
+    name: "${friendly_name} Quelle"
+    id: benq_source_select
+    icon: mdi:video-input-hdmi
+    optimistic: false
+
+    options:
+      - "HDMI 1"
+      - "HDMI 2"
+      - "USB Reader"
+      - "Unbekannt"
+
+    set_action:
+      - if:
+          condition:
+            lambda: 'return x == "HDMI 1";'
+          then:
+            - uart.write:
+                id: benq_uart
+                data: "\r*sour=hdmi#\r"
+
+      - if:
+          condition:
+            lambda: 'return x == "HDMI 2";'
+          then:
+            - uart.write:
+                id: benq_uart
+                data: "\r*sour=hdmi2#\r"
+
+      - if:
+          condition:
+            lambda: 'return x == "USB Reader";'
+          then:
+            - uart.write:
+                id: benq_uart
+                data: "\r*sour=usbreader#\r"
+
+      # "Unbekannt" sendet absichtlich keinen Befehl.
+      - if:
+          condition:
+            lambda: 'return x != "Unbekannt";'
+          then:
+            - delay: 1s
+            - script.execute: benq_query_source
+
+  - platform: template
+    name: "${friendly_name} Lampenmodus"
+    id: benq_lamp_mode_select
+    icon: mdi:lightbulb-outline
+    optimistic: false
+
+    options:
+      - "Normal"
+      - "Eco"
+      - "SmartEco"
+      - "Unbekannt"
+
+    set_action:
+      - if:
+          condition:
+            lambda: 'return x == "Normal";'
+          then:
+            - uart.write:
+                id: benq_uart
+                data: "\r*lampm=lnor#\r"
+
+      - if:
+          condition:
+            lambda: 'return x == "Eco";'
+          then:
+            - uart.write:
+                id: benq_uart
+                data: "\r*lampm=eco#\r"
+
+      - if:
+          condition:
+            lambda: 'return x == "SmartEco";'
+          then:
+            - uart.write:
+                id: benq_uart
+                data: "\r*lampm=seco#\r"
+
+      - if:
+          condition:
+            lambda: 'return x != "Unbekannt";'
+          then:
+            - delay: 1s
+            - script.execute: benq_query_lamp_mode
+
+
+# ============================================================
+# LAUTSTÄRKE
+# ============================================================
+
+number:
+  - platform: template
+    name: "${friendly_name} Lautstärke"
+    id: benq_volume_number
+    icon: mdi:volume-high
+
+    min_value: 0
+    max_value: 10
+    step: 1
+
+    optimistic: false
+    restore_value: false
+    update_interval: never
+
+    set_action:
+      - lambda: |-
+          int target = static_cast<int>(x);
+
+          char command[24];
+
+          snprintf(
+            command,
+            sizeof(command),
+            "\r*vol=%d#\r",
+            target
+          );
+
+          id(benq_uart).write_str(command);
+
+      - delay: 800ms
+      - script.execute: benq_query_volume
+
+
+# ============================================================
+# BUTTONS
+# ============================================================
+
+button:
+  - platform: restart
+    name: "${friendly_name} ESP neu starten"
+    icon: mdi:restart
+    entity_category: diagnostic
+
+  - platform: template
+    name: "${friendly_name} Status aktualisieren"
+    icon: mdi:refresh
+
+    on_press:
+      - script.execute: benq_poll_full
+
+  - platform: template
+    name: "${friendly_name} Lautstärke +"
+    icon: mdi:volume-plus
+
+    on_press:
+      - uart.write:
+          id: benq_uart
+          data: "\r*vol=+#\r"
+
+      - delay: 600ms
+      - script.execute: benq_query_volume
+
+  - platform: template
+    name: "${friendly_name} Lautstärke -"
+    icon: mdi:volume-minus
+
+    on_press:
+      - uart.write:
+          id: benq_uart
+          data: "\r*vol=-#\r"
+
+      - delay: 600ms
+      - script.execute: benq_query_volume
+
+
+# ============================================================
+# EINZELABFRAGEN
+# ============================================================
+
+script:
+  - id: benq_query_power
+    mode: restart
+
+    then:
+      - uart.write:
+          id: benq_uart
+          data: "\r*pow=?#\r"
+
+  - id: benq_query_source
+    mode: restart
+
+    then:
+      - uart.write:
+          id: benq_uart
+          data: "\r*sour=?#\r"
+
+  - id: benq_query_volume
+    mode: restart
+
+    then:
+      - uart.write:
+          id: benq_uart
+          data: "\r*vol=?#\r"
+
+  - id: benq_query_mute
+    mode: restart
+
+    then:
+      - uart.write:
+          id: benq_uart
+          data: "\r*mute=?#\r"
+
+  - id: benq_query_lamp_mode
+    mode: restart
+
+    then:
+      - uart.write:
+          id: benq_uart
+          data: "\r*lampm=?#\r"
+
+  - id: benq_query_lamp_hours
+    mode: restart
+
+    then:
+      - uart.write:
+          id: benq_uart
+          data: "\r*ltim=?#\r"
+
+
+  # ----------------------------------------------------------
+  # Vollständige Detailabfrage
+  # ----------------------------------------------------------
+
+  - id: benq_poll_full
+    mode: single
+
+    then:
+      - script.execute: benq_query_power
+      - delay: 1s
+
+      - if:
+          condition:
+            lambda: 'return id(benq_power_on);'
+
+          then:
+            - script.execute: benq_query_source
+            - delay: 1s
+
+            - script.execute: benq_query_volume
+            - delay: 1s
+
+            - script.execute: benq_query_mute
+            - delay: 1s
+
+            - script.execute: benq_query_lamp_mode
+            - delay: 1s
+
+            - script.execute: benq_query_lamp_hours
+            - delay: 1s
+
+
+  # ----------------------------------------------------------
+  # Automatische Abfrage
+  # ----------------------------------------------------------
+
+  - id: benq_poll
+    mode: single
+
+    then:
+      - script.execute: benq_query_power
+      - delay: 1s
+
+      - lambda: |-
+          id(benq_poll_counter)++;
+
+      - if:
+          condition:
+            lambda: |-
+              return
+                id(benq_power_on) &&
+                id(benq_poll_counter) >= 3;
+
+          then:
+            - lambda: |-
+                id(benq_poll_counter) = 0;
+
+            - script.execute: benq_query_source
+            - delay: 1s
+
+            - script.execute: benq_query_volume
+            - delay: 1s
+
+            - script.execute: benq_query_mute
+            - delay: 1s
+
+            - script.execute: benq_query_lamp_mode
+            - delay: 1s
+
+            - script.execute: benq_query_lamp_hours
+            - delay: 1s
+
+      - if:
+          condition:
+            lambda: 'return !id(benq_power_on);'
+
+          then:
+            - lambda: |-
+                id(benq_poll_counter) = 0;
+
+
+# ============================================================
+# AUTOMATISCHES POLLING
+# ============================================================
+
+interval:
+  - interval: 10s
+
+    then:
+      - if:
+          condition:
+            and:
+              - not:
+                  script.is_running: benq_poll
+              - not:
+                  script.is_running: benq_poll_full
+
+          then:
+            - script.execute: benq_poll

@@ -1,0 +1,27 @@
+benq_beamer_ausschalten:
+  alias: 'Benq Beamer ausschalten '
+  sequence:
+  - action: remote.send_command
+    target:
+      entity_id: remote.wohnzimmer_benq_tk850i_android_remote
+    data:
+      command: POWER
+  - delay:
+      milliseconds: 300
+  - action: remote.send_command
+    target:
+      entity_id: remote.wohnzimmer_benq_tk850i_android_remote
+    data:
+      command: POWER
+  description: ''
+landroid_kamera_snapshot:
+  alias: Landroid Kamera Snapshot
+  mode: queued
+  sequence:
+  - variables:
+      timestamp: '{{ now().strftime(''%Y-%m-%d_%H-%M-%S'') }}'
+  - action: camera.snapshot
+    target:
+      entity_id: camera.landroid_kamera
+    data:
+      filename: /config/www/landroid/manuell_{{ timestamp }}.jpg

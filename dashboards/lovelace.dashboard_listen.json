@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.dashboard_listen",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "type": "sections",
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "New section"
+                },
+                {
+                  "type": "todo-list",
+                  "entity": "todo.marcel_shop_amazon_sauer_hl_de_to_do_liste",
+                  "title": "Alexa To-do"
+                }
+              ]
+            }
+          ],
+          "max_columns": 4,
+          "title": "Alexa",
+          "cards": []
+        }
+      ]
+    }
+  }
+}

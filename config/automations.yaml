@@ -1,0 +1,1078 @@
+- id: '1778234891063'
+  alias: Lichtsteuerung - Wohnzimmer Hauptlicht
+  description: ''
+  triggers:
+  - entity_id: event.schalter_wohnzimmer_input_1_l
+    id: shelly_event
+    trigger: state
+    not_from:
+    - unavailable
+    - unknown
+    not_to:
+    - unavailable
+    - unknown
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''single_push''
+          }}
+
+          '
+      sequence:
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ is_state(light_entity, ''off'') }}'
+          sequence:
+          - target:
+              entity_id: '{{ light_entity }}'
+            action: light.turn_on
+          - target:
+              entity_id: '{{ dim_direction_helper }}'
+            action: input_boolean.turn_off
+        default:
+        - target:
+            entity_id: '{{ light_entity }}'
+          action: light.turn_off
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''double_push''
+          }}
+
+          '
+      sequence:
+      - target:
+          entity_id: '{{ light_entity }}'
+        data:
+          brightness_pct: 100
+        action: light.turn_on
+      - target:
+          entity_id: '{{ dim_direction_helper }}'
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''triple_push''
+          }}
+
+          '
+      sequence:
+      - target:
+          entity_id: '{{ light_entity }}'
+        data:
+          brightness_pct: 100
+          color_temp_kelvin: '{{ warm_white_kelvin }}'
+        action: light.turn_on
+      - target:
+          entity_id: '{{ dim_direction_helper }}'
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''btn_down''
+          }}
+
+          '
+      sequence:
+      - delay:
+          milliseconds: '{{ hold_delay }}'
+      - variables:
+          dim_up: '{{ is_state(dim_direction_helper, ''on'') }}'
+      - target:
+          entity_id: '{{ dim_direction_helper }}'
+        action: input_boolean.toggle
+      - repeat:
+          while:
+          - condition: template
+            value_template: "{% set brightness = state_attr(light_entity, 'brightness')
+              | int(0) %} {% set brightness_pct = (brightness / 255 * 100) | round(0)
+              | int %} {{ is_state(light_entity, 'on')\n   and (\n     (dim_up and
+              brightness_pct < 100)\n     or\n     ((not dim_up) and brightness_pct
+              > 1)\n   )\n}}\n"
+          sequence:
+          - target:
+              entity_id: '{{ light_entity }}'
+            data:
+              brightness_pct: "{% set brightness = state_attr(light_entity, 'brightness')
+                | int(0) %} {% set brightness_pct = (brightness / 255 * 100) | round(0)
+                | int %} {% if dim_up %}\n  {{ [brightness_pct + dim_step, 100] |
+                min }}\n{% else %}\n  {{ [brightness_pct - dim_step, 1] | max }}\n{%
+                endif %}\n"
+              transition: 0.4
+            action: light.turn_on
+          - delay:
+              milliseconds: '{{ dim_interval }}'
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''btn_up'' }}
+
+          '
+      sequence: []
+  mode: restart
+  variables:
+    light_entity: light.wohnzimmerlicht
+    dim_direction_helper: input_boolean.shelly_dimmrichtung_hoch_wz
+    hold_delay: 500
+    dim_step: 2
+    dim_interval: 500
+    warm_white_kelvin: 2700
+- id: '1778236091793'
+  alias: Lichtsteuerung Esszimmerlicht
+  description: ''
+  triggers:
+  - entity_id: event.schalter_wohnzimmer_input_0_r
+    id: shelly_event
+    trigger: state
+    not_from:
+    - unavailable
+    - unknown
+    not_to:
+    - unavailable
+    - unknown
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''single_push''
+          }}
+
+          '
+      sequence:
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ is_state(light_entity, ''off'') }}'
+          sequence:
+          - target:
+              entity_id: '{{ light_entity }}'
+            action: light.turn_on
+          - target:
+              entity_id: '{{ dim_direction_helper }}'
+            action: input_boolean.turn_off
+        default:
+        - target:
+            entity_id: '{{ light_entity }}'
+          action: light.turn_off
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''double_push''
+          }}
+
+          '
+      sequence:
+      - target:
+          entity_id: '{{ light_entity }}'
+        data:
+          brightness_pct: 100
+        action: light.turn_on
+      - target:
+          entity_id: '{{ dim_direction_helper }}'
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''triple_push''
+          }}
+
+          '
+      sequence:
+      - target:
+          entity_id: '{{ light_entity }}'
+        data:
+          brightness_pct: 100
+          color_temp_kelvin: '{{ warm_white_kelvin }}'
+        action: light.turn_on
+      - target:
+          entity_id: '{{ dim_direction_helper }}'
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''btn_down''
+          }}
+
+          '
+      sequence:
+      - delay:
+          milliseconds: '{{ hold_delay }}'
+      - variables:
+          dim_up: '{{ is_state(dim_direction_helper, ''on'') }}'
+      - target:
+          entity_id: '{{ dim_direction_helper }}'
+        action: input_boolean.toggle
+      - repeat:
+          while:
+          - condition: template
+            value_template: "{% set brightness = state_attr(light_entity, 'brightness')
+              | int(0) %} {% set brightness_pct = (brightness / 255 * 100) | round(0)
+              | int %} {{ is_state(light_entity, 'on')\n   and (\n     (dim_up and
+              brightness_pct < 100)\n     or\n     ((not dim_up) and brightness_pct
+              > 1)\n   )\n}}\n"
+          sequence:
+          - target:
+              entity_id: '{{ light_entity }}'
+            data:
+              brightness_pct: "{% set brightness = state_attr(light_entity, 'brightness')
+                | int(0) %} {% set brightness_pct = (brightness / 255 * 100) | round(0)
+                | int %} {% if dim_up %}\n  {{ [brightness_pct + dim_step, 100] |
+                min }}\n{% else %}\n  {{ [brightness_pct - dim_step, 1] | max }}\n{%
+                endif %}\n"
+              transition: 0.4
+            action: light.turn_on
+          - delay:
+              milliseconds: '{{ dim_interval }}'
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''btn_up'' }}
+
+          '
+      sequence: []
+  mode: restart
+  variables:
+    light_entity: light.esszimmerlicht
+    dim_direction_helper: input_boolean.shelly_dimmrichtung_hoch_ez
+    hold_delay: 500
+    dim_step: 2
+    dim_interval: 500
+    warm_white_kelvin: 2700
+- id: '1778236570300'
+  alias: Lichtsteuerung - Schlafzimmerlicht
+  description: ''
+  triggers:
+  - entity_id: event.mini1g3_sz_licht_eingang
+    id: shelly_event
+    trigger: state
+    not_from:
+    - unavailable
+    - unknown
+    not_to:
+    - unavailable
+    - unknown
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''single_push''
+          }}
+
+          '
+      sequence:
+      - choose:
+        - conditions:
+          - condition: template
+            value_template: '{{ is_state(light_entity, ''off'') }}'
+          sequence:
+          - target:
+              entity_id: '{{ light_entity }}'
+            action: light.turn_on
+          - target:
+              entity_id: '{{ dim_direction_helper }}'
+            action: input_boolean.turn_off
+        default:
+        - target:
+            entity_id: '{{ light_entity }}'
+          action: light.turn_off
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''double_push''
+          }}
+
+          '
+      sequence:
+      - target:
+          entity_id: '{{ light_entity }}'
+        data:
+          brightness_pct: 100
+        action: light.turn_on
+      - target:
+          entity_id: '{{ dim_direction_helper }}'
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''triple_push''
+          }}
+
+          '
+      sequence:
+      - target:
+          entity_id: '{{ light_entity }}'
+        data:
+          brightness_pct: 100
+          color_temp_kelvin: '{{ warm_white_kelvin }}'
+        action: light.turn_on
+      - target:
+          entity_id: '{{ dim_direction_helper }}'
+        action: input_boolean.turn_off
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''btn_down''
+          }}
+
+          '
+      sequence:
+      - delay:
+          milliseconds: '{{ hold_delay }}'
+      - variables:
+          dim_up: '{{ is_state(dim_direction_helper, ''on'') }}'
+      - target:
+          entity_id: '{{ dim_direction_helper }}'
+        action: input_boolean.toggle
+      - repeat:
+          while:
+          - condition: template
+            value_template: "{% set brightness = state_attr(light_entity, 'brightness')
+              | int(0) %} {% set brightness_pct = (brightness / 255 * 100) | round(0)
+              | int %} {{ is_state(light_entity, 'on')\n   and (\n     (dim_up and
+              brightness_pct < 100)\n     or\n     ((not dim_up) and brightness_pct
+              > 1)\n   )\n}}\n"
+          sequence:
+          - target:
+              entity_id: '{{ light_entity }}'
+            data:
+              brightness_pct: "{% set brightness = state_attr(light_entity, 'brightness')
+                | int(0) %} {% set brightness_pct = (brightness / 255 * 100) | round(0)
+                | int %} {% if dim_up %}\n  {{ [brightness_pct + dim_step, 100] |
+                min }}\n{% else %}\n  {{ [brightness_pct - dim_step, 1] | max }}\n{%
+                endif %}\n"
+              transition: 0.4
+            action: light.turn_on
+          - delay:
+              milliseconds: '{{ dim_interval }}'
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.to_state.attributes.event_type == ''btn_up'' }}
+
+          '
+      sequence: []
+  mode: restart
+  variables:
+    light_entity: light.schlafzimmerlicht
+    dim_direction_helper: input_boolean.shelly_dimmrichtung_hoch_sz
+    hold_delay: 500
+    dim_step: 2
+    dim_interval: 500
+    warm_white_kelvin: 2700
+- id: '1781716502903'
+  alias: Bürolicht mit Präsenzmelder
+  description: Präsenz im Büro -> Ambilight an, aber nur wenn jemand zu Hause ist
+    (unabhängig von der Helligkeit). Keine Präsenz mehr -> aus. Hintergrund für die
+    Bedingung und die gesenkte Melder-Empfindlichkeit (Bewegung 7, Stillstand 6, Reichweite
+    4 m) waren Fehlalarme, während niemand zu Hause war.
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.prasenzmelder_buro_presence
+    to: 'on'
+    id: presence_on
+  - trigger: state
+    entity_id:
+    - binary_sensor.prasenzmelder_buro_presence
+    to:
+    - 'off'
+    - unavailable
+    - unknown
+    id: presence_off
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: presence_on
+      - condition: template
+        value_template: '{{ persons | select(''is_state'', ''home'') | list | count
+          > 0 }}'
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: '{{ office_light }}'
+        data:
+          brightness_pct: 100
+    - conditions:
+      - condition: trigger
+        id: presence_off
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: '{{ office_light }}'
+  mode: restart
+  variables:
+    office_light: light.ambilight_buro
+    persons:
+    - person.sauerm
+    - person.sarah
+- id: '1783672945400'
+  alias: Präsenzmelder Badezimmer
+  description: Präsenz im Bad -> Hintergrundbeleuchtung an, aber nur bei Dunkelheit
+    (unter max_lux). Keine Präsenz mehr -> aus.
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.prasenzmelder_badezimmer_presence
+    to:
+    - 'on'
+    id: presence_on
+  - trigger: state
+    entity_id:
+    - binary_sensor.prasenzmelder_badezimmer_presence
+    to:
+    - 'off'
+    id: presence_off
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: presence_on
+      - condition: template
+        value_template: '{{ states(illuminance_sensor) | float(0) < max_lux }}'
+      sequence:
+      - action: light.turn_on
+        data:
+          brightness_pct: 100
+        target:
+          entity_id: '{{ bath_light }}'
+    - conditions:
+      - condition: trigger
+        id: presence_off
+      sequence:
+      - action: light.turn_off
+        data: {}
+        target:
+          entity_id: '{{ bath_light }}'
+  mode: restart
+  variables:
+    bath_light: light.badezimmerlicht_hintergrundbeleuchtung
+    illuminance_sensor: sensor.prasenzmelder_badezimmer_illuminance
+    max_lux: 50
+- id: '1783674364235'
+  alias: Kaffeemaschine per TRADFRI Taster
+  triggers:
+  - topic: zigbee2mqtt/Schalter Küche Kaffeemaschine/action
+    payload: 'on'
+    trigger: mqtt
+  actions:
+  - target:
+      entity_id: switch.kaffeemaschine
+    action: switch.toggle
+  mode: single
+- id: '1783682299840'
+  alias: Lichtsteuerung Badezimmerlicht per TRADFRI E17432
+  description: ''
+  triggers:
+  - topic: zigbee2mqtt/Lichtschalter Badezimmer (ZB)/action
+    payload: 'on'
+    id: main_on
+    trigger: mqtt
+  - topic: zigbee2mqtt/Lichtschalter Badezimmer (ZB)/action
+    payload: 'off'
+    id: main_off
+    trigger: mqtt
+  - topic: zigbee2mqtt/Lichtschalter Badezimmer (ZB)/action
+    payload: brightness_move_up
+    id: ambi_on
+    trigger: mqtt
+  - topic: zigbee2mqtt/Lichtschalter Badezimmer (ZB)/action
+    payload: brightness_move_down
+    id: ambi_off
+    trigger: mqtt
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: main_on
+      sequence:
+      - target:
+          entity_id: light.badezimmerlicht
+        action: light.turn_on
+    - conditions:
+      - condition: trigger
+        id: main_off
+      sequence:
+      - target:
+          entity_id: light.badezimmerlicht
+        action: light.turn_off
+    - conditions:
+      - condition: trigger
+        id: ambi_on
+      sequence:
+      - target:
+          entity_id: light.badezimmerlicht_hintergrundbeleuchtung
+        action: light.turn_on
+    - conditions:
+      - condition: trigger
+        id: ambi_off
+      sequence:
+      - target:
+          entity_id: light.badezimmerlicht_hintergrundbeleuchtung
+        action: light.turn_off
+  mode: restart
+- id: '1783688028064'
+  alias: Lichtsteuerung Badezimmerlicht
+  description: Shelly-Taster Badezimmer. Läuft nur, wenn light.badezimmerlicht erreichbar
+    ist; sonst übernimmt das Shelly-Skript (Relais-Fallback). Reagiert die Lampe auf
+    Einfach-Druck nicht innerhalb von response_timeout_s, schaltet die Automation
+    das Relais.
+  triggers:
+  - trigger: state
+    entity_id:
+    - event.badezimmer_lichtschalter_badezimmer_eingang_0
+    - event.badezimmer_lichtschalter_badezimmer_eingang_1
+    not_from:
+    - unavailable
+    - unknown
+    not_to:
+    - unavailable
+    - unknown
+  conditions:
+  - condition: template
+    value_template: '{{ states(main_light) not in [''unavailable'', ''unknown''] }}'
+  actions:
+  - variables:
+      event_type: '{{ trigger.to_state.attributes.event_type | default('''') }}'
+      current_brightness_pct: '{% set b = state_attr(main_light, ''brightness'') |
+        int(0) %} {{ (b / 255 * 100) | round(0) | int }}
+
+        '
+      current_kelvin: '{{ state_attr(main_light, ''color_temp_kelvin'') | int(4757)
+        }}
+
+        '
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ event_type in [''single_push'', ''Single push'', ''single'']
+          }}
+
+          '
+      sequence:
+      - variables:
+          state_before: '{{ states(main_light) }}'
+      - action: light.toggle
+        target:
+          entity_id: '{{ main_light }}'
+      - wait_template: '{{ states(main_light) != state_before }}'
+        timeout:
+          seconds: '{{ response_timeout_s }}'
+        continue_on_timeout: true
+      - if:
+        - condition: template
+          value_template: '{{ not wait.completed }}'
+        then:
+        - action: switch.toggle
+          target:
+            entity_id: '{{ relay_switch }}'
+    - conditions:
+      - condition: template
+        value_template: '{{ event_type in [''double_push'', ''Double push'', ''double'']
+          }}
+
+          '
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: '{{ main_light }}'
+        data:
+          brightness_pct: '{% set b = state_attr(main_light, ''brightness'') | int(0)
+            %} {% set pct = (b / 255 * 100) | round(0) | int %} {{ 10 if pct >= 99
+            else 100 }}
+
+            '
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.entity_id == input_0\n   and event_type in ['long_push',
+          'Long push', 'long'] }}\n"
+      sequence:
+      - if:
+        - condition: template
+          value_template: '{{ is_state(main_light, ''off'') }}'
+        then:
+        - action: light.turn_on
+          target:
+            entity_id: '{{ main_light }}'
+          data:
+            brightness_pct: 10
+      - repeat:
+          while:
+          - condition: template
+            value_template: '{{ (state_attr(main_light, ''brightness'') | int(0) /
+              255 * 100) < 80 }}
+
+              '
+          sequence:
+          - action: light.turn_on
+            target:
+              entity_id: '{{ main_light }}'
+            data:
+              brightness_step_pct: 2
+              transition: 0.2
+          - delay:
+              milliseconds: 250
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.entity_id == input_1\n   and event_type in ['long_push',
+          'Long push', 'long'] }}\n"
+      sequence:
+      - repeat:
+          while:
+          - condition: template
+            value_template: '{{ (state_attr(main_light, ''brightness'') | int(0) /
+              255 * 100) > 10 }}
+
+              '
+          sequence:
+          - action: light.turn_on
+            target:
+              entity_id: '{{ main_light }}'
+            data:
+              brightness_step_pct: -2
+              transition: 0.2
+          - delay:
+              milliseconds: 250
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.entity_id == input_0\n   and event_type in ['triple_push',
+          'Triple push', 'triple'] }}\n"
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: '{{ main_light }}'
+        data:
+          color_temp_kelvin: '{{ [current_kelvin - warm_step_kelvin, min_kelvin] |
+            max }}
+
+            '
+    - conditions:
+      - condition: template
+        value_template: "{{ trigger.entity_id == input_1\n   and event_type in ['triple_push',
+          'Triple push', 'triple'] }}\n"
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: '{{ main_light }}'
+        data:
+          color_temp_kelvin: '{{ [current_kelvin + cold_step_kelvin, max_kelvin] |
+            min }}
+
+            '
+  mode: restart
+  variables:
+    main_light: light.badezimmerlicht
+    input_0: event.badezimmer_lichtschalter_badezimmer_eingang_1
+    input_1: event.badezimmer_lichtschalter_badezimmer_eingang_0
+    dim_step: 10
+    warm_step_kelvin: 500
+    cold_step_kelvin: 500
+    min_kelvin: 3000
+    max_kelvin: 6500
+    relay_switch: switch.badezimmer_schaltausgang_badezimmerlicht
+    response_timeout_s: 5
+- id: '1784124867293'
+  alias: Türöffner über Pepper C1
+  description: Öffnet die Tür bei einem im Pepper C1 hinterlegten NFC-Tag
+  triggers:
+  - trigger: webhook
+    webhook_id: !secret REDACTED_webhook_id  # im Repo geschwärzt
+    allowed_methods:
+    - POST
+    local_only: true
+  conditions: []
+  actions:
+  - action: logbook.log
+    data:
+      name: Pepper C1
+      message: 'NFC-Tag {{ trigger.json.get(''uid'', ''unbekannt'') }}, zugelassen:
+        {{ trigger.json.get(''known_tag'', false) }}'
+  - condition: template
+    value_template: "{{ trigger.json is defined\n   and trigger.json.get('type') ==
+      'uid'\n   and trigger.json.get('known_tag', false) == true }}"
+  - action: switch.turn_on
+    target:
+      entity_id: switch.schaltausgang_haustur
+  mode: single
+- id: '1784333130398'
+  alias: Nachttischlampe – Drehregler
+  description: Drücken schaltet, Drehen dimmt, Doppeldruck wechselt zwischen 1 und
+    100 %
+  triggers:
+  - trigger: mqtt
+    topic: zigbee2mqtt/Lichtschalter Nachttischlampe/action
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.payload == ''single'' }}'
+      sequence:
+      - action: light.toggle
+        target:
+          entity_id: light.nachttischlampe
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.payload == ''double'' }}'
+      sequence:
+      - variables:
+          aktuelle_helligkeit: "{{ ((state_attr('light.nachttischlampe', 'brightness')
+            | int(3))\n    / 255 * 100) | round(0) | int }}\n"
+      - action: light.turn_on
+        target:
+          entity_id: light.nachttischlampe
+        data:
+          brightness_pct: '{{ 1 if aktuelle_helligkeit > 50 else 100 }}
+
+            '
+          transition: 0
+    - conditions:
+      - condition: template
+        value_template: '{{ trigger.payload in [''rotate_left'', ''rotate_right'']
+          }}
+
+          '
+      sequence:
+      - variables:
+          aktuelle_helligkeit: "{{ ((state_attr('light.nachttischlampe', 'brightness')
+            | int(3))\n    / 255 * 100) | round(0) | int }}\n"
+          aenderung: '{{ 10 if trigger.payload == ''rotate_right'' else -10 }}
+
+            '
+          neue_helligkeit: '{{ [[aktuelle_helligkeit + aenderung, 1] | max, 100] |
+            min }}
+
+            '
+      - action: light.turn_on
+        target:
+          entity_id: light.nachttischlampe
+        data:
+          brightness_pct: '{{ neue_helligkeit }}'
+          transition: 0
+  mode: restart
+- id: '1788700421313'
+  alias: Alexa To-do → Node-RED
+  description: Übergibt neue Alexa-To-dos an Node-RED
+  triggers:
+  - trigger: todo.item_added
+    target:
+      entity_id: todo.marcel_shop_amazon_sauer_hl_de_to_do_liste
+  conditions: []
+  actions:
+  - event: alexa_todo_added
+    event_data:
+      entity_id: '{{ trigger.entity_id }}'
+      item_ids: '{{ trigger.item_ids }}'
+  mode: queued
+  max: 10
+- id: heizung_nach_anwesenheit
+  alias: Heizung nach Anwesenheit (HmIP Urlaubsmodus)
+  description: Beide abwesend + Wohnungstür verriegelt (10 min) -> HmIP Urlaubsmodus.
+    Eine Person wieder zu Hause -> Urlaubsmodus aus, Heizprofile laufen wieder (Automatik).
+    Fernanheizen über input_boolean.heizung_anheizen (Helfer, muss existieren); der
+    Schalter verhindert das erneute Aktivieren und wird beim Heimkommen zurückgesetzt.
+  triggers:
+  - trigger: state
+    entity_id:
+    - person.sauerm
+    - person.sarah
+    to: not_home
+    for: 00:10:00
+    id: weg
+  - trigger: state
+    entity_id: lock.wohnungstur
+    to: locked
+    for: 00:10:00
+    id: weg
+  - trigger: state
+    entity_id:
+    - person.sauerm
+    - person.sarah
+    to: home
+    id: da
+  - trigger: state
+    entity_id: input_boolean.heizung_anheizen
+    to: 'on'
+    id: anheizen
+  - trigger: state
+    entity_id: input_boolean.heizung_anheizen
+    to: 'off'
+    id: weg
+  - trigger: homeassistant
+    event: start
+    id: start
+  conditions: []
+  actions:
+  - variables:
+      someone_home: '{{ persons | select(''is_state'', ''home'') | list | count >
+        0 }}'
+  - choose:
+    - alias: Fernanheizen -> Urlaubsmodus aus
+      conditions:
+      - condition: trigger
+        id: anheizen
+      sequence:
+      - action: homematicip_cloud.deactivate_vacation
+        data: {}
+    - alias: Jemand zu Hause -> Automatik, Anheizen-Schalter zurücksetzen
+      conditions:
+      - condition: trigger
+        id:
+        - da
+        - start
+      - condition: template
+        value_template: '{{ someone_home }}'
+      sequence:
+      - action: homematicip_cloud.deactivate_vacation
+        data: {}
+      - action: input_boolean.turn_off
+        target:
+          entity_id: '{{ preheat_switch }}'
+    - alias: Keiner zu Hause, Tür zu, kein Anheizen -> Urlaubsmodus
+      conditions:
+      - condition: trigger
+        id:
+        - weg
+        - start
+      - condition: template
+        value_template: '{{ not someone_home and is_state(door_lock, ''locked'') and
+          is_state(preheat_switch, ''off'') }}'
+      sequence:
+      - action: homematicip_cloud.activate_vacation
+        data:
+          temperature: '{{ vacation_temperature }}'
+          endtime: '{{ (now() + timedelta(days=vacation_days)).strftime(''%Y-%m-%d
+            %H:%M'') }}'
+  mode: queued
+  variables:
+    persons:
+    - person.sauerm
+    - person.sarah
+    door_lock: lock.wohnungstur
+    preheat_switch: input_boolean.heizung_anheizen
+    vacation_temperature: 16
+    vacation_days: 30
+- id: abwesenheit
+  alias: Abwesenheit
+  description: Schalter input_boolean.abwesenheit (Helfer, muss existieren). An ->
+    alle Lichter aus, HmIP Urlaubsmodus, Push an die Companion-App, falls noch ein
+    Fenster oder die Terrassentür offen ist. Aus -> Urlaubsmodus aus. Kommt jemand
+    nach Hause, wird der Schalter zurückgesetzt.
+  triggers:
+  - trigger: state
+    entity_id: input_boolean.abwesenheit
+    to: 'on'
+    id: an
+  - trigger: state
+    entity_id: input_boolean.abwesenheit
+    to: 'off'
+    id: aus
+  - trigger: state
+    entity_id:
+    - person.sauerm
+    - person.sarah
+    to: home
+    id: da
+  conditions: []
+  actions:
+  - choose:
+    - alias: Abwesenheit an
+      conditions:
+      - condition: trigger
+        id: an
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: all
+      - action: homematicip_cloud.activate_vacation
+        data:
+          temperature: '{{ vacation_temperature }}'
+          endtime: '{{ (now() + timedelta(days=vacation_days)).strftime(''%Y-%m-%d
+            %H:%M'') }}'
+      - variables:
+          open_windows: '{{ windows | select(''is_state'', ''on'') | map(''state_attr'',
+            ''friendly_name'') | map(''replace'', '' Tür'', '''') | map(''trim'')
+            | list }}'
+      - if:
+        - condition: template
+          value_template: '{{ open_windows | count > 0 }}'
+        then:
+        - action: notify.mobile_app_sm_f741b
+          data:
+            title: Abwesenheit – Fenster offen
+            message: 'Noch offen: {{ open_windows | join('', '') }}'
+        - action: notify.mobile_app_iphone_17_pro
+          data:
+            title: Abwesenheit – Fenster offen
+            message: 'Noch offen: {{ open_windows | join('', '') }}'
+    - alias: Abwesenheit aus -> Urlaubsmodus aus
+      conditions:
+      - condition: trigger
+        id: aus
+      sequence:
+      - action: homematicip_cloud.deactivate_vacation
+        data: {}
+    - alias: Jemand kommt heim -> Schalter zurücksetzen
+      conditions:
+      - condition: trigger
+        id: da
+      - condition: state
+        entity_id: input_boolean.abwesenheit
+        state: 'on'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: '{{ away_switch }}'
+  mode: queued
+  variables:
+    away_switch: input_boolean.abwesenheit
+    persons:
+    - person.sauerm
+    - person.sarah
+    windows:
+    - binary_sensor.wohnzimmerfenster
+    - binary_sensor.esszimmerfenster
+    - binary_sensor.schlafzimmerfenster
+    - binary_sensor.badezimmerfenster
+    - binary_sensor.terrassentur
+    vacation_temperature: 16
+    vacation_days: 30
+- id: '1793799071145'
+  alias: Rollo Schlafzimmer nach Außenlicht
+  description: Schließt das Rollo, wenn es draußen dunkel ist (Sonne < -3°) und im
+    Schlafzimmer Licht brennt; öffnet es morgens, wenn es draußen hell ist (Sonne
+    > 3°). Nicht während Heimkino Schlafzimmer.
+  triggers:
+  - trigger: numeric_state
+    entity_id: sun.sun
+    attribute: elevation
+    below: -3
+    id: draussen_dunkel
+  - trigger: state
+    entity_id: light.schlafzimmer_gesamt
+    to: 'on'
+    id: licht_an
+  - trigger: numeric_state
+    entity_id: sun.sun
+    attribute: elevation
+    above: 3
+    id: draussen_hell
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - draussen_dunkel
+        - licht_an
+      - condition: numeric_state
+        entity_id: sun.sun
+        attribute: elevation
+        below: -3
+      - condition: state
+        entity_id: light.schlafzimmer_gesamt
+        state: 'on'
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: cover.rollo_schlafzimmer
+          state: closed
+      sequence:
+      - action: cover.close_cover
+        target:
+          entity_id: cover.rollo_schlafzimmer
+    - conditions:
+      - condition: trigger
+        id: draussen_hell
+      - condition: state
+        entity_id: input_boolean.heimkino_schlafzimmer_aktiv
+        state: 'off'
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: cover.rollo_schlafzimmer
+          state: open
+      sequence:
+      - action: cover.open_cover
+        target:
+          entity_id: cover.rollo_schlafzimmer
+  mode: single
+- id: '1793802241684'
+  alias: Wartung - Kritische Ausfälle melden
+  description: Push an Marcels Galaxy Flip 6, wenn Türen, Zigbee oder das HA-Backup
+    ausfallen. Teil des Wartungsplans vom 04.11.2026.
+  triggers:
+  - trigger: state
+    entity_id:
+    - lock.wohnungstur
+    - lock.haustur
+    to: unavailable
+    for:
+      minutes: 10
+    id: offline
+  - trigger: state
+    entity_id: device_tracker.pepperc1
+    to: not_home
+    for:
+      minutes: 15
+    id: offline
+  - trigger: state
+    entity_id: binary_sensor.zigbee2mqtt_bridge_connection_state
+    to:
+    - 'off'
+    - unavailable
+    for:
+      minutes: 5
+    id: offline
+  - trigger: state
+    entity_id: binary_sensor.slzb_ultima3_ethernet
+    to:
+    - 'off'
+    - unavailable
+    for:
+      minutes: 5
+    id: offline
+  - trigger: state
+    entity_id: event.backup_automatic_backup
+    id: backup
+  - trigger: numeric_state
+    entity_id: sensor.slzb_06p7_01_zigbee_chip_temperatur
+    above: 95
+    for:
+      minutes: 15
+    id: hitze
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: offline
+      sequence:
+      - action: notify.mobile_app_sm_f741b
+        data:
+          title: 'Smarthome: Ausfall'
+          message: '{{ trigger.to_state.name }} ist seit {{ trigger.for }} {{ trigger.to_state.state
+            }}.'
+          data:
+            ttl: 0
+            priority: high
+            tag: wartung-{{ trigger.entity_id }}
+    - conditions:
+      - condition: trigger
+        id: backup
+      - condition: state
+        entity_id: event.backup_automatic_backup
+        attribute: event_type
+        state: failed
+      sequence:
+      - action: notify.mobile_app_sm_f741b
+        data:
+          title: 'Smarthome: Backup fehlgeschlagen'
+          message: Das automatische HA-Backup ist fehlgeschlagen. Details unter Einstellungen
+            → System → Backups.
+          data:
+            ttl: 0
+            priority: high
+            tag: wartung-backup
+    - conditions:
+      - condition: trigger
+        id: hitze
+      sequence:
+      - action: notify.mobile_app_sm_f741b
+        data:
+          title: 'Smarthome: SLZB-06P7 zu heiß'
+          message: Zigbee-Chip des SLZB-06P7-01 liegt seit 15 Minuten bei {{ trigger.to_state.state
+            }} °C.
+          data:
+            tag: wartung-slzb-hitze
+  mode: queued

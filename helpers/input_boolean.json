@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "input_boolean",
+  "data": {
+    "items": [
+      {
+        "id": "bool_dimmdirection_schlafzimmer",
+        "name": "bool_dimmDirection_Schlafzimmer",
+        "icon": "mdi:swap-vertical-bold"
+      },
+      {
+        "id": "shelly_dimmrichtung_hoch_wz",
+        "name": "Shelly Dimmrichtung hoch WZ",
+        "icon": "mdi:swap-vertical-bold"
+      },
+      {
+        "id": "shelly_dimmrichtung_hoch_wz_2",
+        "name": "Shelly Dimmrichtung hoch EZ",
+        "icon": "mdi:swap-vertical-bold"
+      },
+      {
+        "id": "shelly_dimmrichtung_hoch_sz",
+        "name": "Shelly Dimmrichtung hoch SZ",
+        "icon": "mdi:swap-vertical-bold"
+      },
+      {
+        "id": "shelly_dimmrichtung_hoch_bz",
+        "name": "Shelly Dimmrichtung hoch BZ",
+        "icon": "mdi:swap-vertical-bold"
+      },
+      {
+        "id": "heizung_anheizen",
+        "name": "Heizung anheizen",
+        "icon": "mdi:radiator"
+      },
+      {
+        "id": "abwesenheit",
+        "name": "Abwesenheit",
+        "icon": "mdi:home-export-outline"
+      }
+    ]
+  }
+}

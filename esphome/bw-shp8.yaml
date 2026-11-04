@@ -1,0 +1,143 @@
+substitutions:
+  hostname: "Steckdose Badezimmer"
+  current_resistor: "0.001"
+  voltage_divider: "1727"
+  restore_mode: "ALWAYS_ON"
+  
+esphome:
+  name: blitzwolf_bw-sph8_bz
+  friendly_name: Steckdose Badezimmer
+  area: Badezimmer
+
+esp8266:
+  board: esp8285
+  restore_from_flash: true
+
+logger:
+  baud_rate: 0
+
+api:
+  encryption:
+    key: !secret bz_steckdose__encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret REDACTED_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+    ssid: "BZ-Steckdose Fallback"
+    password: !secret REDACTED_password
+
+captive_portal:
+
+binary_sensor:
+  - platform: gpio
+    id: button
+    pin:
+      number: GPIO3
+      inverted: true
+      mode: INPUT_PULLUP
+    on_press:
+      - switch.toggle: relay
+
+switch:
+  - platform: gpio
+    name: "Steckdose"
+    id: relay
+    pin: GPIO14
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - light.turn_on: red_led
+    on_turn_off:
+      - light.turn_off: red_led
+
+output:
+  - platform: gpio
+    id: red_led_output
+    pin:
+      number: GPIO1
+      inverted: true
+
+light:
+  - platform: binary
+    id: red_led
+    output: red_led_output
+    internal: true
+
+status_led:
+  pin:
+    number: GPIO13
+    inverted: true
+
+sensor:
+  - platform: hlw8012
+    model: BL0937
+    current_resistor: ${current_resistor}
+    voltage_divider: ${voltage_divider}
+    change_mode_every: 2
+    update_interval: 2s
+
+    sel_pin:
+      number: GPIO12
+      inverted: true
+    cf_pin: GPIO4
+    cf1_pin: GPIO5
+
+    current:
+      name: "Strom"
+      id: current
+      accuracy_decimals: 3
+
+    voltage:
+      name: "Spannung"
+      id: voltage
+      accuracy_decimals: 1
+
+    power:
+      name: "Leistung"
+      id: power
+      accuracy_decimals: 1
+
+  - platform: template
+    name: "Scheinleistung"
+    id: apparent_power
+    unit_of_measurement: VA
+    device_class: apparent_power
+    state_class: measurement
+    accuracy_decimals: 1
+    update_interval: 2s
+    lambda: |-
+      return id(voltage).state * id(current).state;
+
+  - platform: template
+    name: "Blindleistung"
+    unit_of_measurement: var
+    device_class: reactive_power
+    state_class: measurement
+    accuracy_decimals: 1
+    update_interval: 2s
+    lambda: |-
+      const float apparent = id(apparent_power).state;
+      const float active = id(power).state;
+      if (isnan(apparent) || isnan(active) || apparent <= active) {
+        return 0.0;
+      }
+      return sqrtf(apparent * apparent - active * active);
+
+  - platform: template
+    name: "Leistungsfaktor"
+    device_class: power_factor
+    state_class: measurement
+    accuracy_decimals: 2
+    update_interval: 2s
+    lambda: |-
+      const float apparent = id(apparent_power).state;
+      const float active = id(power).state;
+      if (isnan(apparent) || isnan(active) || apparent <= 0.0) {
+        return 0.0;
+      }
+      return min(active / apparent, 1.0f);

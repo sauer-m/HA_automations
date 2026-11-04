@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "input_number",
+  "data": {
+    "items": [
+      {
+        "id": "energy_costs_electricity",
+        "min": 0.0,
+        "max": 100.0,
+        "name": "energy_costs_electricity",
+        "icon": "mdi:flash",
+        "mode": "box",
+        "step": 0.001,
+        "unit_of_measurement": "EUR/kWh"
+      },
+      {
+        "id": "energy_costs_gas",
+        "min": 0.0,
+        "max": 100.0,
+        "name": "energy_costs_gas",
+        "icon": "mdi:gas-burner",
+        "mode": "box",
+        "step": 0.001,
+        "unit_of_measurement": "EUR/m³"
+      }
+    ]
+  }
+}

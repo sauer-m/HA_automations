@@ -1,0 +1,649 @@
+# Home-Assistant-Package: Heimkino
+#
+# Installation:
+#   1. Datei nach /config/packages/heimkino.yaml kopieren.
+#   2. In configuration.yaml sicherstellen:
+#        homeassistant:
+#          packages: !include_dir_named packages
+#   3. Konfiguration pruefen und Home Assistant neu starten.
+#
+# Vor dem Einsatz diese noch nicht bestaetigten Entity-IDs pruefen:
+#   media_player.wohnzimmer_fire_tv_cube
+#   light.wohnzimmerlicht
+#   light.esszimmerlicht
+#   light.stehlampe
+# Bereits bestaetigt:
+#   light.ecklampe_wohnzimmer
+#   fan.brunnen_wohnzimmer_brunnen_wohnzimmer
+
+input_boolean:
+  heimkino_aktiv:
+    name: Heimkino aktiv
+    icon: mdi:projector-screen
+
+input_select:
+  heimkino_quelle:
+    name: Heimkino Quelle
+    icon: mdi:video-input-hdmi
+    options:
+      - Aus
+      - FireTV
+      - Switch
+    initial: Aus
+
+# Zwei gegenseitig exklusive Dashboard-Schalter. Wird bei laufendem Heimkino
+# der andere Schalter aktiviert, wechselt nur der Denon-Eingang.
+template:
+  - switch:
+      - name: Heimkino
+        unique_id: heimkino_firetv_schalter
+        icon: mdi:movie-open
+        state: "{{ is_state('input_select.heimkino_quelle', 'FireTV') }}"
+        turn_on:
+          - action: script.heimkino_firetv_aktivieren
+        turn_off:
+          - condition: state
+            entity_id: input_select.heimkino_quelle
+            state: FireTV
+          - action: script.heimkino_ausschalten
+
+      - name: Switch
+        unique_id: heimkino_switch_schalter
+        icon: mdi:nintendo-switch
+        state: "{{ is_state('input_select.heimkino_quelle', 'Switch') }}"
+        turn_on:
+          - action: script.heimkino_switch_aktivieren
+        turn_off:
+          - condition: state
+            entity_id: input_select.heimkino_quelle
+            state: Switch
+          - action: script.heimkino_ausschalten
+
+scene:
+  - name: Heimkino Beleuchtung
+    icon: mdi:movie-open
+    entities:
+      light.wohnzimmerlicht:
+        state: "off"
+      light.esszimmerlicht:
+        state: "off"
+      light.stehlampe:
+        state: "on"
+        brightness: 38
+      light.ecklampe_wohnzimmer:
+        state: "on"
+        brightness: 77
+      fan.brunnen_wohnzimmer_brunnen_wohnzimmer:
+        state: "off"
+
+script:
+  fire_tv_cube_wecken:
+    alias: Fire TV Cube wecken
+    description: Weckt den Fire TV per ADB und wechselt anschliessend ins Hauptmenue.
+    icon: mdi:television-play
+    mode: restart
+    sequence:
+      - action: androidtv.adb_command
+        continue_on_error: true
+        target:
+          entity_id: media_player.wohnzimmer_fire_tv_cube
+        data:
+          command: WAKEUP
+      - delay:
+          seconds: 2
+      - action: androidtv.adb_command
+        continue_on_error: true
+        target:
+          entity_id: media_player.wohnzimmer_fire_tv_cube
+        data:
+          command: HOME
+
+  heimkino_firetv_aktivieren:
+    alias: Heimkino aktivieren
+    description: Startet das Heimkino mit FireTV oder wechselt nur den AVR-Eingang.
+    icon: mdi:movie-open
+    mode: single
+    sequence:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.heimkino_aktiv
+                state: "on"
+            sequence:
+              - action: script.heimkino_quelle_wechseln
+                data:
+                  quelle: FireTV
+        default:
+          - action: script.heimkino_einschalten
+            data:
+              quelle: FireTV
+
+  heimkino_switch_aktivieren:
+    alias: Switch aktivieren
+    description: Startet das Heimkino mit Switch oder wechselt nur den AVR-Eingang.
+    icon: mdi:nintendo-switch
+    mode: single
+    sequence:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.heimkino_aktiv
+                state: "on"
+            sequence:
+              - action: script.heimkino_quelle_wechseln
+                data:
+                  quelle: Switch
+        default:
+          - action: script.heimkino_einschalten
+            data:
+              quelle: Switch
+
+  heimkino_quelle_wechseln:
+    alias: Heimkino Quelle wechseln
+    description: Wechselt bei laufender Anlage ausschliesslich den Denon-Eingang.
+    icon: mdi:video-input-hdmi
+    mode: restart
+    fields:
+      quelle:
+        name: Quelle
+        description: Exakter Name aus der Denon source_list.
+        required: true
+        selector:
+          select:
+            options:
+              - FireTV
+              - Switch
+    sequence:
+      - condition: state
+        entity_id: input_boolean.heimkino_aktiv
+        state: "on"
+      # Auch beim Wechsel zwischen FireTV und Switch den gemeinsamen
+      # Beamer-Eingang absichern, ohne den Beamer neu zu starten.
+      - repeat:
+          sequence:
+            - action: select.select_option
+              continue_on_error: true
+              target:
+                entity_id: select.benq_tk850i_benq_tk850i_quelle
+              data:
+                option: "HDMI 2"
+            - delay:
+                seconds: 2
+            - action: button.press
+              continue_on_error: true
+              target:
+                entity_id: button.benq_tk850i_benq_tk850i_status_aktualisieren
+            - wait_template: >-
+                {{ is_state(
+                     'select.benq_tk850i_benq_tk850i_quelle',
+                     'HDMI 2') }}
+              timeout: "00:00:08"
+              continue_on_timeout: true
+          until:
+            - condition: template
+              value_template: >-
+                {{ is_state(
+                     'select.benq_tk850i_benq_tk850i_quelle',
+                     'HDMI 2') or repeat.index >= 3 }}
+      - repeat:
+          sequence:
+            - action: media_player.select_source
+              continue_on_error: true
+              target:
+                entity_id: media_player.denon_avr_x1200w
+              data:
+                source: "{{ quelle }}"
+            - wait_template: >-
+                {{ state_attr('media_player.denon_avr_x1200w', 'source')
+                   == quelle }}
+              timeout: "00:00:08"
+              continue_on_timeout: true
+          until:
+            - condition: template
+              value_template: >-
+                {{ state_attr('media_player.denon_avr_x1200w', 'source')
+                     == quelle or repeat.index >= 3 }}
+      - if:
+          - condition: template
+            value_template: >-
+              {{ state_attr('media_player.denon_avr_x1200w', 'source')
+                   == quelle }}
+        then:
+          - action: input_select.select_option
+            target:
+              entity_id: input_select.heimkino_quelle
+            data:
+              option: "{{ quelle }}"
+        else:
+          - action: persistent_notification.create
+            data:
+              notification_id: heimkino_quellenwechsel_fehler
+              title: Heimkino-Eingang nicht umgeschaltet
+              message: >-
+                Gewuenscht: {{ quelle }};
+                Denon meldet:
+                {{ state_attr('media_player.denon_avr_x1200w', 'source') }}.
+
+  heimkino_umschalten:
+    alias: Heimkino umschalten
+    description: Schaltet je nach aktuellem Zustand das Heimkino ein oder aus.
+    icon: mdi:movie-open
+    mode: single
+    sequence:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.heimkino_aktiv
+                state: "on"
+            sequence:
+              - action: script.heimkino_ausschalten
+        default:
+          - action: script.heimkino_firetv_aktivieren
+
+  heimkino_einschalten:
+    alias: Heimkino einschalten
+    description: Speichert Ausgangszustaende und startet das Heimkino mit Pruefungen.
+    icon: mdi:projector
+    mode: single
+    max_exceeded: silent
+    fields:
+      quelle:
+        name: Quelle
+        description: Gewuenschter Denon-Eingang beim Start.
+        required: false
+        default: FireTV
+        selector:
+          select:
+            options:
+              - FireTV
+              - Switch
+    sequence:
+      - condition: state
+        entity_id: input_boolean.heimkino_aktiv
+        state: "off"
+
+      # Nur die Geraete sichern, die beim Ausschalten wiederhergestellt werden.
+      # Beamer und AVR werden bewusst nicht in den Snapshot aufgenommen.
+      - action: scene.create
+        data:
+          scene_id: heimkino_vorher
+          snapshot_entities:
+            - media_player.wohnzimmer_fire_tv_cube
+            - light.wohnzimmerlicht
+            - light.esszimmerlicht
+            - light.stehlampe
+            - light.ecklampe_wohnzimmer
+            - fan.brunnen_wohnzimmer_brunnen_wohnzimmer
+
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.heimkino_aktiv
+
+      - variables:
+          zielquelle: "{{ quelle | default('FireTV', true) }}"
+
+      # BenQ ueber die bestaetigte ESPHome-Power-Entitaet einschalten.
+      - repeat:
+          sequence:
+            - action: switch.turn_on
+              continue_on_error: true
+              target:
+                entity_id: switch.benq_tk850i_benq_tk850i_power
+            - delay:
+                seconds: 3
+            - action: button.press
+              continue_on_error: true
+              target:
+                entity_id: button.benq_tk850i_benq_tk850i_status_aktualisieren
+            - wait_template: >-
+                {{ is_state(
+                     'binary_sensor.benq_tk850i_benq_tk850i_eingeschaltet',
+                     'on') }}
+              timeout: "00:00:20"
+              continue_on_timeout: true
+          until:
+            - condition: template
+              value_template: >-
+                {{ is_state(
+                     'binary_sensor.benq_tk850i_benq_tk850i_eingeschaltet',
+                     'on') or repeat.index >= 3 }}
+
+      # Den Eingang bewusst neu initialisieren: zuerst HDMI 1, danach mit
+      # Abstand auf den fuer FireTV und Switch benoetigten Eingang HDMI 2.
+      # Das verhindert, dass ein bereits angezeigtes HDMI 2 vom Beamer nur
+      # bestaetigt, aber intern nicht wirklich erneut geschaltet wird.
+      - action: select.select_option
+        continue_on_error: true
+        target:
+          entity_id: select.benq_tk850i_benq_tk850i_quelle
+        data:
+          option: "HDMI 1"
+      - delay:
+          seconds: 5
+
+      # HDMI 2 anschliessend wie bisher kontrollieren und bei Bedarf
+      # insgesamt bis zu dreimal erneut setzen.
+      - repeat:
+          sequence:
+            - action: select.select_option
+              continue_on_error: true
+              target:
+                entity_id: select.benq_tk850i_benq_tk850i_quelle
+              data:
+                option: "HDMI 2"
+            - delay:
+                seconds: 2
+            - action: button.press
+              continue_on_error: true
+              target:
+                entity_id: button.benq_tk850i_benq_tk850i_status_aktualisieren
+            - wait_template: >-
+                {{ is_state(
+                     'select.benq_tk850i_benq_tk850i_quelle',
+                     'HDMI 2') }}
+              timeout: "00:00:08"
+              continue_on_timeout: true
+          until:
+            - condition: template
+              value_template: >-
+                {{ is_state(
+                     'select.benq_tk850i_benq_tk850i_quelle',
+                     'HDMI 2') or repeat.index >= 3 }}
+
+      # Denon einschalten.
+      - repeat:
+          sequence:
+            - action: media_player.turn_on
+              continue_on_error: true
+              target:
+                entity_id: media_player.denon_avr_x1200w
+            - wait_template: >-
+                {{ states('media_player.denon_avr_x1200w')
+                   not in ['off', 'unavailable', 'unknown'] }}
+              timeout: "00:00:10"
+              continue_on_timeout: true
+          until:
+            - condition: template
+              value_template: >-
+                {{ states('media_player.denon_avr_x1200w')
+                     not in ['off', 'unavailable', 'unknown']
+                   or repeat.index >= 3 }}
+
+      # Gewuenschten bestaetigten Denon-Eingang setzen und kontrollieren.
+      - repeat:
+          sequence:
+            - action: media_player.select_source
+              continue_on_error: true
+              target:
+                entity_id: media_player.denon_avr_x1200w
+              data:
+                source: "{{ zielquelle }}"
+            - wait_template: >-
+                {{ state_attr('media_player.denon_avr_x1200w', 'source')
+                   == zielquelle }}
+              timeout: "00:00:08"
+              continue_on_timeout: true
+          until:
+            - condition: template
+              value_template: >-
+                {{ state_attr('media_player.denon_avr_x1200w', 'source')
+                     == zielquelle or repeat.index >= 3 }}
+
+      - if:
+          - condition: template
+            value_template: >-
+              {{ state_attr('media_player.denon_avr_x1200w', 'source')
+                   == zielquelle }}
+        then:
+          - action: input_select.select_option
+            target:
+              entity_id: input_select.heimkino_quelle
+            data:
+              option: "{{ zielquelle }}"
+
+      # Die HDMI-Kette steht jetzt stabil. Fire TV erst danach wecken, damit
+      # EDID/HDCP/HDR nicht zuerst ueber den AVR-Standby-Passthrough
+      # ausgehandelt werden.
+      - repeat:
+          sequence:
+            - action: media_player.turn_on
+              continue_on_error: true
+              target:
+                entity_id: media_player.wohnzimmer_fire_tv_cube
+            - action: script.fire_tv_cube_wecken
+            - wait_template: >-
+                {{ states('media_player.wohnzimmer_fire_tv_cube')
+                   not in ['off', 'unavailable', 'unknown'] }}
+              timeout: "00:00:10"
+              continue_on_timeout: true
+          until:
+            - condition: template
+              value_template: >-
+                {{ states('media_player.wohnzimmer_fire_tv_cube')
+                     not in ['off', 'unavailable', 'unknown']
+                   or repeat.index >= 3 }}
+
+      # Festen Kinolicht-Zustand anwenden.
+      - action: scene.turn_on
+        target:
+          entity_id: scene.heimkino_beleuchtung
+        data:
+          transition: 5
+
+      - delay:
+          seconds: 6
+
+      # Einmal nachbessern, falls ein Lichtbefehl verloren ging.
+      - if:
+          - condition: template
+            value_template: >-
+              {% set steh = state_attr('light.stehlampe', 'brightness') | int(0) %}
+              {% set eck = state_attr('light.ecklampe_wohnzimmer', 'brightness') | int(0) %}
+              {{ not is_state('light.wohnzimmerlicht', 'off')
+                 or not is_state('light.esszimmerlicht', 'off')
+                 or not is_state('fan.brunnen_wohnzimmer_brunnen_wohnzimmer', 'off')
+                 or not is_state('light.stehlampe', 'on')
+                 or not is_state('light.ecklampe_wohnzimmer', 'on')
+                 or steh < 30 or steh > 46
+                 or eck < 69 or eck > 85 }}
+        then:
+          - action: scene.turn_on
+            target:
+              entity_id: scene.heimkino_beleuchtung
+            data:
+              transition: 5
+
+      # Fehler melden, Heimkino aber aktiv lassen, damit Ausschalten/Restore moeglich bleibt.
+      - if:
+          - condition: template
+            value_template: >-
+              {{ states('media_player.wohnzimmer_fire_tv_cube')
+                   in ['off', 'unavailable', 'unknown']
+                 or not is_state(
+                      'binary_sensor.benq_tk850i_benq_tk850i_eingeschaltet',
+                      'on')
+                 or not is_state(
+                      'select.benq_tk850i_benq_tk850i_quelle',
+                      'HDMI 2')
+                 or states('media_player.denon_avr_x1200w')
+                      in ['off', 'unavailable', 'unknown']
+                 or state_attr('media_player.denon_avr_x1200w', 'source')
+                      != zielquelle }}
+        then:
+          - action: persistent_notification.create
+            data:
+              notification_id: heimkino_start_fehler
+              title: Heimkino nicht vollstaendig gestartet
+              message: >-
+                Fire TV: {{ states('media_player.wohnzimmer_fire_tv_cube') }};
+                Beamer: {{ states('sensor.benq_tk850i_benq_tk850i_betriebszustand') }};
+                Beamer-Eingang:
+                {{ states('select.benq_tk850i_benq_tk850i_quelle') }};
+                Beamer RS232-Fehler:
+                {{ states('sensor.wohnzimmer_benq_tk850i_benq_tk850i_letzter_rs232_fehler') }};
+                Denon: {{ states('media_player.denon_avr_x1200w') }};
+                Denon-Eingang:
+                {{ state_attr('media_player.denon_avr_x1200w', 'source') }}.
+
+  heimkino_ausschalten:
+    alias: Heimkino ausschalten
+    description: Schaltet Beamer und AVR aus und stellt den Snapshot wieder her.
+    icon: mdi:projector-off
+    mode: single
+    max_exceeded: silent
+    sequence:
+      - condition: state
+        entity_id: input_boolean.heimkino_aktiv
+        state: "on"
+
+      # Denon maximal dreimal ausschalten.
+      - repeat:
+          sequence:
+            - action: media_player.turn_off
+              continue_on_error: true
+              target:
+                entity_id: media_player.denon_avr_x1200w
+            - wait_template: >-
+                {{ is_state('media_player.denon_avr_x1200w', 'off') }}
+              timeout: "00:00:10"
+              continue_on_timeout: true
+          until:
+            - condition: template
+              value_template: >-
+                {{ is_state('media_player.denon_avr_x1200w', 'off')
+                   or repeat.index >= 3 }}
+
+      # Beamer maximal dreimal ausschalten und Status aktiv aktualisieren.
+      - repeat:
+          sequence:
+            - action: switch.turn_off
+              continue_on_error: true
+              target:
+                entity_id: switch.benq_tk850i_benq_tk850i_power
+            - delay:
+                seconds: 3
+            - action: button.press
+              continue_on_error: true
+              target:
+                entity_id: button.benq_tk850i_benq_tk850i_status_aktualisieren
+            - wait_template: >-
+                {{ is_state(
+                     'binary_sensor.benq_tk850i_benq_tk850i_eingeschaltet',
+                     'off') }}
+              timeout: "00:00:30"
+              continue_on_timeout: true
+          until:
+            - condition: template
+              value_template: >-
+                {{ is_state(
+                     'binary_sensor.benq_tk850i_benq_tk850i_eingeschaltet',
+                     'off') or repeat.index >= 3 }}
+
+      # Fire TV, Licht und Brunnen auf den Zustand vor Kinostart setzen.
+      - action: scene.turn_on
+        continue_on_error: true
+        target:
+          entity_id: scene.heimkino_vorher
+        data:
+          transition: 5
+
+      - delay:
+          seconds: 5
+
+      # Snapshot erneut anwenden, falls ein Endgeraet den ersten Befehl verpasst hat.
+      - action: scene.turn_on
+        continue_on_error: true
+        target:
+          entity_id: scene.heimkino_vorher
+        data:
+          transition: 5
+
+      - delay:
+          seconds: 2
+
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.heimkino_aktiv
+
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.heimkino_quelle
+        data:
+          option: Aus
+
+      - if:
+          - condition: template
+            value_template: >-
+              {{ not is_state('media_player.denon_avr_x1200w', 'off')
+                 or not is_state(
+                      'binary_sensor.benq_tk850i_benq_tk850i_eingeschaltet',
+                      'off') }}
+        then:
+          - action: persistent_notification.create
+            data:
+              notification_id: heimkino_aus_fehler
+              title: Heimkino nicht vollstaendig ausgeschaltet
+              message: >-
+                Beamer: {{ states('sensor.benq_tk850i_benq_tk850i_betriebszustand') }};
+                Beamer RS232-Fehler:
+                {{ states('sensor.wohnzimmer_benq_tk850i_benq_tk850i_letzter_rs232_fehler') }};
+                Denon: {{ states('media_player.denon_avr_x1200w') }}.
+
+      - action: scene.delete
+        continue_on_error: true
+        data:
+          entity_id: scene.heimkino_vorher
+
+automation:
+  - id: heimkino_licht_fire_tv_wiedergabestatus
+    alias: Heimkino - Licht bei Fire-TV-Pause
+    description: Dimmt bei Wiedergabe auf 5 Prozent und bei Pause auf 20 Prozent.
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: media_player.wohnzimmer_fire_tv_cube
+        to: "paused"
+        id: pause
+      - trigger: state
+        entity_id: media_player.wohnzimmer_fire_tv_cube
+        to: "playing"
+        id: wiedergabe
+    conditions:
+      - condition: state
+        entity_id: input_boolean.heimkino_aktiv
+        state: "on"
+      - condition: state
+        entity_id: input_select.heimkino_quelle
+        state: FireTV
+    actions:
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: pause
+            sequence:
+              # Kurze Pausen, etwa beim Zurueckspulen, nicht aufhellen.
+              - delay:
+                  seconds: 4
+              - condition: state
+                entity_id: media_player.wohnzimmer_fire_tv_cube
+                state: "paused"
+              - action: light.turn_on
+                target:
+                  entity_id:
+                    - light.stehlampe
+                    - light.ecklampe_wohnzimmer
+                data:
+                  brightness_pct: 20
+                  transition: 2
+          - conditions:
+              - condition: trigger
+                id: wiedergabe
+            sequence:
+              - action: light.turn_on
+                target:
+                  entity_id:
+                    - light.stehlampe
+                    - light.ecklampe_wohnzimmer
+                data:
+                  brightness_pct: 5
+                  transition: 2

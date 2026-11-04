@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.map",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "type": "panel",
+          "title": "Map",
+          "icon": "mdi:map",
+          "cards": [
+            {
+              "type": "map",
+              "auto_fit": true,
+              "show_all": true
+            },
+            {
+              "type": "grid",
+              "square": false,
+              "columns": 1,
+              "cards": [
+                {
+                  "type": "entities",
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.cam_wohnzimmer_global_scene_change",
+                      "name": "Global Scene Change"
+                    },
+                    {
+                      "entity": "binary_sensor.cam_wohnzimmer_motion_alarm",
+                      "name": "Motion Alarm"
+                    }
+                  ],
+                  "title": "Cam Wohnzimmer"
+                },
+                {
+                  "type": "picture-entity",
+                  "entity": "camera.cam_wohnzimmer_profile000"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace_resources",
+  "data": {
+    "items": [
+      {
+        "id": "9a9260fa35d746ac9046b3b87044f3cc",
+        "url": "/hacsfiles/lovelace-mushroom/mushroom.js?hacstag=444350375523",
+        "type": "module"
+      },
+      {
+        "id": "77c2d5eb4ee64d01914fcd1c73930852",
+        "url": "/ha_washdata/ha-washdata-card.js?v=1781734629",
+        "type": "module"
+      },
+      {
+        "id": "9017357cc4b4473795c48c5d7ab0a939",
+        "url": "/hacsfiles/tv-card/tv-card.js?hacstag=505459170052",
+        "type": "module"
+      },
+      {
+        "id": "7b6a5872db5f48bab077fc408e61b882",
+        "url": "/hacsfiles/toothbrush-card/toothbrush-card.js?hacstag=10880526890380",
+        "type": "module"
+      },
+      {
+        "id": "4b44b29b03f74ff6ae418f348cd7208f",
+        "url": "/dreame_vacuum/frontend.js?v=da9f7c2bf8d2d9d7450a7b9f68eccb35",
+        "type": "module"
+      }
+    ]
+  }
+}
