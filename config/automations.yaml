@@ -1154,9 +1154,9 @@
 - id: '1793880126000'
   alias: HDMI-Switch Schlafzimmer - Eingang wählen
   description: 'Nintendo Switch online (FRITZ!Box-Tracker), Beamer an, Wohnzimmer-Switch
-    und Fire TV Stick aus: Eingang 2. Konsole 5 Minuten offline: zurück auf Eingang
-    1. Die Wartezeit fängt das Flattern des Trackers im Standby ab. Migriert aus ioBroker-Skript
-    hdmi_switch_logic.'
+    aus und Fire TV Stick spielt nichts ab: Eingang 2. Konsole 5 Minuten offline:
+    zurück auf Eingang 1. Die Wartezeit fängt das Flattern des Trackers im Standby
+    ab. Migriert aus ioBroker-Skript hdmi_switch_logic.'
   triggers:
   - trigger: state
     entity_id: device_tracker.pc_50_23_6d_51_64_16
@@ -1180,9 +1180,11 @@
       - condition: state
         entity_id: switch.nintendo_switch
         state: 'off'
-      - condition: state
-        entity_id: media_player.schlafzimmer_fire_tv_stick
-        state: 'off'
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: media_player.schlafzimmer_fire_tv_stick
+          state: playing
       sequence:
       - action: input_select.select_option
         target:

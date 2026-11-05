@@ -44,10 +44,7 @@ button:
           then:
             - lambda: |-
                 std::vector<uint8_t> data = {
-                  0x46, 0x00,
-                  0x53, 0x86, 0xb4, 0x44, 0x12, 0xc9, 0x70,
-                  0xff, 0xff, 0xff,
-                  0x30, 0x43, 0x52, 0x4b, 0x54, 0x4d
+                  // im Repo geschwärzt, siehe xgimi_ble_token in secrets.yaml
                 };
                 id(ble).advertising_set_manufacturer_data(data);
             - delay: 1s

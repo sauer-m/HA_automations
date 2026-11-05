@@ -26,9 +26,13 @@ done
 # Klartext-Secrets ersetzen
 sed -i -E 's/^(\s+key:\s*)"[^"]+"/\1!secret api_encryption_key/; s/^(\s+password:\s*)"[^"]+"/\1!secret REDACTED_password/' esphome/*.yaml
 sed -i -E 's/^(\s+webhook_id:\s*)[^!].*$/\1!secret REDACTED_webhook_id  # im Repo geschwärzt/' config/automations.yaml
+# BLE-Token der XGIMI-Fernbedienung (mehrzeilige Byte-Liste)
+sed -i -E '/std::vector<uint8_t> data = \{$/,/\};/{/^\s*0x/d}' esphome/xgimi-halo-remote.yaml
+sed -i -E 's|^(\s*)std::vector<uint8_t> data = \{$|&\n\1  // im Repo geschwärzt, siehe xgimi_ble_token in secrets.yaml|' esphome/xgimi-halo-remote.yaml
 
 # Abbruch, wenn noch etwas nach Secret aussieht
-if grep -rnE 'webhook_id: [^!]|(key|password|token):\s*"[^"]{6,}"|://[^/ ]+:[^/ ]+@' config esphome dashboards helpers; then
+if grep -nE '^\s*0x[0-9A-Fa-f]{2},' esphome/xgimi-halo-remote.yaml \
+  || grep -rnE 'webhook_id: [^!]|(key|password|token):\s*"[^"]{6,}"|://[^/ ]+:[^/ ]+@' config esphome dashboards helpers; then
   echo "ABBRUCH: mögliche Secrets gefunden (siehe oben)" >&2
   exit 1
 fi
