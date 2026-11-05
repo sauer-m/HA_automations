@@ -161,8 +161,9 @@ teelichter_schlafzimmer_setzen:
   description: 'IR über SENCKIT (remote.ir_blaster_schlafzimmer). aus: OFF 2x. an:
     ON 2x (nur wenn aus; Teelichter starten dann in Leuchten, Dimmstufe 3), danach
     gespeicherten Modus senden. modus: wie an, bzw. bei bereits an nur den Moduscode.
-    Dimmen fehlt noch, die Codes sind nicht angelernt. Migriert aus ioBroker-Skript
-    Teelichter_Schlafzimmer.'
+    dimmen: Stufe 1-5 per Luminosity -/+ (Codes aus den Esszimmer-Broadlink-Codes
+    umgerechnet); Stufe 1 und 5 mit 4 Drücken (synchronisiert); im Modus Pulsieren
+    kein Dimmen. Migriert aus ioBroker-Skript Teelichter_Schlafzimmer.'
   icon: mdi:candle
   mode: queued
   fields:
@@ -175,6 +176,15 @@ teelichter_schlafzimmer_setzen:
           - an
           - aus
           - modus
+          - dimmen
+    stufe:
+      name: Dimmstufe (nur dimmen)
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 5
+          step: 1
   variables:
     codes:
       Leicht flackern: b64:RyOQEVICeAZSAngGUgITAlICeAZxAhMCUgITAlICeAZRAnkGUQKYBlECeAZSAhMCUgITAlICeAZxAhMCUgITAlICeAZRAnkGUQKYBlECeAZSAngGUgJ4BlIClwZSAhMCUgITAlICEwJSAjICUgITAlICMgIyAhQCUQIzAlICdwZSAnkGUQJ6l+gi6QgyAjB1
@@ -183,6 +193,8 @@ teelichter_schlafzimmer_setzen:
       Leuchten: b64:ZCNxEVICeAZSAncGUgITAnECeAZRAhQCUQIUAnECeAZRAhQCUQIUAlECeQZxAhMCUQJ5BlECEwJSAngGUgKXBlICeAZSAhMCUgITAlICeAZxAhMCUgJ4BlICEwJSAhMCUQIzAlECeQZSAngGUQKElikjyghSAjB1
       'on': b64:TSNtEXECeQZTAnkGUgIUAlICegZSAhQCcQIUAlICeQZTAnkGUgJ6BlICegZxAhQCUgIzAjMCeQZSAjMCMwIzAlMCmAYzAjMCMwIzAjMCMwJTAhMCUgKZBjMCMwIzApkGMwIzAlICmQYzApgGMwKZBjMCmQYzAjMCUgKZBjMCMwIzApgGMwLBlg8jKQnVATB1
       'off': b64:ZSNxEVICeAZxAngGUgITAlICeAZRAhQCcQITAlICeAZRAngGUgJ4BnECeAZSAhMCUgITAlECeAZxAhMCUgIUAlECeAZSAngGUgKXBlICeAZSAngGUgJ4BlECMwJSAngGUgITAlICEwJSAjICUgITAlICEwJRAhQCUQKYBlICEwJRAnkGUQKhli4jywhSAjB1
+      heller: b64:0CSZEk8CDgcuAu0GTwJPAnAC7QZPAk8CTwJPAnAC7QZPAu0GTwLtBk8C7QZwAk8CTwJPAk8CDgcuAnACLgJwAi4CDgdPAk8CTwLtBk8CcAJPAu0GTwJPAk8CcAJPAu0GLgJwAi4CDgdPAk8CTwIOB08CTwJPAu0GTwIOBy4CcAIuAg4HTwIwddAkPAlPAjB10CRdCU8CMHXxJF0JTwIwdQ==
+      dunkler: b64:0CSZEk8C7QZPAu0GTwJPAk8CDgdPAk8CTwJPAk8CDgcuAu0GTwIOB08C7QZPAnACTwJPAk8C7QYuApECLgJPAk8C7QZwAk8CTwJPAk8CTwJPAk8CcAJPAk8CTwJPAu0GcAJPAk8C7QYuAg4HTwLtBk8CDgdPAu0GLgIOB08CTwJPAu0GcAIwddAkPAlwAjB18SRdCU8CMHXxJF0JTwIwdQ==
   sequence:
   - if:
     - condition: template
@@ -234,7 +246,11 @@ teelichter_schlafzimmer_setzen:
         data:
           command: '{{ codes[states(''input_select.teelichter_schlafzimmer_modus'')]
             }}'
-    - stop: Eingeschaltet
+    - if:
+      - condition: template
+        value_template: '{{ aktion != ''dimmen'' }}'
+      then:
+      - stop: Eingeschaltet
   - if:
     - condition: template
       value_template: '{{ aktion == ''modus'' }}'
@@ -245,3 +261,32 @@ teelichter_schlafzimmer_setzen:
       data:
         command: '{{ codes[states(''input_select.teelichter_schlafzimmer_modus'')]
           }}'
+    - stop: Modus gesendet
+  - if:
+    - condition: state
+      entity_id: input_select.teelichter_schlafzimmer_modus
+      state: Pulsieren
+    then:
+    - stop: Im Modus Pulsieren kein Dimmen
+  - variables:
+      aktuell: '{{ states(''input_number.teelichter_schlafzimmer_dimmstufe'') | int(3)
+        }}'
+      ziel: '{{ [[stufe | default(3) | int(3), 1] | max, 5] | min }}'
+      richtung: '{{ ''heller'' if ziel > aktuell or ziel == 5 else ''dunkler'' }}'
+      anzahl: '{{ 4 if ziel in [1, 5] else (ziel - aktuell) | abs }}'
+  - if:
+    - condition: template
+      value_template: '{{ anzahl > 0 }}'
+    then:
+    - action: remote.send_command
+      target:
+        entity_id: remote.ir_blaster_schlafzimmer
+      data:
+        command: '{{ codes[richtung] }}'
+        num_repeats: '{{ anzahl }}'
+        delay_secs: 0.5
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.teelichter_schlafzimmer_dimmstufe
+    data:
+      value: '{{ ziel }}'
