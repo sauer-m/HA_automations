@@ -398,8 +398,10 @@
     - person.sarah
 - id: '1783672945400'
   alias: Präsenzmelder Badezimmer
-  description: Präsenz im Bad -> nach 2 Sekunden Hintergrundbeleuchtung an, aber nur
-    bei Dunkelheit (unter max_lux). Keine Präsenz mehr -> aus.
+  description: Präsenz im Bad -> Hintergrundbeleuchtung auf 50 %. Nach Sonnenuntergang
+    immer und sofort. Tagsüber nur unter 50 lx; bei höherem Wert bis 2 s auf einen
+    frischen Sensorwert warten, weil der alte Wert vom eigenen Licht stammen kann.
+    Keine Präsenz mehr -> aus.
   triggers:
   - trigger: state
     entity_id:
@@ -419,16 +421,36 @@
     - conditions:
       - condition: trigger
         id: presence_on
-      - condition: template
-        value_template: '{{ states(illuminance_sensor) | float(0) < max_lux }}'
       sequence:
-      - delay:
-          seconds: 2
+      - if:
+        - condition: state
+          entity_id: sun.sun
+          state: above_horizon
+        - condition: not
+          conditions:
+          - condition: numeric_state
+            entity_id: sensor.prasenzmelder_badezimmer_illuminance
+            below: 50
+        then:
+        - wait_for_trigger:
+          - trigger: state
+            entity_id: sensor.prasenzmelder_badezimmer_illuminance
+          timeout:
+            seconds: 2
+          continue_on_timeout: true
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: sun.sun
+          state: below_horizon
+        - condition: numeric_state
+          entity_id: sensor.prasenzmelder_badezimmer_illuminance
+          below: 50
       - action: light.turn_on
         data:
-          brightness_pct: 100
+          brightness_pct: 50
         target:
-          entity_id: '{{ bath_light }}'
+          entity_id: light.badezimmerlicht_hintergrundbeleuchtung
     - conditions:
       - condition: trigger
         id: presence_off
@@ -436,12 +458,8 @@
       - action: light.turn_off
         data: {}
         target:
-          entity_id: '{{ bath_light }}'
+          entity_id: light.badezimmerlicht_hintergrundbeleuchtung
   mode: restart
-  variables:
-    bath_light: light.badezimmerlicht_hintergrundbeleuchtung
-    illuminance_sensor: sensor.prasenzmelder_badezimmer_illuminance
-    max_lux: 50
 - id: '1783674364235'
   alias: Kaffeemaschine per TRADFRI Taster
   triggers:
