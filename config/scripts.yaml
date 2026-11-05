@@ -25,3 +25,134 @@ landroid_kamera_snapshot:
       entity_id: camera.landroid_kamera
     data:
       filename: /config/www/landroid/manuell_{{ timestamp }}.jpg
+teelichter_esszimmer_setzen:
+  alias: Teelichter Esszimmer setzen
+  description: 'IR über Broadlink RM4 (Esszimmer). aus: OFF 2x. an: ON 2x (nur wenn
+    aus; Teelichter starten dann in Leuchten, Dimmstufe 3), danach gespeicherten Modus
+    senden. modus: wie an, bzw. bei bereits an nur den Moduscode. dimmen: Stufe 1-5
+    per Luminosity -/+ (gelernte Codes teelichter_esszimmer/dunkler|heller); Stufe
+    1 und 5 mit 4 Drücken (synchronisiert); im Modus Pulsieren kein Dimmen. Migriert
+    aus ioBroker-Skript Teelichter_EZ.'
+  icon: mdi:candle
+  mode: queued
+  fields:
+    aktion:
+      name: Aktion
+      required: true
+      selector:
+        select:
+          options:
+          - an
+          - aus
+          - modus
+          - dimmen
+    stufe:
+      name: Dimmstufe (nur dimmen)
+      required: false
+      selector:
+        number:
+          min: 1
+          max: 5
+          step: 1
+  variables:
+    codes:
+      Leicht flackern: b64:JgBwAAABIJATNRI2ExISNhISEhMSNhI2EzYSNRITEhMRNhISExISNhI3EjYSNhI2EjYSNxISEhISEhMSEhISEhISExISNhI2EwAE2AABIEgSAAwCAAEhSBMADAIAAR9JEgAMBwABH0gTAAwEAAEeSRIADQUAAAAAAAA=
+      Stark flackern: b64:JgBgAAABIJASNhI3EhISNhMSEhISNRM2EjYSNxISEhISNxISEhISNhI2EjcSEhI2EzYRNhITEhISEhISEjcSEhISEhMSNhI2EwAE0wABIEgSAAv/AAEfShEAC/sAASBJEgANBQAAAAAAAA==
+      Pulsieren: b64:JgBYAAABIJASNhI3EhISNhISExISNRI3EjYSNhMSEhISNRMSEhISNhITEhISEhISEjcSNhISEhMSNRI3EjYSNhITEhISNRI3EgAE2AABH0gTAAwBAAEgSBIADQUAAAAAAAAAAAAAAAAAAA==
+      Leuchten: b64:JgBYAAABH5ASNhI3EhISNxETERMRNhM2EjYSNxETERMRNxISEhISNxISEjYSExI2EjYSNhISEhITNhISEjcRExETERMRNxI2EgAE0gABH0kSAAv+AAEfSRIADQUAAAAAAAAAAAAAAAAAAA==
+      'on': b64:JgAAAQABH5ASNxI2EhITNRISEhITNhI2EzYSNRMSEhISNhMSEhISNhITEhISEhISEjcRExE3EhISNhI3EjYRNxISEjcSEhI2EgAE1AABIEgTAAv8AAEfSBIAC/8AASBIEgAL/wABIEgTAAv7AAEgSBIAC/0AASBIEgAL/AABIEgSAAv8AAEgSBIAC/0AAR9JEgAL/QABH0kSAAv9AAEfSRIAC/wAAR9KEQAL/QABH0oRAAv9AAEfSRIAC/wAAR9JEgAL/AABH0gTAAv7AAEgSBIAC/0AAR9IEgAL/gABH0gSAAv9AAEgSBIAC/0AASBIEgAL/gABH0gSAAv+AAEfSRIADQUAAAAAAAA=
+      'off': b64:JgBwAAABIJASNhM2EhISNxISEhISNRM2EjYSNxISEhISNxETERMRNxI2EjcSNhE3EjYSEhI3EhISEhISExISEhISEjYSEhI2EgAE0wABHkoRAAv8AAEfSBMAC/8AAR9IEwAMAgABH0gTAAwAAAEgSBMADQUAAAAAAAA=
+  sequence:
+  - if:
+    - condition: template
+      value_template: '{{ aktion == ''aus'' }}'
+    then:
+    - action: remote.send_command
+      target:
+        entity_id: remote.ir_remote_esszimmer_rm4_mini
+      data:
+        command: '{{ codes.off }}'
+        num_repeats: 2
+        delay_secs: 0.4
+    - action: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.teelichter_esszimmer_status
+    - stop: Aus
+  - if:
+    - condition: state
+      entity_id: input_boolean.teelichter_esszimmer_status
+      state: 'off'
+    then:
+    - action: remote.send_command
+      target:
+        entity_id: remote.ir_remote_esszimmer_rm4_mini
+      data:
+        command: '{{ codes.on }}'
+        num_repeats: 2
+        delay_secs: 0.4
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.teelichter_esszimmer_status
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.teelichter_esszimmer_stufe
+      data:
+        value: 3
+    - delay:
+        milliseconds: 500
+    - if:
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: input_select.teelichter_esszimmer_modus
+          state: Leuchten
+      then:
+      - action: remote.send_command
+        target:
+          entity_id: remote.ir_remote_esszimmer_rm4_mini
+        data:
+          command: '{{ codes[states(''input_select.teelichter_esszimmer_modus'')]
+            }}'
+    - if:
+      - condition: template
+        value_template: '{{ aktion != ''dimmen'' }}'
+      then:
+      - stop: Eingeschaltet
+  - if:
+    - condition: template
+      value_template: '{{ aktion == ''modus'' }}'
+    then:
+    - action: remote.send_command
+      target:
+        entity_id: remote.ir_remote_esszimmer_rm4_mini
+      data:
+        command: '{{ codes[states(''input_select.teelichter_esszimmer_modus'')] }}'
+    - stop: Modus gesendet
+  - if:
+    - condition: state
+      entity_id: input_select.teelichter_esszimmer_modus
+      state: Pulsieren
+    then:
+    - stop: Im Modus Pulsieren kein Dimmen
+  - variables:
+      aktuell: '{{ states(''input_number.teelichter_esszimmer_stufe'') | int(3) }}'
+      ziel: '{{ [[stufe | default(3) | int(3), 1] | max, 5] | min }}'
+      richtung: '{{ ''heller'' if ziel > aktuell or ziel == 5 else ''dunkler'' }}'
+      anzahl: '{{ 4 if ziel in [1, 5] else (ziel - aktuell) | abs }}'
+  - if:
+    - condition: template
+      value_template: '{{ anzahl > 0 }}'
+    then:
+    - action: remote.send_command
+      target:
+        entity_id: remote.ir_remote_esszimmer_rm4_mini
+      data:
+        device: teelichter_esszimmer
+        command: '{{ richtung }}'
+        num_repeats: '{{ anzahl }}'
+        delay_secs: 0.5
+  - action: input_number.set_value
+    target:
+      entity_id: input_number.teelichter_esszimmer_stufe
+    data:
+      value: '{{ ziel }}'

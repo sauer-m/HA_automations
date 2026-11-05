@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "minor_version": 2,
+  "key": "input_select",
+  "data": {
+    "items": [
+      {
+        "id": "teelichter_esszimmer_modus",
+        "name": "Teelichter Esszimmer Modus",
+        "icon": "mdi:candle",
+        "options": [
+          "Leicht flackern",
+          "Stark flackern",
+          "Pulsieren",
+          "Leuchten"
+        ]
+      }
+    ]
+  }
+}

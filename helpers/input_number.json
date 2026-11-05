@@ -23,6 +23,15 @@
         "mode": "box",
         "step": 0.001,
         "unit_of_measurement": "EUR/m³"
+      },
+      {
+        "id": "teelichter_esszimmer_stufe",
+        "name": "Teelichter Esszimmer Dimmstufe",
+        "icon": "mdi:candle",
+        "min": 1.0,
+        "max": 5.0,
+        "step": 1.0,
+        "mode": "box"
       }
     ]
   }

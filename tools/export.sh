@@ -19,7 +19,7 @@ for f in lovelace.dashboard_beleuctung lovelace.dashboard_listen lovelace.dashbo
          lovelace.map lovelace_dashboards lovelace_resources; do
   cp "$SRC/.storage/$f" "dashboards/$f.json"
 done
-for f in input_boolean input_number; do
+for f in input_boolean input_number input_select; do
   cp "$SRC/.storage/$f" "helpers/$f.json"
 done
 

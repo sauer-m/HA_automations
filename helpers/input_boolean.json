@@ -38,6 +38,11 @@
         "id": "abwesenheit",
         "name": "Abwesenheit",
         "icon": "mdi:home-export-outline"
+      },
+      {
+        "id": "teelichter_esszimmer_status",
+        "name": "Teelichter Esszimmer Status",
+        "icon": "mdi:candle"
       }
     ]
   }

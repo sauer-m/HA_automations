@@ -1076,3 +1076,22 @@
           data:
             tag: wartung-slzb-hitze
   mode: queued
+- id: '1793804846335'
+  alias: Teelichter Esszimmer - Modus senden
+  description: Sendet den gewählten Modus (input_select.teelichter_esszimmer_modus)
+    per IR; schaltet bei Bedarf vorher ein.
+  triggers:
+  - trigger: state
+    entity_id: input_select.teelichter_esszimmer_modus
+    not_from:
+    - unavailable
+    - unknown
+    not_to:
+    - unavailable
+    - unknown
+  conditions: []
+  actions:
+  - action: script.teelichter_esszimmer_setzen
+    data:
+      aktion: modus
+  mode: queued
