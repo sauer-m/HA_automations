@@ -399,9 +399,9 @@
 - id: '1783672945400'
   alias: Präsenzmelder Badezimmer
   description: Präsenz im Bad -> Hintergrundbeleuchtung auf 50 %. Nach Sonnenuntergang
-    immer und sofort. Tagsüber nur unter 50 lx; bei höherem Wert bis 2 s auf einen
-    frischen Sensorwert warten, weil der alte Wert vom eigenen Licht stammen kann.
-    Keine Präsenz mehr -> aus.
+    immer, mit 1 s Verzögerung, damit die Tür zum Schlafzimmer zu ist. Tagsüber nur
+    unter 50 lx; bei höherem Wert bis 2 s auf einen frischen Sensorwert warten, weil
+    der alte Wert vom eigenen Licht stammen kann. Keine Präsenz mehr -> aus.
   triggers:
   - trigger: state
     entity_id:
@@ -422,6 +422,13 @@
       - condition: trigger
         id: presence_on
       sequence:
+      - if:
+        - condition: state
+          entity_id: sun.sun
+          state: below_horizon
+        then:
+        - delay:
+            seconds: 1
       - if:
         - condition: state
           entity_id: sun.sun
