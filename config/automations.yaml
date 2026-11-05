@@ -1114,3 +1114,88 @@
     data:
       aktion: modus
   mode: queued
+- id: '1793880125564'
+  alias: HDMI-Switch Schlafzimmer - Eingang senden
+  description: Sendet den in input_select.hdmi_switch_schlafzimmer gewählten Eingang
+    per IR über den SENCKIT.
+  triggers:
+  - trigger: state
+    entity_id: input_select.hdmi_switch_schlafzimmer
+    not_from:
+    - unavailable
+    - unknown
+    not_to:
+    - unavailable
+    - unknown
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: input_select.hdmi_switch_schlafzimmer
+        state: Eingang 1
+      sequence:
+      - action: remote.send_command
+        target:
+          entity_id: remote.ir_blaster_schlafzimmer
+        data:
+          command: b64:mCOEEVECdwZxAnYGUwJ2BnACdwZRAngGcQJ2BlICdwZwAhQCUQISAlICEgJxAhMCUQITAlECEwJxAhICUgITAlECmAZQAhICUgJ3BnACFQJQAjMCMAIyAlMCEgJRAjICMgIzAlAClgYyAjMCMgKWBlECmAYxApcGUQKVBjMClgZRApcGMQJsmoAjxghRAjB1
+    - conditions:
+      - condition: state
+        entity_id: input_select.hdmi_switch_schlafzimmer
+        state: Eingang 2
+      sequence:
+      - action: remote.send_command
+        target:
+          entity_id: remote.ir_blaster_schlafzimmer
+        data:
+          command: b64:tiNnEVICeAZxAncGUQJ5BnECdwZRAngGUgKXBlECeAZTAjMCUAISAlICEwJTAjACUwITAlECEwJSAhMCcQISAlICeQZRAjECUgIyAjMCdwZSAjICUwISAlECFAJRAjMCUQIzAjMClgYzArUGMwIzAjEClwZTApYGMwKWBlECmQYwApcGMwJdmoMjyghRAjB1
+  mode: queued
+- id: '1793880126000'
+  alias: HDMI-Switch Schlafzimmer - Eingang wählen
+  description: 'Nintendo Switch online (FRITZ!Box-Tracker), Beamer an, Wohnzimmer-Switch
+    und Fire TV Stick aus: Eingang 2. Konsole 5 Minuten offline: zurück auf Eingang
+    1. Die Wartezeit fängt das Flattern des Trackers im Standby ab. Migriert aus ioBroker-Skript
+    hdmi_switch_logic.'
+  triggers:
+  - trigger: state
+    entity_id: device_tracker.pc_50_23_6d_51_64_16
+    to: home
+    id: online
+  - trigger: state
+    entity_id: device_tracker.pc_50_23_6d_51_64_16
+    to: not_home
+    for:
+      minutes: 5
+    id: offline
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: online
+      - condition: state
+        entity_id: remote.xgimi_halo
+        state: 'on'
+      - condition: state
+        entity_id: switch.nintendo_switch
+        state: 'off'
+      - condition: state
+        entity_id: media_player.schlafzimmer_fire_tv_stick
+        state: 'off'
+      sequence:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.hdmi_switch_schlafzimmer
+        data:
+          option: Eingang 2
+    - conditions:
+      - condition: trigger
+        id: offline
+      sequence:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.hdmi_switch_schlafzimmer
+        data:
+          option: Eingang 1
+  mode: single

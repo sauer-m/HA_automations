@@ -1323,7 +1323,7 @@
                     },
                     {
                       "type": "tile",
-                      "entity": "switch.switch",
+                      "entity": "switch.nintendo_switch",
                       "name": "Switch",
                       "icon": "mdi:nintendo-switch",
                       "color": "red",

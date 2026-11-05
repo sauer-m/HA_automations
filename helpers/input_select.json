@@ -25,6 +25,15 @@
           "Pulsieren",
           "Leuchten"
         ]
+      },
+      {
+        "id": "hdmi_switch_schlafzimmer",
+        "name": "HDMI-Switch Schlafzimmer",
+        "icon": "mdi:video-input-hdmi",
+        "options": [
+          "Eingang 1",
+          "Eingang 2"
+        ]
       }
     ]
   }
