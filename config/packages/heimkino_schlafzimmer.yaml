@@ -14,16 +14,37 @@ input_boolean:
 
 template:
   - switch:
+      # Zwei gegenseitig exklusive Schalter wie im Wohnzimmer. Wird bei laufendem
+      # Heimkino der andere Schalter aktiviert, wechselt nur der HDMI-Eingang.
       - name: Heimkino Schlafzimmer
         unique_id: heimkino_schlafzimmer_schalter
         icon: mdi:bed-king-outline
-        state: "{{ is_state('input_boolean.heimkino_schlafzimmer_aktiv', 'on') }}"
+        state: >-
+          {{ is_state('input_boolean.heimkino_schlafzimmer_aktiv', 'on')
+             and is_state('input_select.hdmi_switch_schlafzimmer', 'Eingang 1') }}
         availability: >-
           {{ states('button.xgimi_halo_remote_xgimi_projector_wakeup')
                not in ['unknown', 'unavailable'] }}
         turn_on:
-          - action: script.heimkino_schlafzimmer_einschalten
+          - action: script.heimkino_schlafzimmer_firetv_aktivieren
         turn_off:
+          - action: script.heimkino_schlafzimmer_ausschalten
+
+      - name: Nintendo Switch Schlafzimmer
+        unique_id: heimkino_schlafzimmer_switch_schalter
+        icon: mdi:nintendo-switch
+        state: >-
+          {{ is_state('input_boolean.heimkino_schlafzimmer_aktiv', 'on')
+             and is_state('input_select.hdmi_switch_schlafzimmer', 'Eingang 2') }}
+        availability: >-
+          {{ states('button.xgimi_halo_remote_xgimi_projector_wakeup')
+               not in ['unknown', 'unavailable'] }}
+        turn_on:
+          - action: script.heimkino_schlafzimmer_switch_aktivieren
+        turn_off:
+          - condition: state
+            entity_id: input_select.hdmi_switch_schlafzimmer
+            state: Eingang 2
           - action: script.heimkino_schlafzimmer_ausschalten
 
 script:
@@ -129,6 +150,56 @@ script:
                 {{ states('media_player.schlafzimmer_fire_tv_stick')
                      not in ['off', 'standby', 'unknown', 'unavailable']
                    or repeat.index >= 3 }}
+
+  heimkino_schlafzimmer_firetv_aktivieren:
+    alias: Heimkino Schlafzimmer aktivieren
+    description: Startet das Heimkino mit Fire TV oder wechselt nur den HDMI-Eingang.
+    icon: mdi:bed-king-outline
+    mode: single
+    sequence:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.hdmi_switch_schlafzimmer
+        data:
+          option: Eingang 1
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_boolean.heimkino_schlafzimmer_aktiv
+                state: "on"
+            sequence:
+              - action: script.heimkino_schlafzimmer_firetv_wecken
+        default:
+          - action: script.heimkino_schlafzimmer_einschalten
+
+  heimkino_schlafzimmer_switch_aktivieren:
+    alias: Nintendo Switch Schlafzimmer aktivieren
+    description: Startet das Heimkino mit Switch oder wechselt nur den HDMI-Eingang.
+    icon: mdi:nintendo-switch
+    mode: single
+    sequence:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.hdmi_switch_schlafzimmer
+        data:
+          option: Eingang 2
+      - if:
+          - condition: state
+            entity_id: input_boolean.heimkino_schlafzimmer_aktiv
+            state: "off"
+        then:
+          - action: script.heimkino_schlafzimmer_einschalten
+      # Erst nach dem Start, damit die Szene die alte Rollo-Position sichert.
+      - if:
+          - condition: state
+            entity_id: input_boolean.heimkino_schlafzimmer_aktiv
+            state: "on"
+        then:
+          - action: cover.set_cover_position
+            target:
+              entity_id: cover.rollo_schlafzimmer
+            data:
+              position: 0
 
   heimkino_schlafzimmer_einschalten:
     alias: Heimkino Schlafzimmer einschalten
@@ -285,6 +356,12 @@ script:
     icon: mdi:power-off
     mode: single
     sequence:
+      # Der HDMI-Switch steht danach immer wieder auf Fire TV.
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.hdmi_switch_schlafzimmer
+        data:
+          option: Eingang 1
       # Nachttischlampe eine Minute als Ausstiegslicht verwenden; ihr zuvor
       # gespeicherter Zustand wird erst danach wiederhergestellt.
       - action: script.heimkino_schlafzimmer_nachttisch_setzen
