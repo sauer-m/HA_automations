@@ -398,8 +398,8 @@
     - person.sarah
 - id: '1783672945400'
   alias: Präsenzmelder Badezimmer
-  description: Präsenz im Bad -> Hintergrundbeleuchtung an, aber nur bei Dunkelheit
-    (unter max_lux). Keine Präsenz mehr -> aus.
+  description: Präsenz im Bad -> nach 2 Sekunden Hintergrundbeleuchtung an, aber nur
+    bei Dunkelheit (unter max_lux). Keine Präsenz mehr -> aus.
   triggers:
   - trigger: state
     entity_id:
@@ -422,6 +422,8 @@
       - condition: template
         value_template: '{{ states(illuminance_sensor) | float(0) < max_lux }}'
       sequence:
+      - delay:
+          seconds: 2
       - action: light.turn_on
         data:
           brightness_pct: 100
