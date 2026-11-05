@@ -14,6 +14,17 @@
           "Pulsieren",
           "Leuchten"
         ]
+      },
+      {
+        "id": "teelichter_schlafzimmer_modus",
+        "name": "Teelichter Schlafzimmer Modus",
+        "icon": "mdi:candle",
+        "options": [
+          "Leicht flackern",
+          "Stark flackern",
+          "Pulsieren",
+          "Leuchten"
+        ]
       }
     ]
   }

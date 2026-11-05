@@ -156,3 +156,92 @@ teelichter_esszimmer_setzen:
       entity_id: input_number.teelichter_esszimmer_stufe
     data:
       value: '{{ ziel }}'
+teelichter_schlafzimmer_setzen:
+  alias: Teelichter Schlafzimmer setzen
+  description: 'IR über SENCKIT (remote.ir_blaster_schlafzimmer). aus: OFF 2x. an:
+    ON 2x (nur wenn aus; Teelichter starten dann in Leuchten, Dimmstufe 3), danach
+    gespeicherten Modus senden. modus: wie an, bzw. bei bereits an nur den Moduscode.
+    Dimmen fehlt noch, die Codes sind nicht angelernt. Migriert aus ioBroker-Skript
+    Teelichter_Schlafzimmer.'
+  icon: mdi:candle
+  mode: queued
+  fields:
+    aktion:
+      name: Aktion
+      required: true
+      selector:
+        select:
+          options:
+          - an
+          - aus
+          - modus
+  variables:
+    codes:
+      Leicht flackern: b64:RyOQEVICeAZSAngGUgITAlICeAZxAhMCUgITAlICeAZRAnkGUQKYBlECeAZSAhMCUgITAlICeAZxAhMCUgITAlICeAZRAnkGUQKYBlECeAZSAngGUgJ4BlIClwZSAhMCUgITAlICEwJSAjICUgITAlICMgIyAhQCUQIzAlICdwZSAnkGUQJ6l+gi6QgyAjB1
+      Stark flackern: b64:RiOQEVICeAZSAngGUQIUAlECeAZSAjICUgITAlICdwZSAngGUgJ4BlECmAZRAhMCUgIUAlICeQZSAhMCUwIyAlMCeQZSAnkGUgJ5BlICFAJSAnkGcgJ5BlICeQZSAhQCUgITAlMCEwJSAjMCUgJ5BlICFAJSAhMCUgIUAlICeQZyAnkGUgJbliwjywhSAjB1
+      Pulsieren: b64:byN1EVMCegZSAnoGcQIUAlICegZSAhQCUgIUAnICeQZTAnkGUgJ6BlICegZSAjMCUgIUAlICegZSAhQCUgIUAnICeQZTAhMCUwITAlMCEwJyAhQCUgJ6BlICegZSAhQCcQIUAlICegZSAnkGUwJ5BlMCmAZTAhMCUgIUAlICegZSAnoGcQJUl0gjqwhxAjB1
+      Leuchten: b64:ZCNxEVICeAZSAncGUgITAnECeAZRAhQCUQIUAnECeAZRAhQCUQIUAlECeQZxAhMCUQJ5BlECEwJSAngGUgKXBlICeAZSAhMCUgITAlICeAZxAhMCUgJ4BlICEwJSAhMCUQIzAlECeQZSAngGUQKElikjyghSAjB1
+      'on': b64:TSNtEXECeQZTAnkGUgIUAlICegZSAhQCcQIUAlICeQZTAnkGUgJ6BlICegZxAhQCUgIzAjMCeQZSAjMCMwIzAlMCmAYzAjMCMwIzAjMCMwJTAhMCUgKZBjMCMwIzApkGMwIzAlICmQYzApgGMwKZBjMCmQYzAjMCUgKZBjMCMwIzApgGMwLBlg8jKQnVATB1
+      'off': b64:ZSNxEVICeAZxAngGUgITAlICeAZRAhQCcQITAlICeAZRAngGUgJ4BnECeAZSAhMCUgITAlECeAZxAhMCUgIUAlECeAZSAngGUgKXBlICeAZSAngGUgJ4BlECMwJSAngGUgITAlICEwJSAjICUgITAlICEwJRAhQCUQKYBlICEwJRAnkGUQKhli4jywhSAjB1
+  sequence:
+  - if:
+    - condition: template
+      value_template: '{{ aktion == ''aus'' }}'
+    then:
+    - action: remote.send_command
+      target:
+        entity_id: remote.ir_blaster_schlafzimmer
+      data:
+        command: '{{ codes.off }}'
+        num_repeats: 2
+        delay_secs: 0.4
+    - action: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.teelichter_schlafzimmer_status
+    - stop: Aus
+  - if:
+    - condition: state
+      entity_id: input_boolean.teelichter_schlafzimmer_status
+      state: 'off'
+    then:
+    - action: remote.send_command
+      target:
+        entity_id: remote.ir_blaster_schlafzimmer
+      data:
+        command: '{{ codes.on }}'
+        num_repeats: 2
+        delay_secs: 0.4
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.teelichter_schlafzimmer_status
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.teelichter_schlafzimmer_dimmstufe
+      data:
+        value: 3
+    - delay:
+        milliseconds: 500
+    - if:
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: input_select.teelichter_schlafzimmer_modus
+          state: Leuchten
+      then:
+      - action: remote.send_command
+        target:
+          entity_id: remote.ir_blaster_schlafzimmer
+        data:
+          command: '{{ codes[states(''input_select.teelichter_schlafzimmer_modus'')]
+            }}'
+    - stop: Eingeschaltet
+  - if:
+    - condition: template
+      value_template: '{{ aktion == ''modus'' }}'
+    then:
+    - action: remote.send_command
+      target:
+        entity_id: remote.ir_blaster_schlafzimmer
+      data:
+        command: '{{ codes[states(''input_select.teelichter_schlafzimmer_modus'')]
+          }}'

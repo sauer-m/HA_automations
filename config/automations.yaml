@@ -1095,3 +1095,22 @@
     data:
       aktion: modus
   mode: queued
+- id: '1793877204608'
+  alias: Teelichter Schlafzimmer - Modus senden
+  description: Sendet den gewählten Modus (input_select.teelichter_schlafzimmer_modus)
+    per IR; schaltet bei Bedarf vorher ein.
+  triggers:
+  - trigger: state
+    entity_id: input_select.teelichter_schlafzimmer_modus
+    not_from:
+    - unavailable
+    - unknown
+    not_to:
+    - unavailable
+    - unknown
+  conditions: []
+  actions:
+  - action: script.teelichter_schlafzimmer_setzen
+    data:
+      aktion: modus
+  mode: queued

@@ -32,6 +32,15 @@
         "max": 5.0,
         "step": 1.0,
         "mode": "box"
+      },
+      {
+        "id": "teelichter_schlafzimmer_dimmstufe",
+        "name": "Teelichter Schlafzimmer Dimmstufe",
+        "icon": "mdi:candle",
+        "min": 1.0,
+        "max": 5.0,
+        "step": 1.0,
+        "mode": "box"
       }
     ]
   }

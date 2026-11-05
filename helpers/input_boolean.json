@@ -43,6 +43,11 @@
         "id": "teelichter_esszimmer_status",
         "name": "Teelichter Esszimmer Status",
         "icon": "mdi:candle"
+      },
+      {
+        "id": "teelichter_schlafzimmer_status",
+        "name": "Teelichter Schlafzimmer Status",
+        "icon": "mdi:candle"
       }
     ]
   }
