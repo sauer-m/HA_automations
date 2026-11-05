@@ -41,10 +41,9 @@ template:
         state: "{{ is_state('input_select.heimkino_quelle', 'FireTV') }}"
         turn_on:
           - action: script.heimkino_firetv_aktivieren
+        # Ohne Quellen-Bedingung: Alexa sendet "aus" auch, wenn die Quelle nicht
+        # FireTV ist, etwa beim Start oder wenn das Heimkino ohne HA gestartet wurde.
         turn_off:
-          - condition: state
-            entity_id: input_select.heimkino_quelle
-            state: FireTV
           - action: script.heimkino_ausschalten
 
       - name: Switch
@@ -492,9 +491,31 @@ script:
     mode: single
     max_exceeded: silent
     sequence:
-      - condition: state
-        entity_id: input_boolean.heimkino_aktiv
-        state: "on"
+      # Auch ausfuehren, wenn Beamer oder Denon ohne HA gestartet wurden.
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: input_boolean.heimkino_aktiv
+            state: "on"
+          - condition: state
+            entity_id: binary_sensor.benq_tk850i_benq_tk850i_eingeschaltet
+            state: "on"
+          - condition: not
+            conditions:
+              - condition: state
+                entity_id: media_player.denon_avr_x1200w
+                state:
+                  - "off"
+                  - unavailable
+                  - unknown
+
+      # Laufenden Start abbrechen, damit er nichts wieder einschaltet.
+      - action: script.turn_off
+        target:
+          entity_id:
+            - script.heimkino_firetv_aktivieren
+            - script.heimkino_switch_aktivieren
+            - script.heimkino_einschalten
 
       # Denon maximal dreimal ausschalten.
       - repeat:
@@ -539,27 +560,38 @@ script:
                      'binary_sensor.benq_tk850i_benq_tk850i_eingeschaltet',
                      'off') or repeat.index >= 3 }}
 
-      # Fire TV, Licht und Brunnen auf den Zustand vor Kinostart setzen.
-      - action: scene.turn_on
-        continue_on_error: true
-        target:
-          entity_id: scene.heimkino_vorher
-        data:
-          transition: 5
+      # Den Snapshot gibt es nur nach einem Start ueber HA.
+      - if:
+          - condition: state
+            entity_id: input_boolean.heimkino_aktiv
+            state: "on"
+        then:
+          # Fire TV, Licht und Brunnen auf den Zustand vor Kinostart setzen.
+          - action: scene.turn_on
+            continue_on_error: true
+            target:
+              entity_id: scene.heimkino_vorher
+            data:
+              transition: 5
 
-      - delay:
-          seconds: 5
+          - delay:
+              seconds: 5
 
-      # Snapshot erneut anwenden, falls ein Endgeraet den ersten Befehl verpasst hat.
-      - action: scene.turn_on
-        continue_on_error: true
-        target:
-          entity_id: scene.heimkino_vorher
-        data:
-          transition: 5
+          # Snapshot erneut anwenden, falls ein Endgeraet den ersten Befehl verpasst hat.
+          - action: scene.turn_on
+            continue_on_error: true
+            target:
+              entity_id: scene.heimkino_vorher
+            data:
+              transition: 5
 
-      - delay:
-          seconds: 2
+          - delay:
+              seconds: 2
+        else:
+          - action: media_player.turn_off
+            continue_on_error: true
+            target:
+              entity_id: media_player.wohnzimmer_fire_tv_cube
 
       - action: input_boolean.turn_off
         target:
