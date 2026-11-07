@@ -1178,53 +1178,43 @@
         data:
           command: b64:tiNnEVICeAZxAncGUQJ5BnECdwZRAngGUgKXBlECeAZTAjMCUAISAlICEwJTAjACUwITAlECEwJSAhMCcQISAlICeQZRAjECUgIyAjMCdwZSAjICUwISAlECFAJRAjMCUQIzAjMClgYzArUGMwIzAjEClwZTApYGMwKWBlECmQYwApcGMwJdmoMjyghRAjB1
   mode: queued
-- id: '1793880126000'
-  alias: HDMI-Switch Schlafzimmer - Eingang wählen
-  description: 'Nintendo Switch online (FRITZ!Box-Tracker), Beamer an, Wohnzimmer-Switch
-    aus und Fire TV Stick spielt nichts ab: Eingang 2. Konsole 5 Minuten offline:
-    zurück auf Eingang 1. Die Wartezeit fängt das Flattern des Trackers im Standby
-    ab. Migriert aus ioBroker-Skript hdmi_switch_logic.'
+- id: '1794090985861'
+  alias: 'Haushaltsgeräte fertig: Alexa-Ansage'
+  description: Ansage auf 5 Echos, wenn WashData das Ende von Waschmaschine, Trockner
+    oder Spülmaschine meldet. Ruhezeit 21:00–07:00 (Marcel, 07.11.2026); Push kommt
+    unabhängig davon von WashData selbst.
   triggers:
   - trigger: state
-    entity_id: device_tracker.pc_50_23_6d_51_64_16
-    to: home
-    id: online
+    entity_id: sensor.waschmaschine_zustand
+    to: finished
+    variables:
+      meldung: Die Waschmaschine ist fertig
   - trigger: state
-    entity_id: device_tracker.pc_50_23_6d_51_64_16
-    to: not_home
-    for:
-      minutes: 5
-    id: offline
-  conditions: []
+    entity_id: sensor.trockner_zustand
+    to: finished
+    variables:
+      meldung: Der Trockner ist fertig
+  - trigger: state
+    entity_id: sensor.spulmaschine_zustand
+    to: finished
+    variables:
+      meldung: Die Spülmaschine ist fertig
+  conditions:
+  - condition: time
+    after: 07:00:00
+    before: '21:00:00'
+    note: Ruhezeit laut Marcel 21–7 Uhr
   actions:
-  - choose:
-    - conditions:
-      - condition: trigger
-        id: online
-      - condition: state
-        entity_id: remote.xgimi_halo
-        state: 'on'
-      - condition: state
-        entity_id: switch.nintendo_switch
-        state: 'off'
-      - condition: not
-        conditions:
-        - condition: state
-          entity_id: media_player.schlafzimmer_fire_tv_stick
-          state: playing
-      sequence:
-      - action: input_select.select_option
-        target:
-          entity_id: input_select.hdmi_switch_schlafzimmer
-        data:
-          option: Eingang 2
-    - conditions:
-      - condition: trigger
-        id: offline
-      sequence:
-      - action: input_select.select_option
-        target:
-          entity_id: input_select.hdmi_switch_schlafzimmer
-        data:
-          option: Eingang 1
-  mode: single
+  - action: notify.send_message
+    target:
+      entity_id:
+      - notify.echo_dot_badezimmer_sprechen
+      - notify.echo_show_kuche_sprechen
+      - notify.fire_tv_cube_sprechen
+      - notify.echo_dot_esszimmer_sprechen
+      - notify.echo_dot_keller_sprechen
+    data:
+      message: '{{ meldung }}'
+    continue_on_error: true
+    note: Gleiche Räume wie die früheren alexa_media-Ansagen
+  mode: parallel
