@@ -1218,3 +1218,49 @@
     continue_on_error: true
     note: Gleiche Räume wie die früheren alexa_media-Ansagen
   mode: parallel
+- id: '1794096366871'
+  alias: 'Haushalt: tägliche Erinnerung'
+  description: Jeden Morgen um 9 Uhr Push an Marcel mit allen heute fälligen und überfälligen
+    Aufgaben der Home-Tasks-Liste „Haushalt“. Aufgaben mit dem Tag „saison“ werden
+    von November bis März auf den 1. April verschoben statt gemeldet (Marcel, 08.11.2026).
+  triggers:
+  - trigger: time
+    at: 09:00:00
+  actions:
+  - action: home_tasks.get_tasks
+    data:
+      list_name: Haushalt
+      due: today_or_overdue
+    response_variable: faellig
+  - variables:
+      winterpause: '{{ now().month in [11, 12, 1, 2, 3] }}'
+      saisonstart: '{{ (now().year + (1 if now().month > 3 else 0)) ~ ''-04-01'' }}'
+      pausieren: '{{ (faellig.tasks | selectattr(''tags'', ''contains'', ''saison'')
+        | list) if winterpause else [] }}'
+      melden: '{{ (faellig.tasks | rejectattr(''tags'', ''contains'', ''saison'')
+        | list) if winterpause else faellig.tasks }}'
+  - repeat:
+      for_each: '{{ pausieren }}'
+      sequence:
+      - action: home_tasks.update_task
+        data:
+          list_name: Haushalt
+          task_id: '{{ repeat.item.id }}'
+          due_date: '{{ saisonstart }}'
+    note: Saisonaufgaben (Garten, Terrasse, Mähroboter) im Winter auf den Saisonstart
+      schieben
+  - condition: template
+    value_template: '{{ melden | count > 0 }}'
+  - action: notify.mobile_app_sm_f741b
+    data:
+      title: 'Haushalt: {{ melden | count }} {{ ''Aufgabe'' if melden | count == 1
+        else ''Aufgaben'' }} fällig'
+      message: '{% for t in melden %}• {{ t.title }}{% if t.due_date and t.due_date
+        < now().date() | string %} (seit {{ as_datetime(t.due_date).strftime(''%d.%m.'')
+        }}){% endif %}
+
+        {% endfor %}'
+      data:
+        tag: haushalt-faellig
+        clickAction: /dashboard-beleuctung/haushalt
+  mode: single

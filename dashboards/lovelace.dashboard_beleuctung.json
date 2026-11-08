@@ -2547,6 +2547,66 @@
           ],
           "show_icon_and_title": true,
           "cards": []
+        },
+        {
+          "type": "sections",
+          "title": "Haushalt",
+          "path": "haushalt",
+          "icon": "mdi:broom",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "column_span": 2,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Haushaltsaufgaben",
+                  "heading_style": "title",
+                  "icon": "mdi:broom",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.haushalt_open_tasks",
+                      "show_state": true,
+                      "show_icon": true,
+                      "icon": "mdi:format-list-checks"
+                    },
+                    {
+                      "type": "entity",
+                      "entity": "binary_sensor.haushalt_overdue",
+                      "show_state": true,
+                      "show_icon": true,
+                      "icon": "mdi:alert-circle-outline",
+                      "color": "red"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:home-tasks-card",
+                  "columns": [
+                    {
+                      "list_id": "01M6W7GY8X9952HCVQ8T4MTP3J",
+                      "title": "Haushalt",
+                      "icon": "mdi:broom",
+                      "default_filter": "open",
+                      "default_sort": "due",
+                      "overdue_first": true,
+                      "show_due_soon_filter": true,
+                      "due_soon_days": 14,
+                      "confirm_complete": true,
+                      "show_images": false,
+                      "show_history": true
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            }
+          ]
         }
       ]
     }

@@ -28,6 +28,11 @@
         "id": "4b44b29b03f74ff6ae418f348cd7208f",
         "url": "/dreame_vacuum/frontend.js?v=da9f7c2bf8d2d9d7450a7b9f68eccb35",
         "type": "module"
+      },
+      {
+        "id": "16cfc4bdf33d4fab9981bc12f4da063a",
+        "url": "/home_tasks/home-tasks-card.js?v=1793793621",
+        "type": "module"
       }
     ]
   }
