@@ -679,3 +679,34 @@ automation:
                 data:
                   brightness_pct: 5
                   transition: 2
+
+  - id: heimkino_licht_switch
+    alias: Heimkino - Licht bei Nintendo Switch
+    description: >-
+      Dimmt Steh- und Ecklampe wie bei Fire-TV-Wiedergabe auf 5 Prozent,
+      sobald die Switch Quelle ist. Wartet beim Start, bis das
+      Einschalt-Skript die Kinoszene gesetzt hat.
+    mode: restart
+    triggers:
+      - trigger: state
+        entity_id: input_select.heimkino_quelle
+        to: Switch
+    conditions:
+      - condition: state
+        entity_id: input_boolean.heimkino_aktiv
+        state: "on"
+    actions:
+      - wait_template: "{{ is_state('script.heimkino_einschalten', 'off') }}"
+        timeout: "00:03:00"
+        continue_on_timeout: true
+      - condition: state
+        entity_id: input_select.heimkino_quelle
+        state: Switch
+      - action: light.turn_on
+        target:
+          entity_id:
+            - light.stehlampe
+            - light.ecklampe_wohnzimmer
+        data:
+          brightness_pct: 5
+          transition: 2
