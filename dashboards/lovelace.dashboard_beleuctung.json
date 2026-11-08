@@ -22,10 +22,10 @@
                 },
                 {
                   "type": "custom:mushroom-template-card",
-                  "primary": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht','light.teelichter_esszimmer'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{% if on|count == 0 %}Alle Lichter aus{% elif on|count == 1 %}1 Licht an{% else %}{{ on|count }} Lichter an{% endif %}",
-                  "secondary": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht','light.teelichter_esszimmer'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{{ on | join(', ') if on|count > 0 else 'Alles dunkel' }}",
-                  "icon": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht','light.teelichter_esszimmer'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{{ 'mdi:lightbulb-on' if on|count > 0 else 'mdi:lightbulb-off-outline' }}",
-                  "icon_color": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht','light.teelichter_esszimmer'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{{ 'amber' if on|count > 0 else 'grey' }}",
+                  "primary": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht','light.teelichter_esszimmer','light.teelichter_schlafzimmer'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{% if on|count == 0 %}Alle Lichter aus{% elif on|count == 1 %}1 Licht an{% else %}{{ on|count }} Lichter an{% endif %}",
+                  "secondary": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht','light.teelichter_esszimmer','light.teelichter_schlafzimmer'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{{ on | join(', ') if on|count > 0 else 'Alles dunkel' }}",
+                  "icon": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht','light.teelichter_esszimmer','light.teelichter_schlafzimmer'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{{ 'mdi:lightbulb-on' if on|count > 0 else 'mdi:lightbulb-off-outline' }}",
+                  "icon_color": "{% set on = ['light.wohnzimmerlicht','light.stehlampe','light.ecklampe_wohnzimmer','light.schlafzimmerlicht','light.nachttischlampe','light.badezimmerlicht','light.badezimmerlicht_hintergrundbeleuchtung','light.kuche_schaltausgang_kuchenlicht','light.esszimmerlicht','light.schalter_flurlicht','light.ambilight_buro','light.terrassenlicht','light.teelichter_esszimmer','light.teelichter_schlafzimmer'] | select('is_state','on') | map('state_attr','friendly_name') | list %}{{ 'amber' if on|count > 0 else 'grey' }}",
                   "multiline_secondary": true,
                   "tap_action": {
                     "action": "none"
@@ -58,7 +58,8 @@
                         "light.schalter_flurlicht",
                         "light.ambilight_buro",
                         "light.terrassenlicht",
-                        "light.teelichter_esszimmer"
+                        "light.teelichter_esszimmer",
+                        "light.teelichter_schlafzimmer"
                       ]
                     },
                     "confirmation": {
@@ -193,6 +194,29 @@
                   "show_color_temp_control": true,
                   "show_color_control": true,
                   "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-light-card",
+                  "entity": "light.teelichter_schlafzimmer",
+                  "name": "Teelichter",
+                  "icon": "mdi:candle",
+                  "show_brightness_control": true,
+                  "collapsible_controls": true,
+                  "grid_options": {
+                    "rows": "auto",
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-select-card",
+                  "entity": "input_select.teelichter_schlafzimmer_modus",
+                  "name": "Teelichter Modus",
+                  "icon": "mdi:candle",
+                  "icon_color": "amber",
                   "grid_options": {
                     "rows": "auto",
                     "columns": 12

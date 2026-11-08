@@ -6,6 +6,8 @@
     "config": {
       "views": [
         {
+          "title": "Tools",
+          "path": "tools",
           "type": "sections",
           "sections": [
             {
@@ -13,16 +15,15 @@
               "cards": [
                 {
                   "type": "heading",
-                  "heading": "New section"
+                  "heading": "Zahnbürste",
+                  "icon": "mdi:toothbrush-electric"
                 },
                 {
-                  "type": "tile",
-                  "entity": "update.toothbrush_card_update",
-                  "features": [
-                    {
-                      "type": "update-actions"
-                    }
-                  ]
+                  "type": "custom:toothbrush-card",
+                  "device_id": "833e091ecb86671792406d0408044a45",
+                  "grid_options": {
+                    "columns": "full"
+                  }
                 }
               ]
             }
