@@ -66,12 +66,15 @@ scene:
         state: "off"
       light.esszimmerlicht:
         state: "off"
+      # Rot-Orange, Werte von Marcel in der Tuya-App eingestellt (08.11.)
       light.stehlampe:
         state: "on"
         brightness: 38
+        hs_color: [25, 100]
       light.ecklampe_wohnzimmer:
         state: "on"
         brightness: 77
+        hs_color: [29, 100]
       fan.brunnen_wohnzimmer_brunnen_wohnzimmer:
         state: "off"
 
