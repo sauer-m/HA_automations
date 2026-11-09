@@ -1,0 +1,618 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.dashboard_mova",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "title": "Mova",
+          "path": "mova",
+          "icon": "mdi:robot-vacuum",
+          "type": "sections",
+          "max_columns": 3,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Status & Steuerung",
+                  "icon": "mdi:robot-vacuum"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "vacuum.p50_pro_ultra",
+                  "primary": "Mova · {{ state_translated('vacuum.p50_pro_ultra') }}",
+                  "secondary": "{% if is_state('vacuum.p50_pro_ultra','cleaning') or is_state('vacuum.p50_pro_ultra','paused') %}Raum: {{ states('sensor.p50_pro_ultra_current_room') }} · {{ states('sensor.p50_pro_ultra_cleaned_area') }} m² · {{ states('sensor.p50_pro_ultra_cleaning_time') }} min{% else %}Station: {{ state_translated('sensor.p50_pro_ultra_state') }}{% endif %}{% if not is_state('sensor.p50_pro_ultra_error','no_error') %} · ⚠ {{ state_translated('sensor.p50_pro_ultra_error') }}{% endif %}",
+                  "icon": "{% set s = states('vacuum.p50_pro_ultra') %}{{ {'cleaning':'mdi:robot-vacuum','returning':'mdi:home-import-outline','paused':'mdi:pause-circle','error':'mdi:robot-vacuum-alert','docked':'mdi:home-battery'}.get(s,'mdi:robot-vacuum-variant') }}",
+                  "color": "{% set s = states('vacuum.p50_pro_ultra') %}{{ {'cleaning':'teal','returning':'blue','paused':'amber','error':'red','docked':'green','idle':'grey'}.get(s,'grey') }}",
+                  "badge_icon": "{{ 'mdi:battery-charging' if is_state('binary_sensor.p50_pro_ultra_charging_state','on') else 'mdi:battery' }}",
+                  "badge_text": "{{ states('sensor.p50_pro_ultra_battery_level') }}%",
+                  "badge_color": "{% set b = states('sensor.p50_pro_ultra_battery_level')|int(0) %}{{ 'green' if b > 50 else 'amber' if b > 20 else 'red' }}",
+                  "multiline_secondary": true,
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Start",
+                  "icon": "mdi:play",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') else 'grey' }}",
+                  "content_layout": "vertical",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.start",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 4,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Pause",
+                  "icon": "mdi:pause",
+                  "color": "{{ 'amber' if is_state('vacuum.p50_pro_ultra','paused') else 'grey' }}",
+                  "content_layout": "vertical",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.pause",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 4,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Stopp & Station",
+                  "icon": "mdi:home-import-outline",
+                  "color": "{{ 'blue' if is_state('vacuum.p50_pro_ultra','returning') else 'grey' }}",
+                  "content_layout": "vertical",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.return_to_base",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "confirmation": {
+                      "text": "Reinigung abbrechen und Mova zur Station schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 4,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_battery_level",
+                  "name": "Akku",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Karte",
+                  "icon": "mdi:map"
+                },
+                {
+                  "type": "picture-entity",
+                  "entity": "camera.p50_pro_ultra_map",
+                  "camera_view": "auto",
+                  "show_name": false,
+                  "show_state": false,
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Raum reinigen",
+                  "icon": "mdi:floor-plan"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Flur",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Flur') else '' }}",
+                  "icon": "mdi:foot-print",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Flur') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 5
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Flur schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Wohnzimmer",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Wohnzimmer') else '' }}",
+                  "icon": "mdi:sofa-outline",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Wohnzimmer') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 8
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Wohnzimmer schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Esszimmer",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Esszimmer') else '' }}",
+                  "icon": "mdi:silverware-fork-knife",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Esszimmer') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 7
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Esszimmer schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Büro",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Büro') else '' }}",
+                  "icon": "mdi:monitor-shimmer",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Büro') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 6
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Büro schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Schlafzimmer",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Schlafzimmer') else '' }}",
+                  "icon": "mdi:bed-outline",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Schlafzimmer') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 4
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Schlafzimmer schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Bad",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Bad') else '' }}",
+                  "icon": "mdi:shower-head",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Bad') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 1
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Bad schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Küche",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Küche') else '' }}",
+                  "icon": "mdi:chef-hat",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Küche') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 10
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Küche schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Abstellkammer",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Abstellkammer') else '' }}",
+                  "icon": "mdi:door",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Abstellkammer') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 9
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Abstellkammer schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Reinigungsmodus",
+                  "icon": "mdi:tune-variant"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_cleangenius",
+                  "name": "CleanGenius",
+                  "icon": "mdi:brain",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_cleangenius",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_cleangenius_mode",
+                  "name": "CleanGenius-Modus",
+                  "icon": "mdi:broom",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_cleangenius_mode",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_cleaning_mode",
+                  "name": "Reinigungsart",
+                  "icon": "mdi:broom",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_cleaning_mode",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_suction_level",
+                  "name": "Saugstärke",
+                  "icon": "mdi:fan",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_suction_level",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_mop_pad_humidity",
+                  "name": "Wischfeuchte",
+                  "icon": "mdi:water-percent",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_mop_pad_humidity",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_water_temperature",
+                  "name": "Wassertemperatur",
+                  "icon": "mdi:thermometer-water",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_water_temperature",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Station & Wartung",
+                  "icon": "mdi:wrench-cog"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_self_wash_base_status",
+                  "name": "Station",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_low_water_warning",
+                  "name": "Wasser",
+                  "icon": "mdi:water-alert",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_main_brush_left",
+                  "name": "Hauptbürste",
+                  "icon": "mdi:brush",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_side_brush_left",
+                  "name": "Seitenbürste",
+                  "icon": "mdi:pinwheel-outline",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_filter_left",
+                  "name": "Filter",
+                  "icon": "mdi:air-filter",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_sensor_dirty_left",
+                  "name": "Sensoren",
+                  "icon": "mdi:eye-outline",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_wheel_dirty_left",
+                  "name": "Räder",
+                  "icon": "mdi:tire",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_scale_inhibitor_left",
+                  "name": "Kalkschutz",
+                  "icon": "mdi:water-outline",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
