@@ -290,22 +290,3 @@ teelichter_schlafzimmer_setzen:
       entity_id: input_number.teelichter_schlafzimmer_dimmstufe
     data:
       value: '{{ ziel }}'
-staubsauger_anhalten:
-  alias: Staubsauger anhalten
-  description: Pausiert den Mova P50 (für Alexa über Matter Hub).
-  icon: mdi:pause
-  mode: single
-  sequence:
-  - action: vacuum.pause
-    target:
-      entity_id: vacuum.p50_pro_ultra
-staubsauger_ausschalten:
-  alias: Staubsauger ausschalten
-  description: Bricht die Reinigung des Mova P50 ab und schickt ihn zur Station (für
-    Alexa über Matter Hub).
-  icon: mdi:home-import-outline
-  mode: single
-  sequence:
-  - action: vacuum.return_to_base
-    target:
-      entity_id: vacuum.p50_pro_ultra
