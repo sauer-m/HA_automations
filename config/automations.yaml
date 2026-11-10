@@ -1264,3 +1264,25 @@
         tag: haushalt-faellig
         clickAction: /dashboard-beleuctung/haushalt
   mode: single
+- id: '1794305831938'
+  alias: Prusa XL - Druckenergie bei Druckstart zurücksetzen
+  description: Setzt sensor.prusa_xl_druck_energie bei jedem neuen Druck auf 0. Fortsetzen
+    nach Pause oder Rückkehr aus unavailable zählt nicht als neuer Druck. Basis für
+    Kosten pro Druck (Fabrication-Karte).
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: sensor.prusa_xl
+    to: printing
+    not_from:
+    - paused
+    - attention
+    - unavailable
+    - unknown
+  conditions: []
+  actions:
+  - action: utility_meter.calibrate
+    target:
+      entity_id: sensor.prusa_xl_druck_energie
+    data:
+      value: '0'
