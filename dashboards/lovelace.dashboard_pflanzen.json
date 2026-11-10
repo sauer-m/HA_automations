@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.dashboard_pflanzen",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "title": "Pflanzen",
+          "path": "pflanzen",
+          "type": "sections",
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Wohnzimmer",
+                  "icon": "mdi:sofa"
+                },
+                {
+                  "type": "custom:flower-card",
+                  "entity": "plant.monstera_wohnzimmer",
+                  "battery_sensor": "sensor.pflanze_monstera_wohnzimmer_battery_state",
+                  "show_bars": [
+                    "moisture",
+                    "illuminance",
+                    "temperature",
+                    "humidity",
+                    "dli"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

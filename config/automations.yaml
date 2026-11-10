@@ -1225,7 +1225,7 @@
     von November bis März auf den 1. April verschoben statt gemeldet (Marcel, 08.11.2026).
   triggers:
   - trigger: time
-    at: 09:00:00
+    at: '09:00:00'
   actions:
   - action: home_tasks.get_tasks
     data:
@@ -1286,3 +1286,32 @@
       entity_id: sensor.prusa_xl_druck_energie
     data:
       value: '0'
+- id: '1794305839828'
+  alias: 'Pflanzen: Gießerinnerung'
+  description: Jeden Morgen um 9 Uhr Push an Marcel mit allen Pflanzen (Plant Monitor, domain
+    plant), deren Bodenfeuchte unter dem OpenPlantbook-Minimum liegt. Iteriert über states.plant,
+    damit neue Pflanzen automatisch dabei sind (Marcel, 10.11.2026).
+  triggers:
+  - trigger: time
+    at: '09:00:00'
+  actions:
+  - variables:
+      durstig: '{{ states.plant | selectattr(''attributes.moisture_status'', ''defined'')
+        | selectattr(''attributes.moisture_status'', ''eq'', ''Low'') | list }}'
+    note: Alle Pflanzen mit zu trockener Erde, egal wie viele es gibt
+  - condition: template
+    value_template: '{{ durstig | count > 0 }}'
+    note: 'Template nötig: Die Pflanzenliste ist dynamisch, kein natives Pendant'
+  - action: notify.mobile_app_sm_f741b
+    data:
+      title: 🌿 {{ durstig | count }} {{ 'Pflanze braucht' if durstig | count == 1 else 'Pflanzen
+        brauchen' }} Wasser
+      message: '{% for p in durstig %}{% set m = p.attributes.problems | default([]) | selectattr(''sensor_type'',
+        ''eq'', ''moisture'') | first %}• {{ p.name }}{% if m %} ({{ m.current | float | round(0)
+        | int }} %, min {{ m.min }} %){% endif %}
+
+        {% endfor %}'
+      data:
+        tag: pflanzen-giessen
+        clickAction: /dashboard-pflanzen/pflanzen
+  mode: single
