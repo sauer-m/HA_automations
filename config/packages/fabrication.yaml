@@ -1,14 +1,21 @@
-# Home-Assistant-Package: Fabrication (Prusa XL, FilaMan, FilaBridge)
+# Home-Assistant-Package: Fabrication (Drucker, FilaMan, FilaBridge)
 # Installation: /config/packages/fabrication.yaml
 #
 # Datenquellen (LAN, ohne Auth):
 #   FilaMan Spoolman-API  http://192.168.1.10:8085/spoolman/api/v1
 #   FilaBridge            http://192.168.1.10:5010/api
+#
+# Lagerlogik: Jede Spule hat in FilaMan genau einen Lagerort (String).
+#   - Beginnt der Ort mit einem Druckernamen aus DRUCKER, gilt die Spule als
+#     "geladen" in diesem Drucker und zählt zu dessen Standort.
+#   - Sonst zählt der Ort zum Standort, mit dessen Namen er beginnt
+#     (z. B. "Werkstatt - Regal"), sonst zu "ohne Ort".
+# Neuer Drucker / neuer Standort = Eintrag in den Variablen drucker / standort_liste.
 # FilaBridge zählt Köpfe ab 0: Toolhead 0 = XL-Kopf 1, Toolhead 1 = XL-Kopf 2.
 
 rest_command:
   filaman_spulen:
-    url: http://192.168.1.10:8085/spoolman/api/v1/spool
+    url: http://192.168.1.10:8085/spoolman/api/v1/spool?allow_archived=true
     method: get
     timeout: 10
   filabridge_status:
@@ -42,28 +49,41 @@ template:
         response_variable: fb
         continue_on_error: true
       - variables:
+          # --- Konfiguration ---------------------------------------------
+          standort_liste: ["Werkstatt", "Wohnung"]
+          drucker:
+            - {name: "Prusa XL", standort: "Werkstatt", slots: 5}
+            - {name: "H2C", standort: "Wohnung", slots: 24}
+            - {name: "A1 Mini", standort: "Wohnung", slots: 4}
+          schwelle_g: 150
+          # ----------------------------------------------------------------
           ok: "{{ fm is defined and fm.status == 200 and fm.content is list }}"
+          alle: "{{ fm.content if ok else [] }}"
           spulen: >-
             {% set ns = namespace(l=[]) %}
-            {% if fm is defined and fm.status == 200 and fm.content is list %}
-              {% for s in fm.content if not s.get('archived', false) %}
-                {% set f = s.get('filament', {}) %}
-                {% set w = s.get('initial_weight') or f.get('weight') or 0 %}
-                {% set p = s.get('price') if s.get('price') is not none else f.get('price') %}
-                {% set ns.l = ns.l + [{
-                  'id': s.id,
-                  'name': f.get('name', ''),
-                  'hersteller': (f.get('vendor') or {}).get('name', ''),
-                  'material': f.get('material', ''),
-                  'farbe': '#' ~ (f.get('color_hex') or '888888'),
-                  'rest_g': (s.get('remaining_weight') or 0) | round(1),
-                  'verbraucht_g': (s.get('used_weight') or 0) | round(1),
-                  'gewicht_g': w,
-                  'eur_pro_g': ((p / w) | round(4)) if (p and w) else none,
-                  'ort': s.get('location') or ''
-                }] %}
-              {% endfor %}
-            {% endif %}
+            {% for s in alle if not s.get('archived', false) %}
+              {% set f = s.get('filament', {}) %}
+              {% set w = s.get('initial_weight') or f.get('weight') or 0 %}
+              {% set p = s.get('price') if s.get('price') is not none else f.get('price') %}
+              {% set ort = s.get('location') or '' %}
+              {% set d = drucker | selectattr('name', 'in', [ort.split(' - ')[0]]) | first | default(none) %}
+              {% set so = d.standort if d else
+                 (standort_liste | select('in', [ort.split(' - ')[0]]) | first | default('ohne Ort')) %}
+              {% set ns.l = ns.l + [{
+                'id': s.id,
+                'name': f.get('name', ''),
+                'hersteller': (f.get('vendor') or {}).get('name', ''),
+                'material': f.get('material', ''),
+                'farbe': '#' ~ (f.get('color_hex') or '888888'),
+                'rest_g': (s.get('remaining_weight') or 0) | round(1),
+                'verbraucht_g': (s.get('used_weight') or 0) | round(1),
+                'gewicht_g': w,
+                'eur_pro_g': ((p / w) | round(4)) if (p and w) else none,
+                'ort': ort,
+                'standort': so,
+                'drucker': d.name if d else none
+              }] %}
+            {% endfor %}
             {{ ns.l }}
           kopf: >-
             {% set ns = namespace(m={}) %}
@@ -86,6 +106,97 @@ template:
           gesamt_rest_g: >-
             {{ (spulen | map(attribute='rest_g') | sum | round(0)) if ok
                else this.attributes.get('gesamt_rest_g') }}
+          lagerwert_eur: >-
+            {% if ok %}
+              {% set ns = namespace(e=0) %}
+              {% for s in spulen %}{% set ns.e = ns.e + s.rest_g * (s.eur_pro_g or 0) %}{% endfor %}
+              {{ ns.e | round(2) }}
+            {% else %}{{ this.attributes.get('lagerwert_eur') }}{% endif %}
+          # Liste je Standort: name, rest_g, wert_eur, regal (Anzahl), drucker [[name, belegt, slots]]
+          standorte: >-
+            {% if ok %}
+              {% set ns = namespace(l=[]) %}
+              {% for so in standort_liste + (['ohne Ort'] if spulen | selectattr('standort', 'eq', 'ohne Ort') | list | count else []) %}
+                {% set sp = spulen | selectattr('standort', 'eq', so) | list %}
+                {% set w = namespace(e=0) %}
+                {% for s in sp %}{% set w.e = w.e + s.rest_g * (s.eur_pro_g or 0) %}{% endfor %}
+                {% set dl = namespace(l=[]) %}
+                {% for d in drucker | selectattr('standort', 'eq', so) %}
+                  {% set dl.l = dl.l + [[d.name, sp | selectattr('drucker', 'eq', d.name) | list | count, d.slots]] %}
+                {% endfor %}
+                {% set ns.l = ns.l + [{
+                  'name': so,
+                  'rest_g': sp | map(attribute='rest_g') | sum | round(0),
+                  'wert_eur': w.e | round(2),
+                  'spulen': sp | count,
+                  'regal': sp | selectattr('drucker', 'none') | list | count,
+                  'drucker': dl.l
+                }] %}
+              {% endfor %}
+              {{ ns.l }}
+            {% else %}{{ this.attributes.get('standorte', []) }}{% endif %}
+          # Bestand je Filament (Hersteller + Name + Material) über alle Standorte
+          bestand: >-
+            {% if ok %}
+              {% set ns = namespace(l=[]) %}
+              {% set seen = namespace(k=[]) %}
+              {% for s in spulen %}
+                {% set k = s.hersteller ~ '|' ~ s.name ~ '|' ~ s.material %}
+                {% if k not in seen.k %}
+                  {% set seen.k = seen.k + [k] %}
+                  {% set gl = spulen | selectattr('hersteller', 'eq', s.hersteller)
+                                     | selectattr('name', 'eq', s.name)
+                                     | selectattr('material', 'eq', s.material) | list %}
+                  {% set je = namespace(l=[]) %}
+                  {% for so in standort_liste + ['ohne Ort'] %}
+                    {% set je.l = je.l + [[so, gl | selectattr('standort', 'eq', so) | map(attribute='rest_g') | sum | round(0)]] %}
+                  {% endfor %}
+                  {% set ns.l = ns.l + [{
+                    'filament': (s.hersteller ~ ' ' ~ s.name) | trim,
+                    'material': s.material,
+                    'farbe': s.farbe,
+                    'je_standort': je.l,
+                    'summe_g': gl | map(attribute='rest_g') | sum | round(0)
+                  }] %}
+                {% endif %}
+              {% endfor %}
+              {{ ns.l | sort(attribute='summe_g', reverse=true) }}
+            {% else %}{{ this.attributes.get('bestand', []) }}{% endif %}
+          nachkauf: >-
+            {% if ok %}
+              {{ this.attributes.get('bestand', []) | selectattr('summe_g', 'lt', schwelle_g)
+                 | map(attribute='filament') | list }}
+            {% else %}{{ this.attributes.get('nachkauf', []) }}{% endif %}
+          schwelle_g: "{{ schwelle_g }}"
+
+      # Zähler für utility_meter (Monat): Summe aller je verbrauchten Gramm,
+      # inklusive archivierter Spulen, damit Archivieren den Zähler nicht senkt.
+      - name: FilaMan Verbrauch gesamt
+        unique_id: fabrication_filaman_verbrauch_gesamt
+        icon: mdi:counter
+        unit_of_measurement: g
+        device_class: weight
+        state_class: total_increasing
+        state: >-
+          {{ (alle | map(attribute='used_weight') | map('float', 0) | sum | round(1)) if ok else this.state }}
+
+      - name: FilaMan Verbrauchskosten gesamt
+        unique_id: fabrication_filaman_verbrauchskosten_gesamt
+        icon: mdi:cash
+        unit_of_measurement: EUR
+        device_class: monetary
+        state_class: total
+        state: >-
+          {% if ok %}
+            {% set ns = namespace(e=0) %}
+            {% for s in alle %}
+              {% set f = s.get('filament', {}) %}
+              {% set w = s.get('initial_weight') or f.get('weight') or 0 %}
+              {% set p = s.get('price') if s.get('price') is not none else f.get('price') %}
+              {% if p and w %}{% set ns.e = ns.e + (s.get('used_weight') or 0) * p / w %}{% endif %}
+            {% endfor %}
+            {{ ns.e | round(2) }}
+          {% else %}{{ this.state }}{% endif %}
 
       - name: Prusa XL Kopf 1 Spule
         unique_id: fabrication_prusa_xl_kopf_1_spule
@@ -107,9 +218,9 @@ template:
           spule_id: "{{ kopf['2'] }}"
           spule: "{{ spulen | selectattr('id', 'eq', kopf['2']) | first | default(none) }}"
 
-      # Filamentkosten des laufenden/letzten Drucks: Differenz des Verbrauchs aller
-      # Spulen seit Druckstart × €/g. FilaBridge bucht am Druckende, also steht der
-      # Wert erst nach dem Druck.
+      # Filamentkosten des laufenden/letzten Prusa-XL-Drucks: Verbrauchsdifferenz
+      # der im Prusa XL geladenen Spulen seit Druckstart × €/g. FilaBridge bucht am
+      # Druckende, also steht der Wert erst nach dem Druck.
       - name: Prusa XL Druck Filamentkosten
         unique_id: fabrication_prusa_xl_druck_filamentkosten
         icon: mdi:printer-3d-nozzle
@@ -121,7 +232,7 @@ template:
           {% else %}
             {% set base = this.attributes.get('basis', []) %}
             {% set ns = namespace(eur=0) %}
-            {% for s in spulen %}
+            {% for s in spulen | selectattr('drucker', 'eq', 'Prusa XL') %}
               {% set b = base | selectattr('0', 'eq', s.id) | map(attribute='1') | first | default(s.verbraucht_g) %}
               {% set ns.eur = ns.eur + ([s.verbraucht_g - b, 0] | max) * (s.eur_pro_g or 0) %}
             {% endfor %}
@@ -140,7 +251,7 @@ template:
             {% else %}
               {% set base = this.attributes.get('basis', []) %}
               {% set ns = namespace(g=0) %}
-              {% for s in spulen %}
+              {% for s in spulen | selectattr('drucker', 'eq', 'Prusa XL') %}
                 {% set b = base | selectattr('0', 'eq', s.id) | map(attribute='1') | first | default(s.verbraucht_g) %}
                 {% set ns.g = ns.g + ([s.verbraucht_g - b, 0] | max) %}
               {% endfor %}
