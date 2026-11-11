@@ -1,0 +1,148 @@
+# Home-Assistant-Package: Fabrication (Prusa XL, FilaMan, FilaBridge)
+# Installation: /config/packages/fabrication.yaml
+#
+# Datenquellen (LAN, ohne Auth):
+#   FilaMan Spoolman-API  http://192.168.1.10:8085/spoolman/api/v1
+#   FilaBridge            http://192.168.1.10:5010/api
+# FilaBridge zählt Köpfe ab 0: Toolhead 0 = XL-Kopf 1, Toolhead 1 = XL-Kopf 2.
+
+rest_command:
+  filaman_spulen:
+    url: http://192.168.1.10:8085/spoolman/api/v1/spool
+    method: get
+    timeout: 10
+  filabridge_status:
+    url: http://192.168.1.10:5010/api/status
+    method: get
+    timeout: 10
+
+template:
+  - triggers:
+      - trigger: time_pattern
+        minutes: /2
+        id: poll
+      - trigger: homeassistant
+        event: start
+        id: poll
+      - trigger: state
+        entity_id: sensor.prusa_xl
+        to: printing
+        not_from: [paused, attention, unavailable, unknown]
+        id: druckstart
+      - trigger: state
+        entity_id: sensor.prusa_xl
+        to: finished
+        for: "00:01:00"
+        id: poll
+    actions:
+      - action: rest_command.filaman_spulen
+        response_variable: fm
+        continue_on_error: true
+      - action: rest_command.filabridge_status
+        response_variable: fb
+        continue_on_error: true
+      - variables:
+          ok: "{{ fm is defined and fm.status == 200 and fm.content is list }}"
+          spulen: >-
+            {% set ns = namespace(l=[]) %}
+            {% if fm is defined and fm.status == 200 and fm.content is list %}
+              {% for s in fm.content if not s.get('archived', false) %}
+                {% set f = s.get('filament', {}) %}
+                {% set w = s.get('initial_weight') or f.get('weight') or 0 %}
+                {% set p = s.get('price') if s.get('price') is not none else f.get('price') %}
+                {% set ns.l = ns.l + [{
+                  'id': s.id,
+                  'name': f.get('name', ''),
+                  'hersteller': (f.get('vendor') or {}).get('name', ''),
+                  'material': f.get('material', ''),
+                  'farbe': '#' ~ (f.get('color_hex') or '888888'),
+                  'rest_g': (s.get('remaining_weight') or 0) | round(1),
+                  'verbraucht_g': (s.get('used_weight') or 0) | round(1),
+                  'gewicht_g': w,
+                  'eur_pro_g': ((p / w) | round(4)) if (p and w) else none,
+                  'ort': s.get('location') or ''
+                }] %}
+              {% endfor %}
+            {% endif %}
+            {{ ns.l }}
+          kopf: >-
+            {% set ns = namespace(m={}) %}
+            {% if fb is defined and fb.status == 200 and fb.content is mapping %}
+              {% set maps = (fb.content.get('toolhead_mappings') or {}).values() | list %}
+              {% if maps | count > 0 %}
+                {% set ns.m = maps[0] %}
+              {% endif %}
+            {% endif %}
+            {{ {'1': (ns.m.get('0') or {}).get('spool_id', 0),
+                '2': (ns.m.get('1') or {}).get('spool_id', 0)} }}
+    sensor:
+      - name: FilaMan Spulen
+        unique_id: fabrication_filaman_spulen
+        icon: mdi:printer-3d-nozzle-outline
+        unit_of_measurement: Spulen
+        state: "{{ spulen | count if ok else this.state }}"
+        attributes:
+          spulen: "{{ spulen if ok else this.attributes.get('spulen', []) }}"
+          gesamt_rest_g: >-
+            {{ (spulen | map(attribute='rest_g') | sum | round(0)) if ok
+               else this.attributes.get('gesamt_rest_g') }}
+
+      - name: Prusa XL Kopf 1 Spule
+        unique_id: fabrication_prusa_xl_kopf_1_spule
+        icon: mdi:numeric-1-circle-outline
+        state: >-
+          {% set s = spulen | selectattr('id', 'eq', kopf['1']) | first | default(none) %}
+          {{ (s.hersteller ~ ' ' ~ s.name) if s else ('leer' if ok else this.state) }}
+        attributes:
+          spule_id: "{{ kopf['1'] }}"
+          spule: "{{ spulen | selectattr('id', 'eq', kopf['1']) | first | default(none) }}"
+
+      - name: Prusa XL Kopf 2 Spule
+        unique_id: fabrication_prusa_xl_kopf_2_spule
+        icon: mdi:numeric-2-circle-outline
+        state: >-
+          {% set s = spulen | selectattr('id', 'eq', kopf['2']) | first | default(none) %}
+          {{ (s.hersteller ~ ' ' ~ s.name) if s else ('leer' if ok else this.state) }}
+        attributes:
+          spule_id: "{{ kopf['2'] }}"
+          spule: "{{ spulen | selectattr('id', 'eq', kopf['2']) | first | default(none) }}"
+
+      # Filamentkosten des laufenden/letzten Drucks: Differenz des Verbrauchs aller
+      # Spulen seit Druckstart × €/g. FilaBridge bucht am Druckende, also steht der
+      # Wert erst nach dem Druck.
+      - name: Prusa XL Druck Filamentkosten
+        unique_id: fabrication_prusa_xl_druck_filamentkosten
+        icon: mdi:printer-3d-nozzle
+        unit_of_measurement: EUR
+        device_class: monetary
+        state: >-
+          {% if not ok %}{{ this.state }}
+          {% elif trigger.id == 'druckstart' %}0
+          {% else %}
+            {% set base = this.attributes.get('basis', []) %}
+            {% set ns = namespace(eur=0) %}
+            {% for s in spulen %}
+              {% set b = base | selectattr('0', 'eq', s.id) | map(attribute='1') | first | default(s.verbraucht_g) %}
+              {% set ns.eur = ns.eur + ([s.verbraucht_g - b, 0] | max) * (s.eur_pro_g or 0) %}
+            {% endfor %}
+            {{ ns.eur | round(2) }}
+          {% endif %}
+        attributes:
+          basis: >-
+            {% if ok and (trigger.id == 'druckstart' or this.attributes.get('basis') is none) %}
+              {% set ns = namespace(l=[]) %}
+              {% for s in spulen %}{% set ns.l = ns.l + [[s.id, s.verbraucht_g]] %}{% endfor %}
+              {{ ns.l }}
+            {% else %}{{ this.attributes.get('basis', []) }}{% endif %}
+          gramm: >-
+            {% if not ok %}{{ this.attributes.get('gramm', 0) }}
+            {% elif trigger.id == 'druckstart' %}0
+            {% else %}
+              {% set base = this.attributes.get('basis', []) %}
+              {% set ns = namespace(g=0) %}
+              {% for s in spulen %}
+                {% set b = base | selectattr('0', 'eq', s.id) | map(attribute='1') | first | default(s.verbraucht_g) %}
+                {% set ns.g = ns.g + ([s.verbraucht_g - b, 0] | max) %}
+              {% endfor %}
+              {{ ns.g | round(1) }}
+            {% endif %}
