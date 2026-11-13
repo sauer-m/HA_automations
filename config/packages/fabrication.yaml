@@ -342,6 +342,34 @@ template:
                 'g': (summe_alt.get('g', 0)
                       + (neu | map(attribute='g') | map('float', 0) | sum)
                       - (weg | map(attribute='g') | map('float', 0) | sum)) | round(1)} }}
+          # Summen je Zeitraum und Drucker, unabhängig von der 50er-Liste:
+          # Zeilen [schluessel, drucker, anzahl, gesamt, strom, filament, g],
+          # schluessel = JJJJ, JJJJ-MM oder JJJJ-MM-TT (Tage nur 40 Tage lang).
+          perioden_neu: >-
+            {% set vorhanden = state_attr('sensor.druck_historie', 'perioden') %}
+            {% set ops = namespace(l=[]) %}
+            {% if vorhanden is none %}
+              {% for e in alt | rejectattr('ende', 'in', ersetzt) %}{% set ops.l = ops.l + [[e, 1]] %}{% endfor %}
+            {% endif %}
+            {% for e in neu %}{% set ops.l = ops.l + [[e, 1]] %}{% endfor %}
+            {% for e in weg %}{% set ops.l = ops.l + [[e, -1]] %}{% endfor %}
+            {% set ns = namespace(rows=(vorhanden or [])) %}
+            {% for op in ops.l %}
+              {% set e = op[0] %}{% set v = op[1] %}
+              {% for k in [e.ende[:4], e.ende[:7], e.ende[:10]] %}
+                {% set r = ns.rows | selectattr('0', 'eq', k) | selectattr('1', 'eq', e.drucker) | first
+                           | default([k, e.drucker, 0, 0, 0, 0, 0]) %}
+                {% set ns.rows = (ns.rows | reject('eq', r) | list) + [[k, e.drucker,
+                    r[2] + v,
+                    (r[3] + v * (e.gesamt | float(0))) | round(2),
+                    (r[4] + v * (e.strom | float(0))) | round(2),
+                    (r[5] + v * (e.filament | float(0))) | round(2),
+                    (r[6] + v * (e.g | float(0))) | round(1)]] %}
+              {% endfor %}
+            {% endfor %}
+            {% set grenze = (now() - timedelta(days=40)).strftime('%Y-%m-%d') %}
+            {{ ns.rows | rejectattr('0', 'lt', grenze) | list
+               + (ns.rows | selectattr('0', 'lt', grenze) | rejectattr('0', 'search', '^\d{4}-\d{2}-\d{2}$') | list) }}
     sensor:
       - name: Druck Historie
         unique_id: fabrication_druck_historie
@@ -362,3 +390,4 @@ template:
             {% elif art == 'ende' %}{{ rest }}{% else %}{{ laufend_alt }}{% endif %}
           # Laufende Summe seit Beginn (bleibt, auch wenn alte Einträge rausfallen).
           summe: "{{ summe_neu }}"
+          perioden: "{{ perioden_neu | sort(attribute='0', reverse=true) | list }}"
