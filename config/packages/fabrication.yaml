@@ -76,7 +76,7 @@ template:
                 'material': f.get('material', ''),
                 'farbe': '#' ~ (f.get('color_hex') or '888888'),
                 'rest_g': (s.get('remaining_weight') or 0) | round(1),
-                'verbraucht_g': (s.get('used_weight') or 0) | round(1),
+                'verbraucht_g': ([w - (s.get('remaining_weight') or w), 0] | max | round(1)) if w else ((s.get('used_weight') or 0) | round(1)),
                 'gewicht_g': w,
                 'eur_pro_g': ((p / w) | round(4)) if (p and w) else none,
                 'ort': ort,
@@ -169,7 +169,8 @@ template:
             {% else %}{{ this.attributes.get('nachkauf', []) }}{% endif %}
           schwelle_g: "{{ schwelle_g }}"
 
-      # Zähler für utility_meter (Monat): Summe aller je verbrauchten Gramm,
+      # Zähler für utility_meter (Monat): Summe aller je verbrauchten Gramm
+      # (Anfangsgewicht − Rest; FilaMan meldet used_weight ohne Leerspulengewicht als 0),
       # inklusive archivierter Spulen, damit Archivieren den Zähler nicht senkt.
       - name: FilaMan Verbrauch gesamt
         unique_id: fabrication_filaman_verbrauch_gesamt
@@ -178,7 +179,15 @@ template:
         device_class: weight
         state_class: total_increasing
         state: >-
-          {{ (alle | map(attribute='used_weight') | map('float', 0) | sum | round(1)) if ok else this.state }}
+          {% if ok %}
+            {% set ns = namespace(g=0) %}
+            {% for s in alle %}
+              {% set f = s.get('filament', {}) %}
+              {% set w = s.get('initial_weight') or f.get('weight') or 0 %}
+              {% set ns.g = ns.g + (([w - (s.get('remaining_weight') or w), 0] | max) if w else (s.get('used_weight') or 0)) %}
+            {% endfor %}
+            {{ ns.g | round(1) }}
+          {% else %}{{ this.state }}{% endif %}
 
       - name: FilaMan Verbrauchskosten gesamt
         unique_id: fabrication_filaman_verbrauchskosten_gesamt
@@ -193,7 +202,7 @@ template:
               {% set f = s.get('filament', {}) %}
               {% set w = s.get('initial_weight') or f.get('weight') or 0 %}
               {% set p = s.get('price') if s.get('price') is not none else f.get('price') %}
-              {% if p and w %}{% set ns.e = ns.e + (s.get('used_weight') or 0) * p / w %}{% endif %}
+              {% if p and w %}{% set ns.e = ns.e + ([w - (s.get('remaining_weight') or w), 0] | max) * p / w %}{% endif %}
             {% endfor %}
             {{ ns.e | round(2) }}
           {% else %}{{ this.state }}{% endif %}
