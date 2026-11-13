@@ -257,3 +257,99 @@ template:
               {% endfor %}
               {{ ns.g | round(1) }}
             {% endif %}
+
+  # ---------------------------------------------------------------------------
+  # Druckhistorie aller Drucker (neueste zuerst, max. 50 Einträge).
+  # Start: merkt Datei und Startzeit (Dateiname ist am Druckende schon weg).
+  # Ende: 3 min nach finished/stopped, damit FilaBridge gebucht und der
+  # FilaMan-Abruf (finished + 1 min) die Filamentkosten aktualisiert hat.
+  # Nachtragen/Korrigieren: Event fabrication_druck_import mit data.drucke
+  # (Liste von Einträgen im selben Format; gleiche ende-Zeit ersetzt).
+  # Neuer Drucker: Trigger-Paar mit eigener id-Endung und Eintrag in quellen.
+  - triggers:
+      - trigger: state
+        entity_id: sensor.prusa_xl
+        to: printing
+        not_from: [paused, attention, unavailable, unknown]
+        for: "00:00:30"
+        id: start|Prusa XL
+      - trigger: state
+        entity_id: sensor.prusa_xl
+        to: [finished, stopped]
+        for: "00:03:00"
+        id: ende|Prusa XL
+      - trigger: event
+        event_type: fabrication_druck_import
+        id: import|
+    actions:
+      - variables:
+          quellen:
+            Prusa XL:
+              datei: sensor.prusa_xl_dateiname
+              start: sensor.prusa_xl_druckstart
+              energie: sensor.prusa_xl_druck_energie
+              strom: sensor.prusa_xl_druck_stromkosten
+              filament: sensor.prusa_xl_druck_filamentkosten
+          max_eintraege: 50
+          art: "{{ trigger.id.split('|')[0] }}"
+          drucker: "{{ trigger.id.split('|')[1] }}"
+          alt: "{{ state_attr('sensor.druck_historie', 'drucke') or [] }}"
+          laufend_alt: "{{ state_attr('sensor.druck_historie', 'laufend') or [] }}"
+          summe_alt: "{{ state_attr('sensor.druck_historie', 'summe') or {'anzahl': 0, 'eur': 0} }}"
+          neu: >-
+            {% if art == 'ende' %}
+              {% set q = quellen[drucker] %}
+              {% set l = laufend_alt | selectattr('drucker', 'eq', drucker) | first | default({}) %}
+              {% set en = trigger.to_state.last_changed | as_local %}
+              {% set st = as_datetime(l.get('start') or states(q.start)) %}
+              {% set datei = l.get('datei') or states(q.datei) %}
+              {% set datei = '' if datei in ['unavailable', 'unknown'] else datei %}
+              {% set strom = states(q.strom) | float(0) %}
+              {% set fil = states(q.filament) | float(0) %}
+              {{ [{
+                'drucker': drucker,
+                'name': datei | regex_replace('\.(bgcode|gcode|3mf)$', '') | regex_replace('_?\d\.\dn_.*$', '') | replace('_', ' '),
+                'datei': datei,
+                'start': st.isoformat() if st else none,
+                'ende': en.isoformat(),
+                'min': ((en - st).total_seconds() / 60) | round(0) | int if st else none,
+                'status': 'fertig' if trigger.to_state.state == 'finished' else 'abgebrochen',
+                'kwh': states(q.energie) | float(0) | round(3),
+                'strom': strom | round(2),
+                'g': state_attr(q.filament, 'gramm') | float(0) | round(1),
+                'filament': fil | round(2),
+                'gesamt': (strom + fil) | round(2)
+              }] }}
+            {% elif art == 'import' %}
+              {{ trigger.event.data.get('drucke', []) }}
+            {% else %}[]{% endif %}
+          ersetzt: "{{ neu | map(attribute='ende') | list }}"
+          weg: "{{ alt | selectattr('ende', 'in', ersetzt) | list }}"
+          summe_neu: >-
+            {{ {'anzahl': summe_alt.anzahl + (neu | count) - (weg | count),
+                'eur': (summe_alt.eur
+                        + (neu | map(attribute='gesamt') | map('float', 0) | sum)
+                        - (weg | map(attribute='gesamt') | map('float', 0) | sum)) | round(2),
+                'g': (summe_alt.get('g', 0)
+                      + (neu | map(attribute='g') | map('float', 0) | sum)
+                      - (weg | map(attribute='g') | map('float', 0) | sum)) | round(1)} }}
+    sensor:
+      - name: Druck Historie
+        unique_id: fabrication_druck_historie
+        icon: mdi:history
+        unit_of_measurement: Drucke
+        state: "{{ summe_neu.anzahl }}"
+        attributes:
+          drucke: >-
+            {{ ((neu + (alt | rejectattr('ende', 'in', ersetzt) | list))
+                | sort(attribute='ende', reverse=true) | list)[:max_eintraege] }}
+          laufend: >-
+            {% set rest = laufend_alt | rejectattr('drucker', 'eq', drucker) | list %}
+            {% if art == 'start' %}
+              {% set q = quellen[drucker] %}
+              {{ rest + [{'drucker': drucker,
+                          'datei': states(q.datei),
+                          'start': (trigger.to_state.last_changed | as_local).isoformat()}] }}
+            {% elif art == 'ende' %}{{ rest }}{% else %}{{ laufend_alt }}{% endif %}
+          # Laufende Summe seit Beginn (bleibt, auch wenn alte Einträge rausfallen).
+          summe: "{{ summe_neu }}"
