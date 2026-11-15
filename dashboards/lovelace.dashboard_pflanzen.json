@@ -8,59 +8,874 @@
         {
           "title": "Pflanzen",
           "path": "pflanzen",
+          "icon": "mdi:flower",
           "type": "sections",
+          "max_columns": 3,
+          "header": {
+            "layout": "center",
+            "card": {
+              "type": "markdown",
+              "text_only": true,
+              "content": "{% set todo = states.binary_sensor | selectattr('entity_id', 'match', 'binary_sensor\\.simple_plant_todo_') | selectattr('state', 'eq', 'on') | map(attribute='entity_id') | list %}{% set mon = state_attr('plant.monstera_wohnzimmer', 'moisture_status') == 'Low' %}{% set n = (todo | count) + (1 if mon else 0) %}{% if n == 0 %}### 🌿 Alles im grünen Bereich\nHeute muss keine Pflanze gegossen werden.{% else %}### 💧 {{ n }} {{ 'Pflanze braucht' if n == 1 else 'Pflanzen brauchen' }} heute Wasser\n{% for e in todo %}{{ device_attr(device_id(e), 'name') }}{% if not loop.last %} · {% endif %}{% endfor %}{% if mon %}{{ ' · ' if todo else '' }}Monstera Wohnzimmer{% endif %}{% endif %}\n\n<sub>Zeile tippen = Infoseite · Bild tippen oder lange drücken = gegossen</sub>"
+            }
+          },
           "sections": [
             {
               "type": "grid",
               "cards": [
                 {
                   "type": "heading",
-                  "heading": "Gießplan ohne Sensor",
-                  "icon": "mdi:watering-can"
+                  "heading": "Wohnzimmer",
+                  "icon": "mdi:sofa"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "plant.monstera_wohnzimmer",
+                  "picture": "/local/pflanzen/monstera.png?v=2",
+                  "primary": "Monstera (Sensor)",
+                  "secondary": "{% set st = state_attr('plant.monstera_wohnzimmer', 'moisture_status') %}Feuchte {{ states('sensor.monstera_wohnzimmer_bodenfeuchtigkeit') | float(0) | round(0) | int }} % · {{ {'Low': '💧 Zu trocken, gießen', 'High': '🛑 Zu nass, nicht gießen'}.get(st, '✅ Passt') }}",
+                  "badge_icon": "{% if state_attr('plant.monstera_wohnzimmer', 'moisture_status') in ['Low', 'High'] %}mdi:water-alert{% endif %}",
+                  "badge_color": "{{ 'red' if state_attr('plant.monstera_wohnzimmer', 'moisture_status') == 'High' else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/monstera"
+                  },
+                  "icon_tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/monstera"
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_drachenbaum_sofa",
+                  "picture": "/local/pflanzen/dracaena_marginata.png?v=2",
+                  "primary": "Drachenbaum am Sofa",
+                  "secondary": "{% set s = 'drachenbaum_sofa' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_drachenbaum_sofa', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_drachenbaum_sofa', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_drachenbaum_sofa', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/drachenbaum-sofa"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_drachenbaum_sofa"
+                    },
+                    "confirmation": {
+                      "text": "Drachenbaum am Sofa als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_drachenbaum_sofa"
+                    },
+                    "confirmation": {
+                      "text": "Drachenbaum am Sofa als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_yucca_fenster",
+                  "picture": "/local/pflanzen/yucca.png?v=2",
+                  "primary": "Yucca",
+                  "secondary": "{% set s = 'yucca_fenster' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_yucca_fenster', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_yucca_fenster', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_yucca_fenster', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/yucca-fenster"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_yucca_fenster"
+                    },
+                    "confirmation": {
+                      "text": "Yucca als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_yucca_fenster"
+                    },
+                    "confirmation": {
+                      "text": "Yucca als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_drachenbaum_terracotta",
+                  "picture": "/local/pflanzen/dracaena_marginata.png?v=2",
+                  "primary": "Drachenbaum Terracotta",
+                  "secondary": "{% set s = 'drachenbaum_terracotta' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_drachenbaum_terracotta', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_drachenbaum_terracotta', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_drachenbaum_terracotta', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/drachenbaum-terracotta"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_drachenbaum_terracotta"
+                    },
+                    "confirmation": {
+                      "text": "Drachenbaum Terracotta als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_drachenbaum_terracotta"
+                    },
+                    "confirmation": {
+                      "text": "Drachenbaum Terracotta als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_duftdracaena_fenster",
+                  "picture": "/local/pflanzen/dracaena_fragrans.png?v=2",
+                  "primary": "Duftdracaena",
+                  "secondary": "{% set s = 'duftdracaena_fenster' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_duftdracaena_fenster', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_duftdracaena_fenster', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_duftdracaena_fenster', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/duftdracaena-fenster"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_duftdracaena_fenster"
+                    },
+                    "confirmation": {
+                      "text": "Duftdracaena als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_duftdracaena_fenster"
+                    },
+                    "confirmation": {
+                      "text": "Duftdracaena als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_drachenbaum_twister",
+                  "picture": "/local/pflanzen/dracaena_twister.png?v=2",
+                  "primary": "Drachenbaum Twister",
+                  "secondary": "{% set s = 'drachenbaum_twister' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_drachenbaum_twister', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_drachenbaum_twister', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_drachenbaum_twister', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/drachenbaum-twister"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_drachenbaum_twister"
+                    },
+                    "confirmation": {
+                      "text": "Drachenbaum Twister als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_drachenbaum_twister"
+                    },
+                    "confirmation": {
+                      "text": "Drachenbaum Twister als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_grunlilie_wohnzimmer",
+                  "picture": "/local/pflanzen/gruenlilie.png?v=2",
+                  "primary": "Grünlilie",
+                  "secondary": "{% set s = 'grunlilie_wohnzimmer' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_grunlilie_wohnzimmer', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_grunlilie_wohnzimmer', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_grunlilie_wohnzimmer', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/grunlilie-wohnzimmer"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_grunlilie_wohnzimmer"
+                    },
+                    "confirmation": {
+                      "text": "Grünlilie als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_grunlilie_wohnzimmer"
+                    },
+                    "confirmation": {
+                      "text": "Grünlilie als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_elefantenfuss",
+                  "picture": "/local/pflanzen/elefantenfuss.png?v=2",
+                  "primary": "Elefantenfuß",
+                  "secondary": "{% set s = 'elefantenfuss' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute Wasserstand prüfen{% elif d is none %}–{% elif d == 1 %}Morgen Wasserstand prüfen{% else %}In {{ d }} Tagen Wasserstand prüfen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_elefantenfuss', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_elefantenfuss', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_elefantenfuss', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/elefantenfuss"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_elefantenfuss"
+                    },
+                    "confirmation": {
+                      "text": "Elefantenfuß als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_elefantenfuss"
+                    },
+                    "confirmation": {
+                      "text": "Elefantenfuß als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_efeutute_regal",
+                  "picture": "/local/pflanzen/efeutute.png?v=2",
+                  "primary": "Efeutute",
+                  "secondary": "{% set s = 'efeutute_regal' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_efeutute_regal', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_efeutute_regal', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_efeutute_regal', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/efeutute-regal"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_efeutute_regal"
+                    },
+                    "confirmation": {
+                      "text": "Efeutute als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_efeutute_regal"
+                    },
+                    "confirmation": {
+                      "text": "Efeutute als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Esszimmer",
+                  "icon": "mdi:silverware-fork-knife"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_grunlilie_esszimmer",
+                  "picture": "/local/pflanzen/gruenlilie.png?v=2",
+                  "primary": "Grünlilie",
+                  "secondary": "{% set s = 'grunlilie_esszimmer' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_grunlilie_esszimmer', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_grunlilie_esszimmer', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_grunlilie_esszimmer', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/grunlilie-esszimmer"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_grunlilie_esszimmer"
+                    },
+                    "confirmation": {
+                      "text": "Grünlilie als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_grunlilie_esszimmer"
+                    },
+                    "confirmation": {
+                      "text": "Grünlilie als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_sukkulenten_schale",
+                  "picture": "/local/pflanzen/sukkulenten_schale.png?v=2",
+                  "primary": "Sukkulenten-Schale",
+                  "secondary": "{% set s = 'sukkulenten_schale' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_sukkulenten_schale', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_sukkulenten_schale', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_sukkulenten_schale', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/sukkulenten-schale"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_sukkulenten_schale"
+                    },
+                    "confirmation": {
+                      "text": "Sukkulenten-Schale als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_sukkulenten_schale"
+                    },
+                    "confirmation": {
+                      "text": "Sukkulenten-Schale als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_echeveria_topf",
+                  "picture": "/local/pflanzen/echeveria.png?v=2",
+                  "primary": "Echeveria",
+                  "secondary": "{% set s = 'echeveria_topf' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_echeveria_topf', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_echeveria_topf', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_echeveria_topf', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/echeveria-topf"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_echeveria_topf"
+                    },
+                    "confirmation": {
+                      "text": "Echeveria als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_echeveria_topf"
+                    },
+                    "confirmation": {
+                      "text": "Echeveria als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_haworthia",
+                  "picture": "/local/pflanzen/haworthia.png?v=2",
+                  "primary": "Haworthia",
+                  "secondary": "{% set s = 'haworthia' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_haworthia', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_haworthia', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_haworthia', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/haworthia"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_haworthia"
+                    },
+                    "confirmation": {
+                      "text": "Haworthia als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_haworthia"
+                    },
+                    "confirmation": {
+                      "text": "Haworthia als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_echeveria_glas",
+                  "picture": "/local/pflanzen/echeveria_glas.png?v=2",
+                  "primary": "Echeveria im Glas",
+                  "secondary": "{% set s = 'echeveria_glas' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_echeveria_glas', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_echeveria_glas', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_echeveria_glas', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/echeveria-glas"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_echeveria_glas"
+                    },
+                    "confirmation": {
+                      "text": "Echeveria im Glas als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_echeveria_glas"
+                    },
+                    "confirmation": {
+                      "text": "Echeveria im Glas als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_aloe",
+                  "picture": "/local/pflanzen/aloe.png?v=2",
+                  "primary": "Aloe",
+                  "secondary": "{% set s = 'aloe' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_aloe', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_aloe', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_aloe', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/aloe"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_aloe"
+                    },
+                    "confirmation": {
+                      "text": "Aloe als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_aloe"
+                    },
+                    "confirmation": {
+                      "text": "Aloe als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_dracaena_warneckii",
+                  "picture": "/local/pflanzen/dracaena_warneckii.png?v=2",
+                  "primary": "Dracaena Warneckii",
+                  "secondary": "{% set s = 'dracaena_warneckii' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute Wasserstand prüfen{% elif d is none %}–{% elif d == 1 %}Morgen Wasserstand prüfen{% else %}In {{ d }} Tagen Wasserstand prüfen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_dracaena_warneckii', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_dracaena_warneckii', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_dracaena_warneckii', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/dracaena-warneckii"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_dracaena_warneckii"
+                    },
+                    "confirmation": {
+                      "text": "Dracaena Warneckii als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_dracaena_warneckii"
+                    },
+                    "confirmation": {
+                      "text": "Dracaena Warneckii als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_schefflera",
+                  "picture": "/local/pflanzen/schefflera.png?v=2",
+                  "primary": "Schefflera",
+                  "secondary": "{% set s = 'schefflera' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute Wasserstand prüfen{% elif d is none %}–{% elif d == 1 %}Morgen Wasserstand prüfen{% else %}In {{ d }} Tagen Wasserstand prüfen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_schefflera', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_schefflera', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_schefflera', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/schefflera"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_schefflera"
+                    },
+                    "confirmation": {
+                      "text": "Schefflera als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_schefflera"
+                    },
+                    "confirmation": {
+                      "text": "Schefflera als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Schlafzimmer",
+                  "icon": "mdi:bed"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_calathea_schlafzimmer",
+                  "picture": "/local/pflanzen/calathea.png?v=2",
+                  "primary": "Calathea",
+                  "secondary": "{% set s = 'calathea_schlafzimmer' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_calathea_schlafzimmer', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_calathea_schlafzimmer', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_calathea_schlafzimmer', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/calathea-schlafzimmer"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_calathea_schlafzimmer"
+                    },
+                    "confirmation": {
+                      "text": "Calathea als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_calathea_schlafzimmer"
+                    },
+                    "confirmation": {
+                      "text": "Calathea als gegossen markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
                 },
                 {
                   "type": "heading",
                   "heading": "Badezimmer",
-                  "heading_style": "subtitle",
                   "icon": "mdi:shower"
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "f47e5906d56b2974a0f0ab0a08ed1d95",
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_clusia_bad",
+                  "picture": "/local/pflanzen/clusia.png?v=2",
+                  "primary": "Clusia",
+                  "secondary": "{% set s = 'clusia_bad' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_clusia_bad', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_clusia_bad', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_clusia_bad', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/clusia-bad"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_clusia_bad"
+                    },
+                    "confirmation": {
+                      "text": "Clusia als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_clusia_bad"
+                    },
+                    "confirmation": {
+                      "text": "Clusia als gegossen markieren?"
+                    }
+                  },
                   "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
+                    "columns": 12
                   }
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "8239f2b003d6b3af08f3275136a9dce2",
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_bogenhanf_bad_breit",
+                  "picture": "/local/pflanzen/sansevieria_breit.png?v=2",
+                  "primary": "Bogenhanf (breit)",
+                  "secondary": "{% set s = 'bogenhanf_bad_breit' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_bogenhanf_bad_breit', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_bogenhanf_bad_breit', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_bogenhanf_bad_breit', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/bogenhanf-bad-breit"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_bogenhanf_bad_breit"
+                    },
+                    "confirmation": {
+                      "text": "Bogenhanf (breit) als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_bogenhanf_bad_breit"
+                    },
+                    "confirmation": {
+                      "text": "Bogenhanf (breit) als gegossen markieren?"
+                    }
+                  },
                   "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
+                    "columns": 12
                   }
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "c9628e16ef059c6295ea62b870ddf2d8",
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_bogenhanf_bad_spitz",
+                  "picture": "/local/pflanzen/sansevieria_spitz.png?v=2",
+                  "primary": "Bogenhanf (spitz)",
+                  "secondary": "{% set s = 'bogenhanf_bad_spitz' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "badge_icon": "{% if is_state('binary_sensor.simple_plant_problem_bogenhanf_bad_spitz', 'on') %}mdi:alert{% elif is_state('binary_sensor.simple_plant_todo_bogenhanf_bad_spitz', 'on') %}mdi:water{% endif %}",
+                  "badge_color": "{{ 'red' if is_state('binary_sensor.simple_plant_problem_bogenhanf_bad_spitz', 'on') else 'blue' }}",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-pflanzen/bogenhanf-bad-spitz"
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_bogenhanf_bad_spitz"
+                    },
+                    "confirmation": {
+                      "text": "Bogenhanf (spitz) als gegossen markieren?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_bogenhanf_bad_spitz"
+                    },
+                    "confirmation": {
+                      "text": "Bogenhanf (spitz) als gegossen markieren?"
+                    }
+                  },
                   "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
+                    "columns": 12
                   }
-                },
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Clusia",
+          "path": "clusia-bad",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
                 {
                   "type": "heading",
-                  "heading": "Schlafzimmer",
-                  "heading_style": "subtitle",
-                  "icon": "mdi:bed"
+                  "heading": "Clusia",
+                  "icon": "mdi:sprout"
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "5603fb6e8ea8c5ad62541e7ad21c8a91",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Clusia rosea 'Princess'* · Badezimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/clusia.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_clusia_bad",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'clusia_bad' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
                   }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_clusia_bad",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_clusia_bad"
+                    },
+                    "confirmation": {
+                      "text": "Clusia als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_clusia_bad",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_clusia_bad",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_clusia_bad",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
                 }
               ]
             },
@@ -69,73 +884,105 @@
               "cards": [
                 {
                   "type": "heading",
-                  "heading": "Wohnzimmer (ohne Sensor)",
-                  "heading_style": "subtitle",
-                  "icon": "mdi:sofa"
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "b979b8589bfb91f44628e13859ae3566",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell, aber ohne pralle Mittagssonne. Das Bad ist wegen der Luftfeuchte gut, solange genug Tageslicht hinkommt.\n\n**💧 Gießen**  \nGießen, wenn die oberen 2–3 cm Erde trocken sind. Kein Wasser im Übertopf stehen lassen.\n\n**🧪 Düngen**  \nApril bis September alle 4 Wochen mit Grünpflanzendünger.\n\n**⚠️ Typische Probleme**  \nGelbe, weiche Blätter = zu nass. Abwerfende Blätter = zu dunkel oder Zugluft."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Gesund und kräftig, die Blätter sind sattgrün."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Bogenhanf (breit)",
+          "path": "bogenhanf-bad-breit",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Bogenhanf (breit)",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Sansevieria* · Badezimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/sansevieria_breit.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_bogenhanf_bad_breit",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'bogenhanf_bad_breit' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
                   }
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "8f5862349af0918098ba18fd1a9e499c",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_bogenhanf_bad_breit",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_bogenhanf_bad_breit"
+                    },
+                    "confirmation": {
+                      "text": "Bogenhanf (breit) als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "5a1f43924d5356d798ada252e9b13c53",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_bogenhanf_bad_breit",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "12b08dc9db6590f9bf067c6fa96eeb90",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_bogenhanf_bad_breit",
+                  "name": "Zuletzt gegossen"
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "5f2c4600e66f5899c5619b4d2065f525",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
-                },
-                {
-                  "type": "custom:simple-plant-card",
-                  "device": "7a74d9a15a6e659344dc13f6e81df734",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
-                },
-                {
-                  "type": "custom:simple-plant-card",
-                  "device": "0fefaa1b9868a931890dd63fa96b9f0a",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
-                },
-                {
-                  "type": "custom:simple-plant-card",
-                  "device": "88cac02dfee970c24509482cbad11d16",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_bogenhanf_bad_breit",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
                 }
               ]
             },
@@ -144,73 +991,105 @@
               "cards": [
                 {
                   "type": "heading",
-                  "heading": "Esszimmer (ohne Sensor)",
-                  "heading_style": "subtitle",
-                  "icon": "mdi:silverware-fork-knife"
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "f62d1916e9fc27ad46af9d6a51df0e57",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell bis halbschattig, verträgt auch Sonne. Im dunklen Bad wächst er langsam, hält aber durch.\n\n**💧 Gießen**  \nErst gießen, wenn die Erde komplett trocken ist. Nie in die Blattrosette gießen. Im Winter reicht alle 3–4 Wochen.\n\n**🧪 Düngen**  \nApril bis September alle 6–8 Wochen mit Kakteendünger.\n\n**⚠️ Typische Probleme**  \nWeiche, umknickende Blätter = Fäulnis durch zu viel Wasser. Trockene braune Spitzen sind harmlos, nicht ins Grüne schneiden."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Viele trockene, braune Blattspitzen. Das ist unkritisch, solange die Blätter fest bleiben."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Bogenhanf (spitz)",
+          "path": "bogenhanf-bad-spitz",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Bogenhanf (spitz)",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Sansevieria 'Fernwood'* · Badezimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/sansevieria_spitz.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_bogenhanf_bad_spitz",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'bogenhanf_bad_spitz' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
                   }
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "523ec5aac698462ebc15ee74d6441f72",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_bogenhanf_bad_spitz",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_bogenhanf_bad_spitz"
+                    },
+                    "confirmation": {
+                      "text": "Bogenhanf (spitz) als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "d24e0b7a15fe5f1587b0e677e3d9d132",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_bogenhanf_bad_spitz",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "828d7642784f65992cdeabecd6574d38",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_bogenhanf_bad_spitz",
+                  "name": "Zuletzt gegossen"
                 },
                 {
-                  "type": "custom:simple-plant-card",
-                  "device": "46dfc0cabc5c84e2bc0da33b20ffdd8b",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
-                },
-                {
-                  "type": "custom:simple-plant-card",
-                  "device": "f59eec1bb339abce864af8ade285ba05",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
-                },
-                {
-                  "type": "custom:simple-plant-card",
-                  "device": "3e5c68261f7096830056ec8fef6109f4",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
-                },
-                {
-                  "type": "custom:simple-plant-card",
-                  "device": "f6138714581ed8a37731872b3ae43ecd",
-                  "grid_options": {
-                    "columns": 6,
-                    "rows": "auto"
-                  }
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_bogenhanf_bad_spitz",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
                 }
               ]
             },
@@ -219,8 +1098,1869 @@
               "cards": [
                 {
                   "type": "heading",
-                  "heading": "Mit Sensor · Wohnzimmer",
-                  "icon": "mdi:sofa"
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell bis halbschattig, verträgt auch Sonne. Im dunklen Bad wächst er langsam, hält aber durch.\n\n**💧 Gießen**  \nErst gießen, wenn die Erde komplett trocken ist. Nie in die Blattrosette gießen. Im Winter reicht alle 3–4 Wochen.\n\n**🧪 Düngen**  \nApril bis September alle 6–8 Wochen mit Kakteendünger.\n\n**⚠️ Typische Probleme**  \nWeiche, umknickende Blätter = Fäulnis durch zu viel Wasser. Trockene braune Spitzen sind harmlos, nicht ins Grüne schneiden."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Gesund, kompakt, die Spitzen sind leicht rötlich (sortentypisch)."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Calathea",
+          "path": "calathea-schlafzimmer",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Calathea",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Goeppertia (Calathea) warszewiczii* · Schlafzimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/calathea.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_calathea_schlafzimmer",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'calathea_schlafzimmer' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_calathea_schlafzimmer",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_calathea_schlafzimmer"
+                    },
+                    "confirmation": {
+                      "text": "Calathea als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_calathea_schlafzimmer",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_calathea_schlafzimmer",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_calathea_schlafzimmer",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell, aber keine direkte Sonne.\n\n**💧 Gießen**  \nErde gleichmäßig leicht feucht halten, nie ganz austrocknen lassen. Zimmerwarmes, kalkarmes Wasser (Regen- oder gefiltertes Wasser).\n\n**🧪 Düngen**  \nApril bis September alle 2–3 Wochen schwach dosiert.\n\n**⚠️ Typische Probleme**  \nBraune Ränder und eingerollte Blätter = zu trockene Luft oder zu trocken gegossen. Braucht über 50 % Luftfeuchte, nicht direkt neben die Heizung stellen."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Gestresst: hängende Blätter, braune und gelbe Ränder. Sie steht direkt am Heizkörper: ein Stück wegrücken, Luftfeuchte erhöhen und braune Blätter abschneiden."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Drachenbaum am Sofa",
+          "path": "drachenbaum-sofa",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Drachenbaum am Sofa",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Dracaena marginata* · Wohnzimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/dracaena_marginata.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_drachenbaum_sofa",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'drachenbaum_sofa' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_drachenbaum_sofa",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_drachenbaum_sofa"
+                    },
+                    "confirmation": {
+                      "text": "Drachenbaum am Sofa als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_drachenbaum_sofa",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_drachenbaum_sofa",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_drachenbaum_sofa",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell ohne pralle Sonne. Halbschatten geht, dann wächst sie langsamer.\n\n**💧 Gießen**  \nGießen, wenn die obere Hälfte der Erde trocken ist. Lieber zu trocken als zu nass.\n\n**🧪 Düngen**  \nApril bis September alle 2–4 Wochen.\n\n**⚠️ Typische Probleme**  \nBraune Blattspitzen = trockene Heizungsluft oder kalkhaltiges Wasser. Untere Blätter vergilben mit der Zeit, das ist normal."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Viele braune, eingerollte Blattspitzen: trockene Heizungsluft. Insgesamt eher licht, sie bräuchte mehr Licht."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Yucca",
+          "path": "yucca-fenster",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Yucca",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Yucca elephantipes* · Wohnzimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/yucca.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_yucca_fenster",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'yucca_fenster' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_yucca_fenster",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_yucca_fenster"
+                    },
+                    "confirmation": {
+                      "text": "Yucca als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_yucca_fenster",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_yucca_fenster",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_yucca_fenster",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nSo hell wie möglich, gern sonnig. Im Winter darf sie kühler stehen (10–15 °C).\n\n**💧 Gießen**  \nGießen, wenn die Erde zu zwei Dritteln trocken ist. Im Winter sparsam.\n\n**🧪 Düngen**  \nApril bis September alle 2–3 Wochen.\n\n**⚠️ Typische Probleme**  \nHängende, gelbe untere Blätter sind normal und können abgezupft werden. Weicher Stamm = Staunässe, sofort weniger gießen."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Kräftige Krone, der Stamm ist gestützt. Ein paar trockene alte Blätter am Stamm können weg."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Drachenbaum Terracotta",
+          "path": "drachenbaum-terracotta",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Drachenbaum Terracotta",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Dracaena marginata* · Wohnzimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/dracaena_marginata.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_drachenbaum_terracotta",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'drachenbaum_terracotta' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_drachenbaum_terracotta",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_drachenbaum_terracotta"
+                    },
+                    "confirmation": {
+                      "text": "Drachenbaum Terracotta als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_drachenbaum_terracotta",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_drachenbaum_terracotta",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_drachenbaum_terracotta",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell ohne pralle Sonne. Halbschatten geht, dann wächst sie langsamer.\n\n**💧 Gießen**  \nGießen, wenn die obere Hälfte der Erde trocken ist. Lieber zu trocken als zu nass.\n\n**🧪 Düngen**  \nApril bis September alle 2–4 Wochen.\n\n**⚠️ Typische Probleme**  \nBraune Blattspitzen = trockene Heizungsluft oder kalkhaltiges Wasser. Untere Blätter vergilben mit der Zeit, das ist normal."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Wenige Blätter, kahle Äste. Mehr Licht würde neue Austriebe fördern."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Duftdracaena",
+          "path": "duftdracaena-fenster",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Duftdracaena",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Dracaena fragrans* · Wohnzimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/dracaena_fragrans.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_duftdracaena_fenster",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'duftdracaena_fenster' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_duftdracaena_fenster",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_duftdracaena_fenster"
+                    },
+                    "confirmation": {
+                      "text": "Duftdracaena als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_duftdracaena_fenster",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_duftdracaena_fenster",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_duftdracaena_fenster",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell ohne pralle Sonne. Halbschatten geht, dann wächst sie langsamer.\n\n**💧 Gießen**  \nGießen, wenn die obere Hälfte der Erde trocken ist. Lieber zu trocken als zu nass.\n\n**🧪 Düngen**  \nApril bis September alle 2–4 Wochen.\n\n**⚠️ Typische Probleme**  \nBraune Blattspitzen = trockene Heizungsluft oder kalkhaltiges Wasser. Untere Blätter vergilben mit der Zeit, das ist normal."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Gut im Wuchs, einzelne braune Flecken und Spitzen. Am kalten Fenster nachts eventuell zu kühl."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Drachenbaum Twister",
+          "path": "drachenbaum-twister",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Drachenbaum Twister",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Dracaena marginata (gedreht)* · Wohnzimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/dracaena_twister.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_drachenbaum_twister",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'drachenbaum_twister' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_drachenbaum_twister",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_drachenbaum_twister"
+                    },
+                    "confirmation": {
+                      "text": "Drachenbaum Twister als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_drachenbaum_twister",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_drachenbaum_twister",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_drachenbaum_twister",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell ohne pralle Sonne. Halbschatten geht, dann wächst sie langsamer.\n\n**💧 Gießen**  \nGießen, wenn die obere Hälfte der Erde trocken ist. Lieber zu trocken als zu nass.\n\n**🧪 Düngen**  \nApril bis September alle 2–4 Wochen.\n\n**⚠️ Typische Probleme**  \nBraune Blattspitzen = trockene Heizungsluft oder kalkhaltiges Wasser. Untere Blätter vergilben mit der Zeit, das ist normal."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Gedrehte Stämme mit kleinen Blattschöpfen, unten einige trockene Blätter. Das ist normal."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Grünlilie",
+          "path": "grunlilie-wohnzimmer",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Grünlilie",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Chlorophytum comosum* · Wohnzimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/gruenlilie.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_grunlilie_wohnzimmer",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'grunlilie_wohnzimmer' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_grunlilie_wohnzimmer",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_grunlilie_wohnzimmer"
+                    },
+                    "confirmation": {
+                      "text": "Grünlilie als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_grunlilie_wohnzimmer",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_grunlilie_wohnzimmer",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_grunlilie_wohnzimmer",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell bis halbschattig. Zu dunkel = blasse, lange, schlaffe Blätter.\n\n**💧 Gießen**  \nIm Sommer gleichmäßig feucht, im Winter etwas trockener. Die dicken Wurzeln speichern Wasser.\n\n**🧪 Düngen**  \nApril bis September alle 2 Wochen.\n\n**⚠️ Typische Probleme**  \nBraune Spitzen = trockene Luft oder Kalk. Vertrocknete Blätter an der Basis abziehen. Ableger lassen sich einfach im Wasser bewurzeln."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Sehr gesund und dicht, nur einzelne gelbe Blätter."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Elefantenfuß",
+          "path": "elefantenfuss",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Elefantenfuß",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Beaucarnea recurvata · Hydrokultur* · Wohnzimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/elefantenfuss.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_elefantenfuss",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'elefantenfuss' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute Wasserstand prüfen{% elif d is none %}–{% elif d == 1 %}Morgen Wasserstand prüfen{% else %}In {{ d }} Tagen Wasserstand prüfen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_elefantenfuss",
+                  "name": "Wasserstand aufgefüllt",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_elefantenfuss"
+                    },
+                    "confirmation": {
+                      "text": "Elefantenfuß als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_elefantenfuss",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_elefantenfuss",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_elefantenfuss",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell, ohne pralle Mittagssonne.\n\n**💧 Wasser (Hydrokultur)**  \nHydrokultur: Erst auffüllen, wenn der Wasserstandsanzeiger auf Minimum steht, dann nur bis Optimum (Maximum nur vor dem Urlaub). Nach dem Minimum ruhig 2–3 Tage trocken stehen lassen, die Wurzeln brauchen Luft.\n\n**🧪 Düngen**  \nApril bis September alle 4–6 Wochen Hydrodünger, im Winter nicht.\n\n**⚠️ Typische Probleme**  \nFaulig riechendes Wasser = zu lange auf Maximum. Einmal komplett durchspülen und neu befüllen."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Viele trockene, braune Blätter. Er braucht mehr Licht (gern direkte Sonne) und im Winter sehr wenig Wasser: Wasserstand lange auf Minimum lassen."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Efeutute",
+          "path": "efeutute-regal",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Efeutute",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Epipremnum aureum* · Wohnzimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/efeutute.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_efeutute_regal",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'efeutute_regal' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_efeutute_regal",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_efeutute_regal"
+                    },
+                    "confirmation": {
+                      "text": "Efeutute als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_efeutute_regal",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_efeutute_regal",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_efeutute_regal",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHalbschattig bis hell, kommt auch mit wenig Licht aus. Die hellen Muster verblassen im Dunkeln.\n\n**💧 Gießen**  \nGießen, wenn die oberen 2 cm trocken sind.\n\n**🧪 Düngen**  \nApril bis September alle 2–3 Wochen.\n\n**⚠️ Typische Probleme**  \nLange, kahle Ranken: zurückschneiden, dann wird sie buschiger. Die Stecklinge bewurzeln im Wasserglas und können zurück in den Topf."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Lange, teils kahle Ranken mit einzelnen gelben Blättern. Ein Rückschnitt macht sie wieder buschig."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Grünlilie",
+          "path": "grunlilie-esszimmer",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Grünlilie",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Chlorophytum comosum* · Esszimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/gruenlilie.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_grunlilie_esszimmer",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'grunlilie_esszimmer' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_grunlilie_esszimmer",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_grunlilie_esszimmer"
+                    },
+                    "confirmation": {
+                      "text": "Grünlilie als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_grunlilie_esszimmer",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_grunlilie_esszimmer",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_grunlilie_esszimmer",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell bis halbschattig. Zu dunkel = blasse, lange, schlaffe Blätter.\n\n**💧 Gießen**  \nIm Sommer gleichmäßig feucht, im Winter etwas trockener. Die dicken Wurzeln speichern Wasser.\n\n**🧪 Düngen**  \nApril bis September alle 2 Wochen.\n\n**⚠️ Typische Probleme**  \nBraune Spitzen = trockene Luft oder Kalk. Vertrocknete Blätter an der Basis abziehen. Ableger lassen sich einfach im Wasser bewurzeln."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Blass und lang gestreckt, mehrere vertrocknete Blätter: deutlich zu wenig Licht. Heller stellen."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Sukkulenten-Schale",
+          "path": "sukkulenten-schale",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Sukkulenten-Schale",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Haworthia, Aloe, Sukkulente* · Esszimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/sukkulenten_schale.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_sukkulenten_schale",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'sukkulenten_schale' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_sukkulenten_schale",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_sukkulenten_schale"
+                    },
+                    "confirmation": {
+                      "text": "Sukkulenten-Schale als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_sukkulenten_schale",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_sukkulenten_schale",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_sukkulenten_schale",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nDer hellste Platz der Wohnung, gern direkte Sonne. Zu wenig Licht = blasse, gestreckte Pflanzen.\n\n**💧 Gießen**  \nNur gießen, wenn die Erde komplett trocken ist, dann durchdringend. Im Winter alle 3–4 Wochen. Die grüne Gießhilfe hält die Erde eher zu feucht; bei Sukkulenten besser weglassen.\n\n**🧪 Düngen**  \nApril bis September 1× im Monat Kakteendünger.\n\n**⚠️ Typische Probleme**  \nMatschige, glasige Blätter = zu nass. Die untersten Blätter vertrocknen mit der Zeit, das ist normal."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Haworthia und Aloe sind gesund. Die graue, zerknitterte Sukkulente rechts wirkt vertrocknet: prüfen und gegebenenfalls entfernen."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Echeveria",
+          "path": "echeveria-topf",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Echeveria",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Echeveria* · Esszimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/echeveria.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_echeveria_topf",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'echeveria_topf' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_echeveria_topf",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_echeveria_topf"
+                    },
+                    "confirmation": {
+                      "text": "Echeveria als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_echeveria_topf",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_echeveria_topf",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_echeveria_topf",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nDer hellste Platz der Wohnung, gern direkte Sonne. Zu wenig Licht = blasse, gestreckte Pflanzen.\n\n**💧 Gießen**  \nNur gießen, wenn die Erde komplett trocken ist, dann durchdringend. Im Winter alle 3–4 Wochen. Die grüne Gießhilfe hält die Erde eher zu feucht; bei Sukkulenten besser weglassen.\n\n**🧪 Düngen**  \nApril bis September 1× im Monat Kakteendünger.\n\n**⚠️ Typische Probleme**  \nMatschige, glasige Blätter = zu nass. Die untersten Blätter vertrocknen mit der Zeit, das ist normal."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Blasse Färbung, die unteren Blätter sind vertrocknet. Sie braucht mehr Licht."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Haworthia",
+          "path": "haworthia",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Haworthia",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Haworthiopsis attenuata* · Esszimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/haworthia.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_haworthia",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'haworthia' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_haworthia",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_haworthia"
+                    },
+                    "confirmation": {
+                      "text": "Haworthia als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_haworthia",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_haworthia",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_haworthia",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nDer hellste Platz der Wohnung, gern direkte Sonne. Zu wenig Licht = blasse, gestreckte Pflanzen.\n\n**💧 Gießen**  \nNur gießen, wenn die Erde komplett trocken ist, dann durchdringend. Im Winter alle 3–4 Wochen. Die grüne Gießhilfe hält die Erde eher zu feucht; bei Sukkulenten besser weglassen.\n\n**🧪 Düngen**  \nApril bis September 1× im Monat Kakteendünger.\n\n**⚠️ Typische Probleme**  \nMatschige, glasige Blätter = zu nass. Die untersten Blätter vertrocknen mit der Zeit, das ist normal."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Gesund, kräftig grün."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Echeveria im Glas",
+          "path": "echeveria-glas",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Echeveria im Glas",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Echeveria · Glas ohne Abfluss* · Esszimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/echeveria_glas.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_echeveria_glas",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'echeveria_glas' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_echeveria_glas",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_echeveria_glas"
+                    },
+                    "confirmation": {
+                      "text": "Echeveria im Glas als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_echeveria_glas",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_echeveria_glas",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_echeveria_glas",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nDer hellste Platz der Wohnung, gern direkte Sonne. Zu wenig Licht = blasse, gestreckte Pflanzen.\n\n**💧 Gießen**  \nNur gießen, wenn die Erde komplett trocken ist, dann durchdringend. Im Winter alle 3–4 Wochen. Die grüne Gießhilfe hält die Erde eher zu feucht; bei Sukkulenten besser weglassen.\n\n**🧪 Düngen**  \nApril bis September 1× im Monat Kakteendünger.\n\n**⚠️ Typische Probleme**  \nMatschige, glasige Blätter = zu nass. Die untersten Blätter vertrocknen mit der Zeit, das ist normal."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Das Glas hat kein Abflussloch: nur 1–2 Esslöffel Wasser geben. Besser in einen Topf mit Loch umsetzen."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Aloe",
+          "path": "aloe",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Aloe",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Aloe* · Esszimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/aloe.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_aloe",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'aloe' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute gießen{% elif d is none %}–{% elif d == 1 %}Morgen gießen{% else %}In {{ d }} Tagen gießen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_aloe",
+                  "name": "Jetzt gegossen",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_aloe"
+                    },
+                    "confirmation": {
+                      "text": "Aloe als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_aloe",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_aloe",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_aloe",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nDer hellste Platz der Wohnung, gern direkte Sonne. Zu wenig Licht = blasse, gestreckte Pflanzen.\n\n**💧 Gießen**  \nNur gießen, wenn die Erde komplett trocken ist, dann durchdringend. Im Winter alle 3–4 Wochen. Die grüne Gießhilfe hält die Erde eher zu feucht; bei Sukkulenten besser weglassen.\n\n**🧪 Düngen**  \nApril bis September 1× im Monat Kakteendünger.\n\n**⚠️ Typische Probleme**  \nMatschige, glasige Blätter = zu nass. Die untersten Blätter vertrocknen mit der Zeit, das ist normal."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Hellgrün und leicht gestreckt: etwas mehr Licht wäre gut."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Dracaena Warneckii",
+          "path": "dracaena-warneckii",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Dracaena Warneckii",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Dracaena fragrans 'Warneckii' · Hydrokultur* · Esszimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/dracaena_warneckii.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_dracaena_warneckii",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'dracaena_warneckii' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute Wasserstand prüfen{% elif d is none %}–{% elif d == 1 %}Morgen Wasserstand prüfen{% else %}In {{ d }} Tagen Wasserstand prüfen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_dracaena_warneckii",
+                  "name": "Wasserstand aufgefüllt",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_dracaena_warneckii"
+                    },
+                    "confirmation": {
+                      "text": "Dracaena Warneckii als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_dracaena_warneckii",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_dracaena_warneckii",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_dracaena_warneckii",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell, ohne pralle Mittagssonne.\n\n**💧 Wasser (Hydrokultur)**  \nHydrokultur: Erst auffüllen, wenn der Wasserstandsanzeiger auf Minimum steht, dann nur bis Optimum (Maximum nur vor dem Urlaub). Nach dem Minimum ruhig 2–3 Tage trocken stehen lassen, die Wurzeln brauchen Luft.\n\n**🧪 Düngen**  \nApril bis September alle 4–6 Wochen Hydrodünger, im Winter nicht.\n\n**⚠️ Typische Probleme**  \nFaulig riechendes Wasser = zu lange auf Maximum. Einmal komplett durchspülen und neu befüllen."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Buschig, gut im Wuchs. Einzelne braune Blätter an der Basis können weg."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Schefflera",
+          "path": "schefflera",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Schefflera",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Schefflera arboricola · Hydrokultur* · Esszimmer"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/schefflera.png?v=2"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "sensor.simple_plant_next_watering_schefflera",
+                  "icon": "mdi:watering-can",
+                  "color": "blue",
+                  "primary": "Nächster Termin",
+                  "secondary": "{% set s = 'schefflera' %}{% set n = states('sensor.simple_plant_next_watering_' ~ s) %}{% set d = (as_datetime(n).date() - now().date()).days if as_datetime(n) is not none else none %}{% if is_state('binary_sensor.simple_plant_problem_' ~ s, 'on') %}⚠️ Überfällig seit {{ -d }} {{ 'Tag' if -d == 1 else 'Tagen' }}{% elif is_state('binary_sensor.simple_plant_todo_' ~ s, 'on') %}💧 Heute Wasserstand prüfen{% elif d is none %}–{% elif d == 1 %}Morgen Wasserstand prüfen{% else %}In {{ d }} Tagen Wasserstand prüfen{% endif %} · alle {{ states('number.simple_plant_days_between_waterings_' ~ s) | int(0) }} Tage",
+                  "tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.simple_plant_mark_watered_schefflera",
+                  "name": "Wasserstand aufgefüllt",
+                  "icon": "mdi:water-check",
+                  "color": "green",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.simple_plant_mark_watered_schefflera"
+                    },
+                    "confirmation": {
+                      "text": "Schefflera als gegossen markieren?"
+                    }
+                  },
+                  "hide_state": true
+                },
+                {
+                  "type": "tile",
+                  "entity": "number.simple_plant_days_between_waterings_schefflera",
+                  "name": "Rhythmus (Tage)",
+                  "features": [
+                    {
+                      "type": "numeric-input",
+                      "style": "buttons"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "date.simple_plant_last_watered_schefflera",
+                  "name": "Zuletzt gegossen"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.simple_plant_health_schefflera",
+                  "name": "Zustand",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell, ohne pralle Mittagssonne.\n\n**💧 Wasser (Hydrokultur)**  \nHydrokultur: Erst auffüllen, wenn der Wasserstandsanzeiger auf Minimum steht, dann nur bis Optimum (Maximum nur vor dem Urlaub). Nach dem Minimum ruhig 2–3 Tage trocken stehen lassen, die Wurzeln brauchen Luft.\n\n**🧪 Düngen**  \nApril bis September alle 4–6 Wochen Hydrodünger, im Winter nicht.\n\n**⚠️ Typische Probleme**  \nFaulig riechendes Wasser = zu lange auf Maximum. Einmal komplett durchspülen und neu befüllen."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Gesund und dicht."
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Monstera",
+          "path": "monstera",
+          "subview": true,
+          "back_path": "/dashboard-pflanzen/pflanzen",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Monstera",
+                  "icon": "mdi:sprout"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "*Monstera deliciosa* · Wohnzimmer · mit Sensor"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/pflanzen/monstera.png?v=2"
                 },
                 {
                   "type": "custom:flower-card",
@@ -233,6 +2973,44 @@
                     "humidity",
                     "dli"
                   ]
+                },
+                {
+                  "type": "history-graph",
+                  "title": "Bodenfeuchte (7 Tage)",
+                  "hours_to_show": 168,
+                  "entities": [
+                    {
+                      "entity": "sensor.monstera_wohnzimmer_bodenfeuchtigkeit",
+                      "name": "Feuchte"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": 4
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Pflegetipps",
+                  "icon": "mdi:lightbulb-on-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**☀️ Licht**  \nHell ohne direkte Sonne. Ein Moosstab hilft ihr beim Klettern und bringt größere Blätter.\n\n**💧 Gießen**  \nErst gießen, wenn der Sensor unter 30 % zeigt. Im Winter deutlich weniger.\n\n**🧪 Düngen**  \nApril bis September alle 2 Wochen.\n\n**⚠️ Typische Probleme**  \nBraune Ränder mit gelbem Saum und hängende Blätter = Staunässe. Kein Wasser im Übertopf stehen lassen."
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zustand laut Foto (15.11.)",
+                  "icon": "mdi:camera-outline"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Braune Ränder, gelbe und hängende Blätter, der Sensor zeigt dauerhaft 70–76 %: Sie ist deutlich zu nass. Erst wieder gießen, wenn der Sensor unter 30 % fällt, und kein Wasser im Übertopf lassen. Die Gießhilfe vorerst herausnehmen."
                 }
               ]
             }
