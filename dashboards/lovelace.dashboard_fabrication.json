@@ -1,0 +1,1674 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.dashboard_fabrication",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "title": "Drucker",
+          "path": "drucker",
+          "icon": "mdi:printer-3d",
+          "type": "sections",
+          "max_columns": 3,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Prusa XL",
+                  "icon": "mdi:printer-3d",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/prusa-xl"
+                  },
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.prusa_xl",
+                      "show_state": true
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "Werkstatt · Toolchanger mit 5 Köpfen"
+                },
+                {
+                  "type": "picture-entity",
+                  "entity": "camera.tapo_c200c_prusa_xl_hd_stream",
+                  "camera_view": "live",
+                  "show_name": false,
+                  "show_state": false,
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/prusa-xl"
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state_not": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/fabrication/prusa_xl.svg",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/prusa-xl"
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set n = 'Prusa XL' %}{% set st = states('sensor.prusa_xl') %}{% set m = {'idle': 'Bereit', 'finished': 'Fertig', 'finish': 'Fertig', 'stopped': 'Abgebrochen', 'failed': 'Abgebrochen', 'printing': 'Druckt', 'running': 'Druckt', 'paused': 'Pausiert', 'pause': 'Pausiert', 'prepare': 'Bereitet vor', 'busy': 'Beschäftigt', 'error': 'Fehler', 'attention': 'Achtung', 'offline': 'Offline', 'unavailable': 'Offline', 'unknown': 'Offline'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_fortschritt",
+                  "name": "Fortschritt",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/prusa-xl"
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state_not": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druck_fertig",
+                  "name": "Fertig",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state_not": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druck_gesamtkosten",
+                  "name": "Kosten",
+                  "color": "green",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state_not": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set g = (state_attr('sensor.filaman_spulen','spulen') or []) | selectattr('drucker','eq','Prusa XL') | sort(attribute='ort') | list %}**{{ g | count }} von 5** Köpfen belegt\n{% for s in g %}<font color='{{ s.farbe }}'>⬤</font> **Kopf {{ (s.ort[-1] | int(-1)) + 1 if s.ort[-1] is match('\\d') else '?' }}**: {{ s.hersteller }} {{ s.name }} · {{ s.rest_g | int }} g\n{% endfor %}"
+                },
+                {
+                  "type": "shortcut",
+                  "label": "Details",
+                  "icon": "mdi:arrow-right",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/prusa-xl"
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "A1 Mini",
+                  "icon": "mdi:printer-3d",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/a1-mini"
+                  },
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "show_state": true
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "Wohnung · mit AMS (4 Slots) und externer Spule"
+                },
+                {
+                  "type": "picture-entity",
+                  "entity": "camera.a1mini_0309da442500462_kamera",
+                  "camera_view": "live",
+                  "show_name": false,
+                  "show_state": false,
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/a1-mini"
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/fabrication/a1_mini.svg",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/a1-mini"
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state_not": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set n = 'A1 Mini' %}{% set st = states('sensor.a1mini_0309da442500462_druckstatus') %}{% set m = {'idle': 'Bereit', 'finished': 'Fertig', 'finish': 'Fertig', 'stopped': 'Abgebrochen', 'failed': 'Abgebrochen', 'printing': 'Druckt', 'running': 'Druckt', 'paused': 'Pausiert', 'pause': 'Pausiert', 'prepare': 'Bereitet vor', 'busy': 'Beschäftigt', 'error': 'Fehler', 'attention': 'Achtung', 'offline': 'Offline', 'unavailable': 'Offline', 'unknown': 'Offline'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state_not": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_druckfortschritt",
+                  "name": "Fortschritt",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/a1-mini"
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_endzeit",
+                  "name": "Fertig",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_gewicht_des_drucks",
+                  "name": "Gewicht",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set p = 'sensor.a1mini_0309da442500462_' %}{% set sl = [p ~ 'ams_1_slot_1', p ~ 'ams_1_slot_2', p ~ 'ams_1_slot_3', p ~ 'ams_1_slot_4', p ~ 'externalspool_externe_spule'] %}**{{ sl | select('is_state_attr', 'empty', false) | list | count }} von 5** Slots belegt (AMS + extern)\n{% set p = 'sensor.a1mini_0309da442500462_' %}{% set fm = state_attr('sensor.filaman_spulen','spulen') or [] %}{% for e in [p ~ 'ams_1_slot_1', p ~ 'ams_1_slot_2', p ~ 'ams_1_slot_3', p ~ 'ams_1_slot_4', p ~ 'externalspool_externe_spule'] %}{% set n = 'Extern' if 'external' in e else 'Slot ' ~ e[-1] %}{% set a = states[e].attributes if states[e] is not none else {} %}{% set leer = a.get('empty', true) %}{% set s = fm | selectattr('ort','eq','A1 Mini - ' ~ n) | first | default(none) %}{{ '◯' if leer else \"<font color='\" ~ (a.get('color') or '#888888')[:7] ~ \"'>⬤</font>\" }} **{{ n }}**{{ ' ▶' if a.get('active') }}: {{ 'leer' if leer else states(e) }}{% if s %} · FilaMan: {{ s.hersteller }} {{ s.name }}, {{ s.rest_g | int }} g{% elif not leer %} · *keine FilaMan-Spule zugeordnet*{% endif %}\n{% endfor %}"
+                },
+                {
+                  "type": "shortcut",
+                  "label": "Details",
+                  "icon": "mdi:arrow-right",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/a1-mini"
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "H2C",
+                  "icon": "mdi:printer-3d"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "Wohnung · noch nicht in Home Assistant"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/fabrication/h2c.svg",
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "**Nicht eingebunden**\nAnbindung folgt über die Bambu-Lab-Integration wie beim A1 Mini.",
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set g = (state_attr('sensor.filaman_spulen','spulen') or []) | selectattr('drucker','eq','H2C') | list %}**{{ g | count }} von 24** Slots belegt\n{% for s in g %}<font color='{{ s.farbe }}'>⬤</font> {{ s.ort }}: {{ s.hersteller }} {{ s.name }} · {{ s.rest_g | int }} g\n{% endfor %}"
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 3,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Druckkosten",
+                  "icon": "mdi:cash-multiple",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.druck_historie",
+                      "show_state": true
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_select.fabrication_zeitraum",
+                  "name": "Zeitraum",
+                  "icon": "mdi:calendar-range",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set nur = '' %}{% set anz = 15 %}{% set z = states('input_select.fabrication_zeitraum') %}{% set mo = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'] %}{% set key = now().strftime({'Tag': '%Y-%m-%d', 'Monat': '%Y-%m', 'Jahr': '%Y'}.get(z, '%Y-%m')) %}{% set titel = {'Tag': 'Heute, ' ~ now().strftime('%d.%m.%Y'), 'Monat': mo[now().month - 1] ~ ' ' ~ now().year, 'Jahr': 'Jahr ' ~ now().year}.get(z, '') %}{% set rows = (state_attr('sensor.druck_historie','perioden') or []) | selectattr('0','eq',key) | list %}{% set rows = (rows | selectattr('1','eq',nur) | list) if nur else rows %}{% macro eur(x) %}{{ ('%.2f' | format(x | float(0))) | replace('.', ',') }} €{% endmacro %}## {{ eur(rows | map(attribute='3') | sum) }}\n**{{ titel }}** · {{ rows | map(attribute='2') | sum }} Drucke · Strom {{ eur(rows | map(attribute='4') | sum) }} · Filament {{ eur(rows | map(attribute='5') | sum) }} · {{ rows | map(attribute='6') | sum | round(0) | int }} g\n{% if not nur and rows | count > 1 %}{% for r in rows | sort(attribute='3', reverse=true) %}- {{ r[1] }}: {{ r[2] }} Drucke · {{ eur(r[3]) }}\n{% endfor %}{% endif %}{% if not nur %}{% set su = state_attr('sensor.druck_historie','summe') or {} %}<sub>Seit Beginn: {{ su.get('anzahl', 0) }} Drucke · {{ eur(su.get('eur', 0)) }}</sub>\n{% endif %}{% set alle = state_attr('sensor.druck_historie','drucke') or [] %}{% set d = (alle | selectattr('drucker','eq',nur) | list) if nur else alle %}{% set d = d | selectattr('ende','search','^' ~ key) | list %}\n{% if d %}| Datum | {% if not nur %}Drucker | {% endif %}Teil | Dauer | Gramm | Strom | Filament | Gesamt |\n|:--|{% if not nur %}:--|{% endif %}:--|--:|--:|--:|--:|--:|\n{% for e in d[:anz] %}{% set t = as_datetime(e.ende) | as_local %}| {{ t.strftime('%d.%m. %H:%M') }} | {% if not nur %}{{ e.drucker }} | {% endif %}{{ e.name }}{{ ' ✕' if e.status == 'abgebrochen' }}{{ '*' if e.get('nachgetragen') }} | {{ '%d:%02d' | format((e.min or 0) // 60, (e.min or 0) % 60) if e.min is not none else '–' }} | {{ (e.g | round(0) | int ~ ' g') if e.g is not none else '–' }} | {{ eur(e.strom) if e.strom is not none else '–' }} | {{ eur(e.filament) if e.filament is not none else '–' }} | **{{ eur(e.gesamt) if e.gesamt is not none else '–' }}** |\n{% endfor %}{% if d | count > anz %}<sub>{{ d | count - anz }} weitere Drucke im Zeitraum</sub>\n{% endif %}{% if d | selectattr('nachgetragen','defined') | list %}<sub>* nachgetragen, Filament mit 6 €/kg geschätzt · ✕ abgebrochen</sub>{% endif %}{% else %}*Keine Drucke in diesem Zeitraum.*{% endif %}",
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 3,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Links",
+                  "icon": "mdi:link-variant"
+                },
+                {
+                  "type": "shortcut",
+                  "label": "FilaMan",
+                  "icon": "mdi:printer-3d-nozzle-outline",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "http://192.168.1.10:8085"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "FilaBridge",
+                  "icon": "mdi:bridge",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "http://192.168.1.10:5010"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "Printables",
+                  "icon": "mdi:cube-outline",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "https://www.printables.com"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "MakerWorld",
+                  "icon": "mdi:cube-outline",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "https://makerworld.com"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Prusa XL",
+          "path": "prusa-xl",
+          "icon": "mdi:printer-3d",
+          "type": "sections",
+          "max_columns": 3,
+          "subview": true,
+          "back_path": "/dashboard-fabrication/drucker",
+          "badges": [
+            {
+              "type": "entity",
+              "entity": "sensor.prusa_xl",
+              "show_name": true,
+              "name": "Status"
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.prusa_xl_keller_leistung",
+              "show_name": true,
+              "name": "Leistung"
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.prusa_xl_material",
+              "show_name": true,
+              "name": "Material"
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.prusa_xl_dusendurchmesser",
+              "show_name": true,
+              "name": "Düse"
+            }
+          ],
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Prusa XL",
+                  "icon": "mdi:printer-3d"
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set n = 'Prusa XL' %}{% set st = states('sensor.prusa_xl') %}{% set m = {'idle': 'Bereit', 'finished': 'Fertig', 'finish': 'Fertig', 'stopped': 'Abgebrochen', 'failed': 'Abgebrochen', 'printing': 'Druckt', 'running': 'Druckt', 'paused': 'Pausiert', 'pause': 'Pausiert', 'prepare': 'Bereitet vor', 'busy': 'Beschäftigt', 'error': 'Fehler', 'attention': 'Achtung', 'offline': 'Offline', 'unavailable': 'Offline', 'unknown': 'Offline'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "picture-entity",
+                  "entity": "camera.tapo_c200c_prusa_xl_hd_stream",
+                  "camera_view": "live",
+                  "show_name": false,
+                  "show_state": false,
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_fortschritt",
+                  "name": "Fortschritt",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state_not": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_dateiname",
+                  "name": "Datei",
+                  "grid_options": {
+                    "columns": 12
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state_not": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druckstart",
+                  "name": "Start",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state_not": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druck_fertig",
+                  "name": "Fertig",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.prusa_xl_fortschritt",
+                      "state_not": [
+                        "unavailable",
+                        "unknown"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Druckerdaten",
+                  "icon": "mdi:thermometer"
+                },
+                {
+                  "type": "markdown",
+                  "content": "<ha-icon icon='mdi:printer-3d-nozzle-heat'></ha-icon> **Düse**\n# {{ states('sensor.prusa_xl_dusentemperatur') | float(0) | round(0) | int }} °C\nSoll {{ states('sensor.prusa_xl_dusen_soll_temperatur') | float(0) | round(0) | int }} °C",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "<ha-icon icon='mdi:radiator'></ha-icon> **Bett**\n# {{ states('sensor.prusa_xl_heizbetttemperatur') | float(0) | round(0) | int }} °C\nSoll {{ states('sensor.prusa_xl_heizbett_soll_temperatur') | float(0) | round(0) | int }} °C",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druckgeschwindigkeit",
+                  "name": "Speed",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druckfluss",
+                  "name": "Flow",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_z_hohe",
+                  "name": "Z-Höhe",
+                  "grid_options": {
+                    "columns": 4
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_hotend_lufter",
+                  "name": "Hotend-Lüfter",
+                  "grid_options": {
+                    "columns": 4
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_drucker_lufter",
+                  "name": "Bauteil-Lüfter",
+                  "grid_options": {
+                    "columns": 4
+                  }
+                },
+                {
+                  "type": "history-graph",
+                  "title": "Temperaturen (6 h)",
+                  "hours_to_show": 6,
+                  "entities": [
+                    {
+                      "entity": "sensor.prusa_xl_dusentemperatur",
+                      "name": "Düse"
+                    },
+                    {
+                      "entity": "sensor.prusa_xl_heizbetttemperatur",
+                      "name": "Bett"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": 4
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Kosten (aktueller Druck)",
+                  "icon": "mdi:currency-eur"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druck_energie",
+                  "name": "Energie",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druck_stromkosten",
+                  "name": "Strom",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druck_filamentkosten",
+                  "name": "Filament",
+                  "state_content": [
+                    "state",
+                    "gramm"
+                  ],
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druck_gesamtkosten",
+                  "name": "Gesamt",
+                  "color": "green",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "heading",
+                  "heading": "Filament in den Köpfen",
+                  "icon": "mdi:printer-3d-nozzle-outline",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/filament"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_kopf_1_spule",
+                  "name": "Kopf 1",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_kopf_2_spule",
+                  "name": "Kopf 2",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% for k in ['1','2'] %}{% set s = state_attr('sensor.prusa_xl_kopf_' ~ k ~ '_spule', 'spule') %}{% if s %}<font color='{{ s.farbe }}'>⬤</font> **Kopf {{ k }}:** {{ s.rest_g | round(0) | int }} g übrig · {{ (s.eur_pro_g * 1000) | round(2) }} €/kg\n{% endif %}{% endfor %}",
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "heading",
+                  "heading": "Steuerung",
+                  "icon": "mdi:gesture-tap-button"
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.prusa_xl_auftrag_pausieren",
+                  "name": "Pause",
+                  "icon": "mdi:pause",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.prusa_xl_auftrag_pausieren"
+                    },
+                    "confirmation": {
+                      "text": "Druck pausieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.werkstatt_prusa_xl_auftrag_fortsetzen",
+                  "name": "Fortsetzen",
+                  "icon": "mdi:play",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.werkstatt_prusa_xl_auftrag_fortsetzen"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.prusa_xl_auftrag_abbrechen",
+                  "name": "Abbrechen",
+                  "icon": "mdi:stop",
+                  "color": "red",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.prusa_xl_auftrag_abbrechen"
+                    },
+                    "confirmation": {
+                      "text": "Druck wirklich abbrechen?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "light.tapo_c200c_prusa_xl_floodlight_timed",
+                  "name": "Kameralicht",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 3,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "G-Code-Vorschau & Links",
+                  "icon": "mdi:link-variant"
+                },
+                {
+                  "type": "picture-entity",
+                  "entity": "camera.prusa_xl_vorschau",
+                  "show_name": false,
+                  "show_state": false,
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 4
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "PrusaLink",
+                  "icon": "mdi:lan",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "http://192.168.1.61"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "Prusa Connect",
+                  "icon": "mdi:cloud-outline",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "https://connect.prusa3d.com"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "Printables",
+                  "icon": "mdi:cube-outline",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "https://www.printables.com"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "XL-Handbuch",
+                  "icon": "mdi:book-open-variant",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "https://help.prusa3d.com/de/"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "FilaMan",
+                  "icon": "mdi:printer-3d-nozzle-outline",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "http://192.168.1.10:8085"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "FilaBridge",
+                  "icon": "mdi:bridge",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "http://192.168.1.10:5010"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 3,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Druckkosten Prusa XL",
+                  "icon": "mdi:cash-multiple"
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_select.fabrication_zeitraum",
+                  "name": "Zeitraum",
+                  "icon": "mdi:calendar-range",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set nur = 'Prusa XL' %}{% set anz = 10 %}{% set z = states('input_select.fabrication_zeitraum') %}{% set mo = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'] %}{% set key = now().strftime({'Tag': '%Y-%m-%d', 'Monat': '%Y-%m', 'Jahr': '%Y'}.get(z, '%Y-%m')) %}{% set titel = {'Tag': 'Heute, ' ~ now().strftime('%d.%m.%Y'), 'Monat': mo[now().month - 1] ~ ' ' ~ now().year, 'Jahr': 'Jahr ' ~ now().year}.get(z, '') %}{% set rows = (state_attr('sensor.druck_historie','perioden') or []) | selectattr('0','eq',key) | list %}{% set rows = (rows | selectattr('1','eq',nur) | list) if nur else rows %}{% macro eur(x) %}{{ ('%.2f' | format(x | float(0))) | replace('.', ',') }} €{% endmacro %}## {{ eur(rows | map(attribute='3') | sum) }}\n**{{ titel }}** · {{ rows | map(attribute='2') | sum }} Drucke · Strom {{ eur(rows | map(attribute='4') | sum) }} · Filament {{ eur(rows | map(attribute='5') | sum) }} · {{ rows | map(attribute='6') | sum | round(0) | int }} g\n{% if not nur and rows | count > 1 %}{% for r in rows | sort(attribute='3', reverse=true) %}- {{ r[1] }}: {{ r[2] }} Drucke · {{ eur(r[3]) }}\n{% endfor %}{% endif %}{% if not nur %}{% set su = state_attr('sensor.druck_historie','summe') or {} %}<sub>Seit Beginn: {{ su.get('anzahl', 0) }} Drucke · {{ eur(su.get('eur', 0)) }}</sub>\n{% endif %}{% set alle = state_attr('sensor.druck_historie','drucke') or [] %}{% set d = (alle | selectattr('drucker','eq',nur) | list) if nur else alle %}{% set d = d | selectattr('ende','search','^' ~ key) | list %}\n{% if d %}| Datum | {% if not nur %}Drucker | {% endif %}Teil | Dauer | Gramm | Strom | Filament | Gesamt |\n|:--|{% if not nur %}:--|{% endif %}:--|--:|--:|--:|--:|--:|\n{% for e in d[:anz] %}{% set t = as_datetime(e.ende) | as_local %}| {{ t.strftime('%d.%m. %H:%M') }} | {% if not nur %}{{ e.drucker }} | {% endif %}{{ e.name }}{{ ' ✕' if e.status == 'abgebrochen' }}{{ '*' if e.get('nachgetragen') }} | {{ '%d:%02d' | format((e.min or 0) // 60, (e.min or 0) % 60) if e.min is not none else '–' }} | {{ (e.g | round(0) | int ~ ' g') if e.g is not none else '–' }} | {{ eur(e.strom) if e.strom is not none else '–' }} | {{ eur(e.filament) if e.filament is not none else '–' }} | **{{ eur(e.gesamt) if e.gesamt is not none else '–' }}** |\n{% endfor %}{% if d | count > anz %}<sub>{{ d | count - anz }} weitere Drucke im Zeitraum</sub>\n{% endif %}{% if d | selectattr('nachgetragen','defined') | list %}<sub>* nachgetragen, Filament mit 6 €/kg geschätzt · ✕ abgebrochen</sub>{% endif %}{% else %}*Keine Drucke in diesem Zeitraum.*{% endif %}",
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "A1 Mini",
+          "path": "a1-mini",
+          "icon": "mdi:printer-3d",
+          "type": "sections",
+          "max_columns": 3,
+          "subview": true,
+          "back_path": "/dashboard-fabrication/drucker",
+          "badges": [
+            {
+              "type": "entity",
+              "entity": "sensor.a1mini_0309da442500462_druckstatus",
+              "show_name": true,
+              "name": "Status"
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.a1mini_0309da442500462_aktueller_arbeitsschritt",
+              "show_name": true,
+              "name": "Schritt"
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.a1mini_0309da442500462_dusengrosse",
+              "show_name": true,
+              "name": "Düse"
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.a1mini_0309da442500462_druckbett_typ",
+              "show_name": true,
+              "name": "Platte"
+            },
+            {
+              "type": "entity",
+              "entity": "sensor.a1mini_0309da442500462_wi_fi_signalqualitat",
+              "show_name": true,
+              "name": "WLAN"
+            }
+          ],
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "A1 Mini",
+                  "icon": "mdi:printer-3d"
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set n = 'A1 Mini' %}{% set st = states('sensor.a1mini_0309da442500462_druckstatus') %}{% set m = {'idle': 'Bereit', 'finished': 'Fertig', 'finish': 'Fertig', 'stopped': 'Abgebrochen', 'failed': 'Abgebrochen', 'printing': 'Druckt', 'running': 'Druckt', 'paused': 'Pausiert', 'pause': 'Pausiert', 'prepare': 'Bereitet vor', 'busy': 'Beschäftigt', 'error': 'Fehler', 'attention': 'Achtung', 'offline': 'Offline', 'unavailable': 'Offline', 'unknown': 'Offline'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state_not": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "picture-entity",
+                  "entity": "camera.a1mini_0309da442500462_kamera",
+                  "camera_view": "live",
+                  "show_name": false,
+                  "show_state": false,
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_druckfortschritt",
+                  "name": "Fortschritt",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_name_der_aufgabe",
+                  "name": "Auftrag",
+                  "grid_options": {
+                    "columns": 12
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_startzeit",
+                  "name": "Start",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_endzeit",
+                  "name": "Fertig",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_verbleibende_zeit",
+                  "name": "Restzeit",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_aktuelle_schicht",
+                  "name": "Schicht",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                      "state": [
+                        "running",
+                        "pause",
+                        "prepare"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Druckerdaten",
+                  "icon": "mdi:thermometer"
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "content": "<ha-icon icon='mdi:printer-3d-nozzle-heat'></ha-icon> **Düse**\n# {{ states('sensor.a1mini_0309da442500462_temperatur_der_duse') | float(0) | round(0) | int }} °C\nSoll {{ states('sensor.a1mini_0309da442500462_zieltemperatur_der_duse') | float(0) | round(0) | int }} °C"
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "content": "<ha-icon icon='mdi:radiator'></ha-icon> **Bett**\n# {{ states('sensor.a1mini_0309da442500462_druckbetttemperatur') | float(0) | round(0) | int }} °C\nSoll {{ states('sensor.a1mini_0309da442500462_zieltemperatur_vom_druckbett') | float(0) | round(0) | int }} °C"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_geschwindigkeitsprofil",
+                  "name": "Speed",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_gewicht_des_drucks",
+                  "name": "Gewicht",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_druckkopflufterdrehzahl",
+                  "name": "Bauteil-Lüfter",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_hotendlufterdrehzahl",
+                  "name": "Hotend-Lüfter",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "history-graph",
+                  "title": "Temperaturen (6 h)",
+                  "hours_to_show": 6,
+                  "entities": [
+                    {
+                      "entity": "sensor.a1mini_0309da442500462_temperatur_der_duse",
+                      "name": "Düse"
+                    },
+                    {
+                      "entity": "sensor.a1mini_0309da442500462_druckbetttemperatur",
+                      "name": "Bett"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": 4
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "AMS",
+                  "icon": "mdi:tray",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-fabrication/filament"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set p = 'sensor.a1mini_0309da442500462_' %}{% set fm = state_attr('sensor.filaman_spulen','spulen') or [] %}{% for e in [p ~ 'ams_1_slot_1', p ~ 'ams_1_slot_2', p ~ 'ams_1_slot_3', p ~ 'ams_1_slot_4', p ~ 'externalspool_externe_spule'] %}{% set n = 'Extern' if 'external' in e else 'Slot ' ~ e[-1] %}{% set a = states[e].attributes if states[e] is not none else {} %}{% set leer = a.get('empty', true) %}{% set s = fm | selectattr('ort','eq','A1 Mini - ' ~ n) | first | default(none) %}{{ '◯' if leer else \"<font color='\" ~ (a.get('color') or '#888888')[:7] ~ \"'>⬤</font>\" }} **{{ n }}**{{ ' ▶' if a.get('active') }}: {{ 'leer' if leer else states(e) }}{% if s %} · FilaMan: {{ s.hersteller }} {{ s.name }}, {{ s.rest_g | int }} g{% elif not leer %} · *keine FilaMan-Spule zugeordnet*{% endif %}\n{% endfor %}"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_ams_1_luftfeuchtigkeit",
+                  "name": "Luftfeuchte",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_ams_1_temperatur",
+                  "name": "Temperatur",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "heading",
+                  "heading": "Steuerung",
+                  "icon": "mdi:gesture-tap-button"
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.a1mini_0309da442500462_druckvorgang_anhalten",
+                  "name": "Pause",
+                  "icon": "mdi:pause",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.a1mini_0309da442500462_druckvorgang_anhalten"
+                    },
+                    "confirmation": {
+                      "text": "Druck pausieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.a1mini_0309da442500462_druckvorgang_fortsetzen",
+                  "name": "Fortsetzen",
+                  "icon": "mdi:play",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.a1mini_0309da442500462_druckvorgang_fortsetzen"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "button.a1mini_0309da442500462_druckvorgang_beenden",
+                  "name": "Abbrechen",
+                  "icon": "mdi:stop",
+                  "color": "red",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.a1mini_0309da442500462_druckvorgang_beenden"
+                    },
+                    "confirmation": {
+                      "text": "Druck wirklich abbrechen?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "light.a1mini_0309da442500462_druckraumbeleuchtung",
+                  "name": "Licht",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.a1mini_0309da442500462_druckgeschwindigkeit",
+                  "name": "Geschwindigkeit",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 3,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Druckkosten A1 Mini",
+                  "icon": "mdi:cash-multiple"
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_select.fabrication_zeitraum",
+                  "name": "Zeitraum",
+                  "icon": "mdi:calendar-range",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set nur = 'A1 Mini' %}{% set anz = 10 %}{% set z = states('input_select.fabrication_zeitraum') %}{% set mo = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'] %}{% set key = now().strftime({'Tag': '%Y-%m-%d', 'Monat': '%Y-%m', 'Jahr': '%Y'}.get(z, '%Y-%m')) %}{% set titel = {'Tag': 'Heute, ' ~ now().strftime('%d.%m.%Y'), 'Monat': mo[now().month - 1] ~ ' ' ~ now().year, 'Jahr': 'Jahr ' ~ now().year}.get(z, '') %}{% set rows = (state_attr('sensor.druck_historie','perioden') or []) | selectattr('0','eq',key) | list %}{% set rows = (rows | selectattr('1','eq',nur) | list) if nur else rows %}{% macro eur(x) %}{{ ('%.2f' | format(x | float(0))) | replace('.', ',') }} €{% endmacro %}## {{ eur(rows | map(attribute='3') | sum) }}\n**{{ titel }}** · {{ rows | map(attribute='2') | sum }} Drucke · Strom {{ eur(rows | map(attribute='4') | sum) }} · Filament {{ eur(rows | map(attribute='5') | sum) }} · {{ rows | map(attribute='6') | sum | round(0) | int }} g\n{% if not nur and rows | count > 1 %}{% for r in rows | sort(attribute='3', reverse=true) %}- {{ r[1] }}: {{ r[2] }} Drucke · {{ eur(r[3]) }}\n{% endfor %}{% endif %}{% if not nur %}{% set su = state_attr('sensor.druck_historie','summe') or {} %}<sub>Seit Beginn: {{ su.get('anzahl', 0) }} Drucke · {{ eur(su.get('eur', 0)) }}</sub>\n{% endif %}{% set alle = state_attr('sensor.druck_historie','drucke') or [] %}{% set d = (alle | selectattr('drucker','eq',nur) | list) if nur else alle %}{% set d = d | selectattr('ende','search','^' ~ key) | list %}\n{% if d %}| Datum | {% if not nur %}Drucker | {% endif %}Teil | Dauer | Gramm | Strom | Filament | Gesamt |\n|:--|{% if not nur %}:--|{% endif %}:--|--:|--:|--:|--:|--:|\n{% for e in d[:anz] %}{% set t = as_datetime(e.ende) | as_local %}| {{ t.strftime('%d.%m. %H:%M') }} | {% if not nur %}{{ e.drucker }} | {% endif %}{{ e.name }}{{ ' ✕' if e.status == 'abgebrochen' }}{{ '*' if e.get('nachgetragen') }} | {{ '%d:%02d' | format((e.min or 0) // 60, (e.min or 0) % 60) if e.min is not none else '–' }} | {{ (e.g | round(0) | int ~ ' g') if e.g is not none else '–' }} | {{ eur(e.strom) if e.strom is not none else '–' }} | {{ eur(e.filament) if e.filament is not none else '–' }} | **{{ eur(e.gesamt) if e.gesamt is not none else '–' }}** |\n{% endfor %}{% if d | count > anz %}<sub>{{ d | count - anz }} weitere Drucke im Zeitraum</sub>\n{% endif %}{% if d | selectattr('nachgetragen','defined') | list %}<sub>* nachgetragen, Filament mit 6 €/kg geschätzt · ✕ abgebrochen</sub>{% endif %}{% else %}*Keine Drucke in diesem Zeitraum.*{% endif %}",
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "<sub>Ohne Messsteckdose keine Stromkosten. Filament = Slicer-Gewicht × €/g der FilaMan-Spule im aktiven Slot (Lagerort „A1 Mini - Slot 1…4“ bzw. „A1 Mini - Extern“).</sub>"
+                },
+                {
+                  "type": "shortcut",
+                  "label": "MakerWorld",
+                  "icon": "mdi:cube-outline",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "https://makerworld.com"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "A1 mini Wiki",
+                  "icon": "mdi:book-open-variant",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "https://wiki.bambulab.com/en/a1-mini"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "FilaMan",
+                  "icon": "mdi:printer-3d-nozzle-outline",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "http://192.168.1.10:8085"
+                  },
+                  "grid_options": {
+                    "columns": 3
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Filament",
+          "path": "filament",
+          "icon": "mdi:printer-3d-nozzle-outline",
+          "type": "sections",
+          "max_columns": 3,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Bestand",
+                  "icon": "mdi:warehouse",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.filaman_spulen",
+                      "show_state": true
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "content": "{% set so = (state_attr('sensor.filaman_spulen','standorte') or []) | selectattr('name','eq','Werkstatt') | first | default(none) %}<ha-icon icon='mdi:hammer-wrench'></ha-icon> **Werkstatt**\n{% if so %}# {{ (so.rest_g / 1000) | round(2) | string | replace('.', ',') }} kg\n{{ so.spulen }} Spulen · {{ so.wert_eur | round(0) | int }} €\nRegal {{ so.regal }}{% for d in so.drucker %} · {{ d[0] }} {{ d[1] }}/{{ d[2] }}{% endfor %}{% endif %}"
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "content": "{% set so = (state_attr('sensor.filaman_spulen','standorte') or []) | selectattr('name','eq','Wohnung') | first | default(none) %}<ha-icon icon='mdi:home'></ha-icon> **Wohnung**\n{% if so %}# {{ (so.rest_g / 1000) | round(2) | string | replace('.', ',') }} kg\n{{ so.spulen }} Spulen · {{ so.wert_eur | round(0) | int }} €\nRegal {{ so.regal }}{% for d in so.drucker %} · {{ d[0] }} {{ d[1] }}/{{ d[2] }}{% endfor %}{% endif %}"
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": 12
+                  },
+                  "content": "**Gesamt:** {{ ((state_attr('sensor.filaman_spulen','gesamt_rest_g') or 0) / 1000) | round(2) | string | replace('.', ',') }} kg · Lagerwert {{ (state_attr('sensor.filaman_spulen','lagerwert_eur') or 0) | round(2) | string | replace('.', ',') }} €"
+                },
+                {
+                  "type": "heading",
+                  "heading": "Verbrauch diesen Monat",
+                  "icon": "mdi:chart-line",
+                  "heading_style": "subtitle"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.filament_verbrauch_monat",
+                  "name": "Filament",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.filament_kosten_monat",
+                  "name": "Kosten",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "statistics-graph",
+                  "title": "Verbrauch pro Woche",
+                  "entities": [
+                    {
+                      "entity": "sensor.filaman_verbrauch_gesamt",
+                      "name": "Gramm"
+                    }
+                  ],
+                  "stat_types": [
+                    "change"
+                  ],
+                  "period": "week",
+                  "chart_type": "bar",
+                  "days_to_show": 90,
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": 4
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 2,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Bestand nach Filament",
+                  "icon": "mdi:table"
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set b = state_attr('sensor.filaman_spulen','bestand') or [] %}{% set so = (state_attr('sensor.filaman_spulen','standorte') or []) | map(attribute='name') | list %}{% set t = state_attr('sensor.filaman_spulen','schwelle_g') | int(150) %}| Filament | Material |{% for s in so %} {{ s }} |{% endfor %} Summe |\n|:--|:--|{% for s in so %}--:|{% endfor %}--:|\n{% for f in b %}| <font color='{{ f.farbe }}'>⬤</font> {{ f.filament }} | {{ f.material }} |{% for s in so %}{% set g = f.je_standort | selectattr('0','eq',s) | map(attribute='1') | first | default(0) %} {{ (g | int ~ ' g') if g else '–' }} |{% endfor %} {{ '**' ~ (f.summe_g | int) ~ ' g** ⚠' if f.summe_g < t else '**' ~ (f.summe_g | int) ~ ' g**' }} |\n{% endfor %}"
+                },
+                {
+                  "type": "heading",
+                  "heading": "Spulen nach Lagerort",
+                  "icon": "mdi:format-list-bulleted",
+                  "heading_style": "subtitle"
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set sp = state_attr('sensor.filaman_spulen','spulen') or [] %}{% for so in (state_attr('sensor.filaman_spulen','standorte') or []) %}**{{ so.name }}**\n{% for s in sp | selectattr('standort','eq',so.name) | sort(attribute='rest_g') %}<font color='{{ s.farbe }}'>⬤</font> {{ s.hersteller }} {{ s.name }} · {{ s.rest_g | int }} g · {{ s.ort or 'ohne Ort' }}\n{% endfor %}\n{% endfor %}"
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 3,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Nachkaufen",
+                  "icon": "mdi:cart-outline"
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "content": "{% set n = state_attr('sensor.filaman_spulen','nachkauf') or [] %}{% set t = state_attr('sensor.filaman_spulen','schwelle_g') | int(150) %}{% if n %}Unter {{ t }} g über alle Lager:\n{% for f in n %}- {{ f }}\n{% endfor %}{% else %}Kein Filament unter {{ t }} g über alle Lager.{% endif %}"
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": 6
+                  },
+                  "content": "*Platz für Marcels eigene FilaMan-Visualisierung.* Daten: `sensor.filaman_spulen` mit den Attributen `spulen`, `standorte`, `bestand`, `nachkauf`."
+                },
+                {
+                  "type": "shortcut",
+                  "label": "FilaMan öffnen",
+                  "icon": "mdi:open-in-new",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "http://192.168.1.10:8085"
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Laser",
+          "path": "laser",
+          "icon": "mdi:laser-pointer",
+          "type": "sections",
+          "max_columns": 3,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "CO2-Laser 80 W (Ruida)",
+                  "icon": "mdi:laser-pointer"
+                },
+                {
+                  "type": "markdown",
+                  "content": "**Platzhalter.** Folgt, sobald IP und Sensoren bekannt sind: Freigabe-Status, Chiller, Durchfluss, Absaugung, Deckel, Röhrenstunden, Linsenreinigung, Jobkosten."
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Links",
+                  "icon": "mdi:link-variant"
+                },
+                {
+                  "type": "shortcut",
+                  "label": "LightBurn Doku",
+                  "icon": "mdi:book-open-variant",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "https://docs.lightburnsoftware.com"
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "FilaMan",
+                  "icon": "mdi:printer-3d-nozzle-outline",
+                  "tap_action": {
+                    "action": "url",
+                    "url_path": "http://192.168.1.10:8085"
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
