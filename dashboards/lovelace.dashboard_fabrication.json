@@ -62,7 +62,7 @@
                 },
                 {
                   "type": "picture",
-                  "image": "/local/fabrication/prusa_xl.svg",
+                  "image": "/local/fabrication/prusa_xl.png?v=2",
                   "tap_action": {
                     "action": "navigate",
                     "navigation_path": "/dashboard-fabrication/prusa-xl"
@@ -233,7 +233,7 @@
                 },
                 {
                   "type": "picture",
-                  "image": "/local/fabrication/a1_mini.svg",
+                  "image": "/local/fabrication/a1_mini.svg?v=2",
                   "tap_action": {
                     "action": "navigate",
                     "navigation_path": "/dashboard-fabrication/a1-mini"
@@ -372,7 +372,7 @@
                 },
                 {
                   "type": "picture",
-                  "image": "/local/fabrication/h2c.svg",
+                  "image": "/local/fabrication/h2c.svg?v=2",
                   "grid_options": {
                     "columns": "full"
                   }
