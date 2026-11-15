@@ -22,6 +22,13 @@ rest_command:
     url: http://192.168.1.10:5010/api/status
     method: get
     timeout: 10
+  # Verbrauch auf eine Spule buchen (für Drucker ohne FilaBridge, z. B. A1 Mini)
+  filaman_verbrauch_buchen:
+    url: "http://192.168.1.10:8085/spoolman/api/v1/spool/{{ spule_id }}/use"
+    method: put
+    content_type: application/json
+    payload: '{"use_weight": {{ gramm }}}'
+    timeout: 10
 
 template:
   - triggers:
@@ -54,7 +61,7 @@ template:
           drucker:
             - {name: "Prusa XL", standort: "Werkstatt", slots: 5}
             - {name: "H2C", standort: "Wohnung", slots: 24}
-            - {name: "A1 Mini", standort: "Wohnung", slots: 4}
+            - {name: "A1 Mini", standort: "Wohnung", slots: 5}
           schwelle_g: 150
           # ----------------------------------------------------------------
           ok: "{{ fm is defined and fm.status == 200 and fm.content is list }}"
@@ -275,6 +282,10 @@ template:
   # Nachtragen/Korrigieren: Event fabrication_druck_import mit data.drucke
   # (Liste von Einträgen im selben Format; gleiche ende-Zeit ersetzt).
   # Neuer Drucker: Trigger-Paar mit eigener id-Endung und Eintrag in quellen.
+  # Bambu (typ bambu): Gramm = Slicer-Gewicht (bei Abbruch × Fortschritt),
+  # gebucht auf die FilaMan-Spule mit Lagerort "A1 Mini - Slot N" bzw.
+  # "A1 Mini - Extern" (zuletzt aktiver Slot im Druck). Mehrfarbdrucke werden
+  # komplett dieser Spule zugerechnet. Ohne Messsteckdose kein Strom.
   - triggers:
       - trigger: state
         entity_id: sensor.prusa_xl
@@ -287,6 +298,27 @@ template:
         to: [finished, stopped]
         for: "00:03:00"
         id: ende|Prusa XL
+      - trigger: state
+        entity_id: sensor.a1mini_0309da442500462_druckstatus
+        to: running
+        not_from: [pause, unavailable, unknown, offline]
+        for: "00:00:30"
+        id: start|A1 Mini
+      - trigger: state
+        entity_id: sensor.a1mini_0309da442500462_druckstatus
+        to: [finish, failed]
+        for: "00:01:00"
+        id: ende|A1 Mini
+      - trigger: state
+        entity_id:
+          - sensor.a1mini_0309da442500462_ams_1_slot_1
+          - sensor.a1mini_0309da442500462_ams_1_slot_2
+          - sensor.a1mini_0309da442500462_ams_1_slot_3
+          - sensor.a1mini_0309da442500462_ams_1_slot_4
+          - sensor.a1mini_0309da442500462_externalspool_externe_spule
+        attribute: active
+        to: true
+        id: slot|A1 Mini
       - trigger: event
         event_type: fabrication_druck_import
         id: import|
@@ -299,6 +331,14 @@ template:
               energie: sensor.prusa_xl_druck_energie
               strom: sensor.prusa_xl_druck_stromkosten
               filament: sensor.prusa_xl_druck_filamentkosten
+            A1 Mini:
+              typ: bambu
+              datei: sensor.a1mini_0309da442500462_name_der_aufgabe
+              datei2: sensor.a1mini_0309da442500462_gcode_dateiname
+              start: sensor.a1mini_0309da442500462_startzeit
+              gewicht: sensor.a1mini_0309da442500462_gewicht_des_drucks
+              fortschritt: sensor.a1mini_0309da442500462_druckfortschritt
+              ort: A1 Mini
           max_eintraege: 50
           art: "{{ trigger.id.split('|')[0] }}"
           drucker: "{{ trigger.id.split('|')[1] }}"
@@ -312,22 +352,40 @@ template:
               {% set en = trigger.to_state.last_changed | as_local %}
               {% set st = as_datetime(l.get('start') or states(q.start)) %}
               {% set datei = l.get('datei') or states(q.datei) %}
+              {% if datei in ['unavailable', 'unknown', '', none] and q.get('datei2') %}{% set datei = states(q.datei2) %}{% endif %}
               {% set datei = '' if datei in ['unavailable', 'unknown'] else datei %}
-              {% set strom = states(q.strom) | float(0) %}
-              {% set fil = states(q.filament) | float(0) %}
+              {% set fertig = trigger.to_state.state in ['finished', 'finish'] %}
+              {% if q.get('typ') == 'bambu' %}
+                {% set prog = states(q.fortschritt) | float(100) %}
+                {% set g = (states(q.gewicht) | float(0)) * (1 if fertig else prog / 100) %}
+                {% set ort = q.ort ~ ' - ' ~ (l.get('slot') or 'Extern') %}
+                {% set sp = (state_attr('sensor.filaman_spulen', 'spulen') or [])
+                            | selectattr('ort', 'eq', ort) | first | default(none) %}
+                {% set fil = (g * (sp.eur_pro_g or 0)) if sp else 0 %}
+                {% set strom = none %}{% set kwh = none %}
+                {% set spule_id = sp.id if sp else none %}
+              {% else %}
+                {% set strom = states(q.strom) | float(0) %}
+                {% set kwh = states(q.energie) | float(0) | round(3) %}
+                {% set fil = states(q.filament) | float(0) %}
+                {% set g = state_attr(q.filament, 'gramm') | float(0) %}
+                {% set ort = none %}{% set spule_id = none %}
+              {% endif %}
               {{ [{
                 'drucker': drucker,
-                'name': datei | regex_replace('\.(bgcode|gcode|3mf)$', '') | regex_replace('_?\d\.\dn_.*$', '') | replace('_', ' '),
+                'name': datei | regex_replace('\.(gcode\.)?(bgcode|gcode|3mf)$', '') | regex_replace('_?\d\.\dn_.*$', '') | replace('_', ' '),
                 'datei': datei,
                 'start': st.isoformat() if st else none,
                 'ende': en.isoformat(),
                 'min': ((en - st).total_seconds() / 60) | round(0) | int if st else none,
-                'status': 'fertig' if trigger.to_state.state == 'finished' else 'abgebrochen',
-                'kwh': states(q.energie) | float(0) | round(3),
-                'strom': strom | round(2),
-                'g': state_attr(q.filament, 'gramm') | float(0) | round(1),
+                'status': 'fertig' if fertig else 'abgebrochen',
+                'kwh': kwh,
+                'strom': (strom | round(2)) if strom is not none else none,
+                'g': g | round(1),
                 'filament': fil | round(2),
-                'gesamt': (strom + fil) | round(2)
+                'gesamt': ((strom or 0) + fil) | round(2),
+                'spule_id': spule_id,
+                'ort': ort
               }] }}
             {% elif art == 'import' %}
               {{ trigger.event.data.get('drucke', []) }}
@@ -370,6 +428,13 @@ template:
             {% set grenze = (now() - timedelta(days=40)).strftime('%Y-%m-%d') %}
             {{ ns.rows | rejectattr('0', 'lt', grenze) | list
                + (ns.rows | selectattr('0', 'lt', grenze) | rejectattr('0', 'search', '^\d{4}-\d{2}-\d{2}$') | list) }}
+      - if: "{{ art == 'ende' and neu | count > 0 and neu[0].spule_id and neu[0].g > 0 }}"
+        then:
+          - action: rest_command.filaman_verbrauch_buchen
+            data:
+              spule_id: "{{ neu[0].spule_id }}"
+              gramm: "{{ neu[0].g }}"
+            continue_on_error: true
     sensor:
       - name: Druck Historie
         unique_id: fabrication_druck_historie
@@ -382,11 +447,20 @@ template:
                 | sort(attribute='ende', reverse=true) | list)[:max_eintraege] }}
           laufend: >-
             {% set rest = laufend_alt | rejectattr('drucker', 'eq', drucker) | list %}
+            {% set l = laufend_alt | selectattr('drucker', 'eq', drucker) | first | default({}) %}
             {% if art == 'start' %}
               {% set q = quellen[drucker] %}
+              {% set d = states(q.datei) %}
+              {% if d in ['unavailable', 'unknown', ''] and q.get('datei2') %}{% set d = states(q.datei2) %}{% endif %}
               {{ rest + [{'drucker': drucker,
-                          'datei': states(q.datei),
-                          'start': (trigger.to_state.last_changed | as_local).isoformat()}] }}
+                          'datei': d,
+                          'start': (trigger.to_state.last_changed | as_local).isoformat(),
+                          'slot': l.get('slot')}] }}
+            {% elif art == 'slot' %}
+              {% set s = 'Extern' if 'externalspool' in trigger.entity_id
+                         else 'Slot ' ~ trigger.entity_id[-1] %}
+              {{ rest + [{'drucker': drucker, 'datei': l.get('datei'),
+                          'start': l.get('start'), 'slot': s}] }}
             {% elif art == 'ende' %}{{ rest }}{% else %}{{ laufend_alt }}{% endif %}
           # Laufende Summe seit Beginn (bleibt, auch wenn alte Einträge rausfallen).
           summe: "{{ summe_neu }}"
