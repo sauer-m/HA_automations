@@ -307,7 +307,6 @@ template:
       - trigger: state
         entity_id: sensor.a1mini_0309da442500462_druckstatus
         to: [finish, failed]
-        for: "00:01:00"
         id: ende|A1 Mini
       - trigger: state
         entity_id:
@@ -340,6 +339,16 @@ template:
               fortschritt: sensor.a1mini_0309da442500462_druckfortschritt
               ort: A1 Mini
           max_eintraege: 50
+          a1_aktiv: >-
+            {% set ns = namespace(s=none) %}
+            {% for e in ['sensor.a1mini_0309da442500462_ams_1_slot_1', 'sensor.a1mini_0309da442500462_ams_1_slot_2',
+                         'sensor.a1mini_0309da442500462_ams_1_slot_3', 'sensor.a1mini_0309da442500462_ams_1_slot_4',
+                         'sensor.a1mini_0309da442500462_externalspool_externe_spule'] %}
+              {% if state_attr(e, 'active') %}
+                {% set ns.s = 'Extern' if 'externalspool' in e else 'Slot ' ~ e[-1] %}
+              {% endif %}
+            {% endfor %}
+            {{ ns.s }}
           art: "{{ trigger.id.split('|')[0] }}"
           drucker: "{{ trigger.id.split('|')[1] }}"
           alt: "{{ state_attr('sensor.druck_historie', 'drucke') or [] }}"
@@ -358,10 +367,10 @@ template:
               {% if q.get('typ') == 'bambu' %}
                 {% set prog = states(q.fortschritt) | float(100) %}
                 {% set g = (states(q.gewicht) | float(0)) * (1 if fertig else prog / 100) %}
-                {% set ort = q.ort ~ ' - ' ~ (l.get('slot') or 'Extern') %}
+                {% set ort = q.ort ~ ' - ' ~ (l.get('slot') or a1_aktiv or 'Extern') %}
                 {% set sp = (state_attr('sensor.filaman_spulen', 'spulen') or [])
                             | selectattr('ort', 'eq', ort) | first | default(none) %}
-                {% set fil = (g * (sp.eur_pro_g or 0)) if sp else 0 %}
+                {% set fil = (g * (sp.eur_pro_g or 0)) if sp else none %}
                 {% set strom = none %}{% set kwh = none %}
                 {% set spule_id = sp.id if sp else none %}
               {% else %}
@@ -382,8 +391,8 @@ template:
                 'kwh': kwh,
                 'strom': (strom | round(2)) if strom is not none else none,
                 'g': g | round(1),
-                'filament': fil | round(2),
-                'gesamt': ((strom or 0) + fil) | round(2),
+                'filament': (fil | round(2)) if fil is not none else none,
+                'gesamt': ((strom or 0) + (fil or 0)) | round(2),
                 'spule_id': spule_id,
                 'ort': ort
               }] }}
@@ -455,7 +464,7 @@ template:
               {{ rest + [{'drucker': drucker,
                           'datei': d,
                           'start': (trigger.to_state.last_changed | as_local).isoformat(),
-                          'slot': l.get('slot')}] }}
+                          'slot': l.get('slot') or (a1_aktiv if drucker == 'A1 Mini' else none)}] }}
             {% elif art == 'slot' %}
               {% set s = 'Extern' if 'externalspool' in trigger.entity_id
                          else 'Slot ' ~ trigger.entity_id[-1] %}
