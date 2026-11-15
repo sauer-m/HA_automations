@@ -1288,9 +1288,11 @@
       value: '0'
 - id: '1794305839828'
   alias: 'Pflanzen: Gießerinnerung'
-  description: Jeden Morgen um 9 Uhr Push an Marcel mit allen Pflanzen (Plant Monitor, domain
-    plant), deren Bodenfeuchte unter dem OpenPlantbook-Minimum liegt. Iteriert über states.plant,
-    damit neue Pflanzen automatisch dabei sind (Marcel, 10.11.2026).
+  description: 'Jeden Morgen um 9 Uhr Push an Marcel mit allen Pflanzen, die Wasser brauchen:
+    Plant-Monitor-Pflanzen (Sensor, Bodenfeuchte unter Minimum) und Simple-Plant-Pflanzen
+    (Gießplan fällig). Iteriert über states.plant und binary_sensor.simple_plant_todo_*, damit
+    neue Pflanzen automatisch dabei sind. Hydrokultur-Pflanzen (Modell enthält ''Hydrokultur'')
+    werden als ''Wasserstand prüfen'' gemeldet (Marcel, 10.11./15.11.2026).'
   triggers:
   - trigger: time
     at: '09:00:00'
@@ -1298,17 +1300,24 @@
   - variables:
       durstig: '{{ states.plant | selectattr(''attributes.moisture_status'', ''defined'')
         | selectattr(''attributes.moisture_status'', ''eq'', ''Low'') | list }}'
-    note: Alle Pflanzen mit zu trockener Erde, egal wie viele es gibt
+      giessen: '{{ states.binary_sensor | selectattr(''entity_id'', ''match'', ''binary_sensor\.simple_plant_todo_'')
+        | selectattr(''state'', ''eq'', ''on'') | map(attribute=''entity_id'') | list }}'
+      anzahl: '{{ (durstig | count) + (giessen | count) }}'
+    note: Sensor-Pflanzen mit zu trockener Erde plus fällige Simple-Plant-Pflanzen
   - condition: template
-    value_template: '{{ durstig | count > 0 }}'
-    note: 'Template nötig: Die Pflanzenliste ist dynamisch, kein natives Pendant'
+    value_template: '{{ anzahl | int(0) > 0 }}'
+    note: 'Template nötig: Die Pflanzenlisten sind dynamisch, kein natives Pendant'
   - action: notify.mobile_app_sm_f741b
     data:
-      title: 🌿 {{ durstig | count }} {{ 'Pflanze braucht' if durstig | count == 1 else 'Pflanzen
-        brauchen' }} Wasser
+      title: 🌿 {{ anzahl }} {{ 'Pflanze braucht' if anzahl | int(0) == 1 else 'Pflanzen brauchen'
+        }} Wasser
       message: '{% for p in durstig %}{% set m = p.attributes.problems | default([]) | selectattr(''sensor_type'',
         ''eq'', ''moisture'') | first %}• {{ p.name }}{% if m %} ({{ m.current | float | round(0)
         | int }} %, min {{ m.min }} %){% endif %}
+
+        {% endfor %}{% for e in giessen %}{% set d = device_id(e) %}• {{ device_attr(d, ''name'')
+        }} ({{ area_name(e) or ''?'' }}){% if ''Hydrokultur'' in (device_attr(d, ''model'')
+        or '''') %} – Wasserstand prüfen{% endif %}
 
         {% endfor %}'
       data:

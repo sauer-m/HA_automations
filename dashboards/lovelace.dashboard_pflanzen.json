@@ -15,7 +15,211 @@
               "cards": [
                 {
                   "type": "heading",
-                  "heading": "Wohnzimmer",
+                  "heading": "Gießplan ohne Sensor",
+                  "icon": "mdi:watering-can"
+                },
+                {
+                  "type": "heading",
+                  "heading": "Badezimmer",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:shower"
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "f47e5906d56b2974a0f0ab0a08ed1d95",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "8239f2b003d6b3af08f3275136a9dce2",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "c9628e16ef059c6295ea62b870ddf2d8",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "heading",
+                  "heading": "Schlafzimmer",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:bed"
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "5603fb6e8ea8c5ad62541e7ad21c8a91",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Wohnzimmer (ohne Sensor)",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:sofa"
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "b979b8589bfb91f44628e13859ae3566",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "8f5862349af0918098ba18fd1a9e499c",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "5a1f43924d5356d798ada252e9b13c53",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "12b08dc9db6590f9bf067c6fa96eeb90",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "5f2c4600e66f5899c5619b4d2065f525",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "7a74d9a15a6e659344dc13f6e81df734",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "0fefaa1b9868a931890dd63fa96b9f0a",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "88cac02dfee970c24509482cbad11d16",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Esszimmer (ohne Sensor)",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:silverware-fork-knife"
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "f62d1916e9fc27ad46af9d6a51df0e57",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "523ec5aac698462ebc15ee74d6441f72",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "d24e0b7a15fe5f1587b0e677e3d9d132",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "828d7642784f65992cdeabecd6574d38",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "46dfc0cabc5c84e2bc0da33b20ffdd8b",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "f59eec1bb339abce864af8ade285ba05",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "3e5c68261f7096830056ec8fef6109f4",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "custom:simple-plant-card",
+                  "device": "f6138714581ed8a37731872b3ae43ecd",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Mit Sensor · Wohnzimmer",
                   "icon": "mdi:sofa"
                 },
                 {
