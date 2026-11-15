@@ -1315,3 +1315,105 @@
         tag: pflanzen-giessen
         clickAction: /dashboard-pflanzen/pflanzen
   mode: single
+- id: fabrication_filaman_ams_a1_mini
+  alias: 'Fabrication: FilaMan-Spule ans AMS (A1 Mini)'
+  description: Hat eine FilaMan-Spule den Lagerort 'A1 Mini - Slot 1…4' oder 'A1 Mini
+    - Extern' (z. B. per SpoolmanScale gesetzt) und steckt im Slot eine Spule ohne
+    Bambu-RFID, setzt HA dort Material, Farbe und Temperaturbereich (allgemeines Bambu-Profil
+    je Material). Bambu-Spulen mit RFID werden nicht überschrieben.
+  triggers:
+  - trigger: state
+    entity_id: sensor.filaman_spulen
+    attribute: spulen
+    note: Lagerort in FilaMan geändert (Abruf alle 2 min)
+  - trigger: state
+    entity_id:
+    - sensor.a1mini_0309da442500462_ams_1_slot_1
+    - sensor.a1mini_0309da442500462_ams_1_slot_2
+    - sensor.a1mini_0309da442500462_ams_1_slot_3
+    - sensor.a1mini_0309da442500462_ams_1_slot_4
+    - sensor.a1mini_0309da442500462_externalspool_externe_spule
+    note: Spule eingelegt oder Slot geändert
+  - trigger: state
+    entity_id:
+    - sensor.a1mini_0309da442500462_ams_1_slot_1
+    - sensor.a1mini_0309da442500462_ams_1_slot_2
+    - sensor.a1mini_0309da442500462_ams_1_slot_3
+    - sensor.a1mini_0309da442500462_ams_1_slot_4
+    attribute: empty
+  actions:
+  - variables:
+      p: sensor.a1mini_0309da442500462_
+      profile:
+        PLA:
+        - GFL99
+        - 190
+        - 240
+        PETG:
+        - GFG99
+        - 220
+        - 260
+        ABS:
+        - GFB99
+        - 240
+        - 270
+        ASA:
+        - GFB98
+        - 240
+        - 270
+        TPU:
+        - GFU99
+        - 200
+        - 250
+        PA:
+        - GFN99
+        - 260
+        - 290
+        PC:
+        - GFC99
+        - 260
+        - 290
+        PVA:
+        - GFS99
+        - 190
+        - 240
+      todo: '{% set slots = [[''Slot 1'', p ~ ''ams_1_slot_1''], [''Slot 2'', p ~
+        ''ams_1_slot_2''], [''Slot 3'', p ~ ''ams_1_slot_3''], [''Slot 4'', p ~ ''ams_1_slot_4''],
+        [''Extern'', p ~ ''externalspool_externe_spule'']] %}{% set sp = state_attr(''sensor.filaman_spulen'',
+        ''spulen'') or [] %}{% set ns = namespace(l=[]) %}{% for s in slots %}{% set
+        f = sp | selectattr(''ort'', ''eq'', ''A1 Mini - '' ~ s[0]) | first | default(none)
+        %}{% set a = states[s[1]].attributes if states[s[1]] is not none else {} %}{%
+        set rfid = (a.get(''tag_uid'') or ''0000000000000000'') | replace(''0'', '''')
+        != '''' %}{% set m = profile.get((f.material if f else '''') | upper) %}{%
+        if f and m and not rfid and not a.get(''empty'', true) %}{% set farbe = (f.farbe
+        | replace(''#'', '''') | upper)[:6] ~ ''FF'' %}{% set ist = (a.get(''color'')
+        or '''') | replace(''#'', '''') | upper %}{% if (a.get(''type'') or '''')
+        | upper != f.material | upper or ist != farbe %}{% set ns.l = ns.l + [{''entity_id'':
+        s[1], ''tray_info_idx'': m[0], ''tray_color'': farbe, ''tray_type'': f.material
+        | upper, ''nozzle_temp_min'': m[1], ''nozzle_temp_max'': m[2], ''spule'':
+        f.hersteller ~ '' '' ~ f.name, ''slot'': s[0]}] %}{% endif %}{% endif %}{%
+        endfor %}{{ ns.l }}'
+    note: Slots mit FilaMan-Spule, die im AMS anders eingestellt sind
+  - condition: template
+    value_template: '{{ todo | count > 0 }}'
+    note: Nichts zu tun, wenn alle Slots passen
+  - repeat:
+      for_each: '{{ todo }}'
+      sequence:
+      - action: bambu_lab.set_filament
+        data:
+          entity_id: '{{ repeat.item.entity_id }}'
+          tray_info_idx: '{{ repeat.item.tray_info_idx }}'
+          tray_color: '{{ repeat.item.tray_color }}'
+          tray_type: '{{ repeat.item.tray_type }}'
+          nozzle_temp_min: '{{ repeat.item.nozzle_temp_min }}'
+          nozzle_temp_max: '{{ repeat.item.nozzle_temp_max }}'
+        continue_on_error: true
+      - action: logbook.log
+        data:
+          name: A1 Mini AMS
+          message: '{{ repeat.item.slot }}: {{ repeat.item.spule }} ({{ repeat.item.tray_type
+            }}) aus FilaMan gesetzt'
+          entity_id: '{{ repeat.item.entity_id }}'
+  mode: queued
+  max: 3
