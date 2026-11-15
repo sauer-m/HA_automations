@@ -1426,3 +1426,114 @@
           entity_id: '{{ repeat.item.entity_id }}'
   mode: queued
   max: 3
+- id: fabrication_drucker_benachrichtigungen
+  alias: 'Fabrication: Druckerbenachrichtigungen'
+  description: 'Bündelt die Meldungen aller Drucker auf Marcels Samsung (ersetzt die
+    Prusa-Connect-App-Meldungen): Druck fertig oder abgebrochen mit Dauer, Gramm und
+    Kosten aus der Druckhistorie, dazu sofortige Warnungen bei Pause, Aufmerksamkeit
+    oder Fehler. Kamerabild als Anhang, Tipp öffnet die Druckeransicht.'
+  triggers:
+  - trigger: state
+    entity_id: sensor.druck_historie
+    id: fertig
+    note: Neuer Eintrag in der Druckhistorie = Druck beendet, Kosten sind dann schon
+      berechnet
+  - trigger: state
+    entity_id: sensor.prusa_xl
+    to:
+    - paused
+    - attention
+    - error
+    not_from:
+    - unavailable
+    - unknown
+    id: prusa_problem
+  - trigger: state
+    entity_id: sensor.a1mini_0309da442500462_druckstatus
+    to: pause
+    id: a1_problem
+  - trigger: state
+    entity_id:
+    - binary_sensor.a1mini_0309da442500462_hms_fehler
+    - binary_sensor.a1mini_0309da442500462_druckfehler
+    from: 'off'
+    to: 'on'
+    id: a1_problem
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: fertig
+      - condition: template
+        value_template: '{{ i != {} and not letzter.get(''nachgetragen'', false) and
+          (now() - as_datetime(letzter.ende)).total_seconds() < 900 }}'
+        note: Nur echte, frische Druckenden; Importe und Korrekturen lösen nichts
+          aus
+      sequence:
+      - action: notify.mobile_app_sm_f741b
+        data:
+          title: '{{ ''✅ '' ~ drucker ~ '': Druck fertig'' if letzter.status == ''fertig''
+            else ''✕ '' ~ drucker ~ '': Druck abgebrochen'' }}'
+          message: '{% macro eur(x) %}{{ (''%.2f'' | format(x | float(0))) | replace(''.'',
+            '','') }} €{% endmacro %}{{ letzter.name or ''Unbenannter Druck'' }}
+
+            {{ ''%d:%02d h'' | format((letzter.min or 0) // 60, (letzter.min or 0)
+            % 60) if letzter.min is not none else '''' }}{{ '' · '' ~ (letzter.g |
+            round(0) | int) ~ '' g'' if letzter.g }}{{ '' · '' ~ eur(letzter.gesamt)
+            if letzter.gesamt else '''' }}{{ '' (ohne Filament)'' if letzter.filament
+            is none and letzter.g }}'
+          data:
+            tag: '{{ tag }}'
+            channel: 3D-Druck
+            image: /api/camera_proxy/{{ i.kamera }}
+            clickAction: '{{ i.pfad }}'
+    - conditions:
+      - condition: trigger
+        id:
+        - prusa_problem
+        - a1_problem
+      sequence:
+      - variables:
+          st: '{{ states(i.status) }}'
+          titel: '{{ {''paused'': ''Druck pausiert'', ''pause'': ''Druck pausiert'',
+            ''attention'': ''braucht Aufmerksamkeit'', ''error'': ''Fehler''}.get(st,
+            ''Fehler'') if trigger.id == ''prusa_problem'' or trigger.entity_id ==
+            i.status else (''HMS-Fehler'' if ''hms'' in trigger.entity_id else ''Druckfehler'')
+            }}'
+      - action: notify.mobile_app_sm_f741b
+        data:
+          title: '⚠️ {{ drucker }}: {{ titel }}'
+          message: '{% set d = states(i.datei) %}{{ d if d not in [''unknown'', ''unavailable'',
+            ''''] else ''Aktueller Druck'' }} · {{ states(i.fortschritt) | int(0)
+            }} %
+
+            Bitte am Drucker nachsehen.'
+          data:
+            tag: '{{ tag }}_problem'
+            channel: 3D-Druck Alarm
+            importance: high
+            priority: high
+            ttl: 0
+            image: /api/camera_proxy/{{ i.kamera }}
+            clickAction: '{{ i.pfad }}'
+  mode: queued
+  max: 5
+  variables:
+    info:
+      Prusa XL:
+        kamera: camera.tapo_c200c_prusa_xl_hd_stream
+        pfad: /dashboard-fabrication/prusa-xl
+        status: sensor.prusa_xl
+        datei: sensor.prusa_xl_dateiname
+        fortschritt: sensor.prusa_xl_fortschritt
+      A1 Mini:
+        kamera: camera.a1mini_0309da442500462_kamera
+        pfad: /dashboard-fabrication/a1-mini
+        status: sensor.a1mini_0309da442500462_druckstatus
+        datei: sensor.a1mini_0309da442500462_name_der_aufgabe
+        fortschritt: sensor.a1mini_0309da442500462_druckfortschritt
+    letzter: '{{ (state_attr(''sensor.druck_historie'', ''drucke'') or [{}])[0] }}'
+    drucker: '{{ letzter.get(''drucker'', '''') if trigger.id == ''fertig'' else (''Prusa
+      XL'' if trigger.id == ''prusa_problem'' else ''A1 Mini'') }}'
+    i: '{{ info.get(drucker, {}) }}'
+    tag: druck_{{ drucker | lower | replace(' ', '_') }}
