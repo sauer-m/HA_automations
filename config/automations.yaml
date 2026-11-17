@@ -1537,3 +1537,30 @@
       XL'' if trigger.id == ''prusa_problem'' else ''A1 Mini'') }}'
     i: '{{ info.get(drucker, {}) }}'
     tag: druck_{{ drucker | lower | replace(' ', '_') }}
+- id: '1794955606197'
+  alias: Prusa XL - Steckdose nach Druckende aus
+  description: Schaltet die Steckdose des Prusa XL aus, wenn der Drucker seit 30 Minuten
+    nicht druckt und unter 30 W zieht. Spart ca. 14 W Leerlauf (rund 40 Euro im Jahr).
+    Vor dem naechsten Druck die Steckdose wieder einschalten.
+  mode: single
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.prusa_xl_keller_leistung
+    below: 30
+    for:
+      minutes: 30
+  conditions:
+  - condition: state
+    entity_id: switch.prusa_xl_keller
+    state: 'on'
+  - condition: state
+    entity_id: sensor.prusa_xl
+    state:
+    - finished
+    - stopped
+    - idle
+    - ready
+  actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.prusa_xl_keller
