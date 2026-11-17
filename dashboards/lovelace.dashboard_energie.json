@@ -3,6 +3,125 @@
   "minor_version": 1,
   "key": "lovelace.dashboard_energie",
   "data": {
-    "config": {"views":[{"title":"Energie","path":"uebersicht","icon":"mdi:lightning-bolt","type":"sections","max_columns":3,"sections":[{"type":"grid","column_span":3,"cards":[{"type":"heading","heading":"Energie","icon":"mdi:lightning-bolt","badges":[{"type":"entity","entity":"sensor.energie_leistung_erfasst","show_state":true,"show_icon":true},{"type":"entity","entity":"sensor.stromkosten_heute","show_state":true,"show_icon":true},{"type":"entity","entity":"sensor.stromkosten_prognose_monat","show_state":true,"show_icon":true}]},{"type":"energy-date-selection","grid_options":{"columns":"full"}}]},{"type":"grid","cards":[{"type":"energy-distribution","grid_options":{"columns":"full"}},{"type":"energy-sources-table","grid_options":{"columns":"full"}}]},{"type":"grid","cards":[{"type":"energy-usage-graph","grid_options":{"columns":"full"}}]},{"type":"grid","cards":[{"type":"power-sources-graph","grid_options":{"columns":"full"}}]},{"type":"grid","column_span":3,"cards":[{"type":"power-sankey","grid_options":{"columns":"full"}}]},{"type":"grid","cards":[{"type":"energy-devices-graph","modes":["pie","bar"],"grid_options":{"columns":"full"}}]},{"type":"grid","column_span":2,"cards":[{"type":"energy-devices-detail-graph","grid_options":{"columns":"full"}}]}]},{"title":"3D-Druck","path":"druck","icon":"mdi:printer-3d-nozzle","type":"sections","max_columns":2,"sections":[{"type":"grid","cards":[{"type":"heading","heading":"Aktueller Druck","icon":"mdi:printer-3d"},{"type":"tile","entity":"sensor.prusa_xl_keller_leistung","name":"Leistung","icon":"mdi:flash","features":[{"type":"trend-graph","hours_to_show":24}],"grid_options":{"columns":"full"}},{"type":"tile","entity":"sensor.prusa_xl_druck_stromkosten","name":"Strom","icon":"mdi:cash","grid_options":{"columns":6}},{"type":"tile","entity":"sensor.prusa_xl_druck_filamentkosten","name":"Filament","icon":"mdi:printer-3d-nozzle","grid_options":{"columns":6}}]},{"type":"grid","cards":[{"type":"heading","heading":"Monat","icon":"mdi:calendar-month"},{"type":"statistic","entity":"sensor.prusa_xl_keller_energie","name":"Strom","stat_type":"change","period":{"calendar":{"period":"month"}},"grid_options":{"columns":6}},{"type":"tile","entity":"sensor.filament_kosten_monat","name":"Filament","icon":"mdi:printer-3d-nozzle","grid_options":{"columns":6}},{"type":"statistics-graph","chart_type":"bar","period":"month","days_to_show":365,"stat_types":["change"],"hide_legend":true,"entities":[{"entity":"sensor.prusa_xl_keller_energie","name":"Prusa XL"}],"grid_options":{"columns":"full","rows":4}}]}]}]}
+    "config": {
+      "views": [
+        {
+          "title": "Übersicht",
+          "path": "uebersicht",
+          "icon": "mdi:lightning-bolt",
+          "type": "panel",
+          "cards": [
+            {
+              "type": "custom:energie-dashboard-card"
+            }
+          ]
+        },
+        {
+          "title": "3D-Druck",
+          "path": "druck",
+          "icon": "mdi:printer-3d-nozzle",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Aktueller Druck",
+                  "icon": "mdi:printer-3d"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_keller_leistung",
+                  "name": "Leistung",
+                  "icon": "mdi:flash",
+                  "features": [
+                    {
+                      "type": "trend-graph",
+                      "hours_to_show": 24
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druck_stromkosten",
+                  "name": "Strom",
+                  "icon": "mdi:cash",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.prusa_xl_druck_filamentkosten",
+                  "name": "Filament",
+                  "icon": "mdi:printer-3d-nozzle",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Monat",
+                  "icon": "mdi:calendar-month"
+                },
+                {
+                  "type": "statistic",
+                  "entity": "sensor.prusa_xl_keller_energie",
+                  "name": "Strom",
+                  "stat_type": "change",
+                  "period": {
+                    "calendar": {
+                      "period": "month"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.filament_kosten_monat",
+                  "name": "Filament",
+                  "icon": "mdi:printer-3d-nozzle",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "statistics-graph",
+                  "chart_type": "bar",
+                  "period": "month",
+                  "days_to_show": 365,
+                  "stat_types": [
+                    "change"
+                  ],
+                  "hide_legend": true,
+                  "entities": [
+                    {
+                      "entity": "sensor.prusa_xl_keller_energie",
+                      "name": "Prusa XL"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": 4
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
   }
 }
