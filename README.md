@@ -9,6 +9,7 @@ Spiegel der Home-Assistant-Konfiguration von Marcel (HA OS 2026.10 als VM auf Pr
 | `esphome/` | Eigene ESPHome-Geräte (BenQ, Brunnen, Steckdose, Landroid-Kamera, ProfiCook, XGIMI-Remote) | `/config/esphome` |
 | `dashboards/` | Lovelace-Dashboards (Beleuchtung/Klima/Sicherheit/Media, Listen, Tools, Karte) | `.storage/lovelace*` |
 | `helpers/` | `input_boolean`, `input_number` aus der UI | `.storage/input_*` |
+| `docs/` | Doku je Komponente (z. B. Fabrication-Dashboard) | – |
 | `tools/export.sh` | Aktualisiert den Spiegel vom Samba-Share und schwärzt Secrets | – |
 
 Nicht im Repo: `secrets.yaml`, Zigbee2MQTT-Konfiguration (enthält den Netzwerkschlüssel), Datenbank, eigene Blueprints in `blueprints/automation/sauer-m` (ein Dateiname mit `<>` lässt sich unter Windows nicht kopieren).
