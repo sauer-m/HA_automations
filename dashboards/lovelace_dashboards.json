@@ -1,1 +1,117 @@
-{"version": 1, "minor_version": 1, "key": "lovelace_dashboards", "data": {"items": [{"id": "map", "icon": "mdi:map", "title": "Karte", "url_path": "map", "require_admin": false, "show_in_sidebar": true, "mode": "storage"}, {"id": "dashboard_beleuctung", "show_in_sidebar": true, "title": "Home", "require_admin": false, "mode": "storage", "url_path": "dashboard-beleuctung", "icon": "mdi:home-analytics"}, {"id": "dashboard_tools", "show_in_sidebar": true, "icon": "mdi:progress-wrench", "title": "Tools", "require_admin": false, "mode": "storage", "url_path": "dashboard-tools"}, {"id": "dashboard_listen", "require_admin": false, "show_in_sidebar": true, "icon": "mdi:list-box", "title": "Listen", "url_path": "dashboard-listen", "mode": "storage"}, {"id": "dashboard_mova", "show_in_sidebar": true, "icon": "mdi:robot-vacuum", "title": "Mova", "require_admin": false, "mode": "storage", "url_path": "dashboard-mova"}]}}
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace_dashboards",
+  "data": {
+    "items": [
+      {
+        "id": "map",
+        "icon": "mdi:map",
+        "title": "Karte",
+        "url_path": "map",
+        "require_admin": false,
+        "show_in_sidebar": true,
+        "mode": "storage"
+      },
+      {
+        "id": "dashboard_beleuctung",
+        "show_in_sidebar": true,
+        "title": "Home",
+        "require_admin": false,
+        "mode": "storage",
+        "url_path": "dashboard-beleuctung",
+        "icon": "mdi:home-analytics"
+      },
+      {
+        "id": "dashboard_tools",
+        "show_in_sidebar": true,
+        "icon": "mdi:progress-wrench",
+        "title": "Tools",
+        "require_admin": false,
+        "mode": "storage",
+        "url_path": "dashboard-tools"
+      },
+      {
+        "id": "dashboard_listen",
+        "require_admin": false,
+        "show_in_sidebar": true,
+        "icon": "mdi:list-box",
+        "title": "Listen",
+        "url_path": "dashboard-listen",
+        "mode": "storage"
+      },
+      {
+        "id": "dashboard_mova",
+        "url_path": "dashboard-mova",
+        "title": "Mova",
+        "icon": "mdi:robot-vacuum",
+        "show_in_sidebar": true,
+        "require_admin": false,
+        "mode": "storage"
+      },
+      {
+        "id": "dashboard_pflanzen",
+        "url_path": "dashboard-pflanzen",
+        "title": "Pflanzen",
+        "icon": "mdi:flower",
+        "show_in_sidebar": true,
+        "require_admin": false,
+        "mode": "storage"
+      },
+      {
+        "id": "dashboard_fabrication",
+        "url_path": "dashboard-fabrication",
+        "title": "Fabrication",
+        "icon": "mdi:printer-3d-nozzle",
+        "show_in_sidebar": true,
+        "require_admin": false,
+        "mode": "storage"
+      },
+      {
+        "id": "dashboard_briefing",
+        "url_path": "dashboard-briefing",
+        "title": "Briefing",
+        "icon": "mdi:newspaper-variant-outline",
+        "require_admin": false,
+        "show_in_sidebar": true,
+        "mode": "storage"
+      },
+      {
+        "id": "dashboard_infobereich",
+        "url_path": "dashboard-infobereich",
+        "title": "Infobereich",
+        "icon": "mdi:mirror-rectangle",
+        "show_in_sidebar": true,
+        "require_admin": false,
+        "mode": "storage"
+      },
+      {
+        "id": "dashboard_haushalt",
+        "url_path": "dashboard-haushalt",
+        "title": "Haushalt",
+        "icon": "mdi:washing-machine",
+        "show_in_sidebar": true,
+        "require_admin": false,
+        "mode": "storage"
+      },
+      {
+        "id": "dashboard_energie",
+        "url_path": "dashboard-energie",
+        "title": "Energie",
+        "icon": "mdi:lightning-bolt",
+        "require_admin": false,
+        "show_in_sidebar": true,
+        "mode": "storage"
+      },
+      {
+        "id": "dashboard_willkommen",
+        "url_path": "dashboard-willkommen",
+        "title": "Willkommen",
+        "icon": "mdi:hand-wave",
+        "show_in_sidebar": true,
+        "require_admin": false,
+        "mode": "storage"
+      }
+    ]
+  }
+}

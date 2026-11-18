@@ -34,6 +34,17 @@
           "Eingang 1",
           "Eingang 2"
         ]
+      },
+      {
+        "id": "fabrication_zeitraum",
+        "name": "Fabrication Zeitraum",
+        "icon": "mdi:calendar-range",
+        "options": [
+          "Tag",
+          "Monat",
+          "Jahr"
+        ],
+        "initial": "Monat"
       }
     ]
   }
