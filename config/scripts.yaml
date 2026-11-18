@@ -290,3 +290,163 @@ teelichter_schlafzimmer_setzen:
       entity_id: input_number.teelichter_schlafzimmer_dimmstufe
     data:
       value: '{{ ziel }}'
+mondsmaussion_ansagen:
+  alias: Mondsmäussion ansagen
+  description: 'Sagt den aktuellen Tag der Mondsmäussion an. Feld ziel = notify-Entität(en)
+    der Echos; ohne ziel: alle erreichbaren Echos (notify.*_sprechen). Aufgerufen
+    von script.mondsmaussion_knopf (Dashboard) und der Automation ''Mondsmäussion:
+    Alexa-Frage beantworten''. Besondere Tage kommen aus sensor.mondsmaussion_besonderheiten.
+    Angelegt 15.11.2026. Liebes-Zeile: ungerader Tag = Smäus liebt mehr, gerader Tag
+    = Smäusin liebt mehr, Formulierung zufällig.'
+  icon: mdi:moon-waning-crescent
+  mode: parallel
+  fields:
+    ziel:
+      name: Ziel
+      description: notify-Entität(en), auf denen gesprochen wird; leer = alle Echos
+      selector:
+        entity:
+          domain: notify
+          multiple: true
+  variables:
+    tag: '{{ states(''sensor.mondsmaussion_tag'') | int(0) }}'
+    ziele: '{{ ziel if ziel is defined and ziel else (states.notify | selectattr(''entity_id'',
+      ''search'', ''_sprechen$'') | rejectattr(''state'', ''eq'', ''unavailable'')
+      | map(attribute=''entity_id'') | list) }}'
+    besonders: '{{ states(''sensor.mondsmaussion_besonderheiten'') if has_value(''sensor.mondsmaussion_besonderheiten'')
+      else '''' }}'
+    liebe: '{% set l = [''Heute liebt der Smäus die Smäusin mehr.'', ''Heute wird
+      die Smäusin mehr geliebt.'', ''Heute hat der Smäus die Nase vorn: Er liebt die
+      Smäusin ein kleines bisschen mehr.'', ''Ungerader Tag, also liebt heute der
+      Smäus die Smäusin mehr.'', ''Heute bekommt die Smäusin eine Extraportion Liebe
+      vom Smäus.'', ''Heute ist Smäusin-Tag: Der Smäus liebt sie heute mehr.'', ''Heute
+      liebt der Smäus noch ein bisschen doller.''] if tag is odd else [''Heute liebt
+      die Smäusin den Smäus mehr.'', ''Heute wird der Smäus mehr geliebt.'', ''Heute
+      hat die Smäusin die Nase vorn: Sie liebt den Smäus ein kleines bisschen mehr.'',
+      ''Gerader Tag, also liebt heute die Smäusin den Smäus mehr.'', ''Heute bekommt
+      der Smäus eine Extraportion Liebe von der Smäusin.'', ''Heute ist Smäus-Tag:
+      Die Smäusin liebt ihn heute mehr.'', ''Heute liebt die Smäusin noch ein bisschen
+      doller.''] %}{{ l | random }}'
+  sequence:
+  - action: notify.send_message
+    target:
+      entity_id: '{{ ziele }}'
+    data:
+      message: Heute ist Tag {{ tag }} eurer Mondsmäussion. {{ liebe }} {{ besonders
+        }}
+    continue_on_error: true
+mondsmaussion_knopf:
+  alias: Mondsmäussion Knopf (Ansage starten/stoppen)
+  description: 'Dashboard-Knopf. Läuft keine Ansage: spricht auf allen Echos und startet
+    timer.mondsmaussion_ansage_lauft für die geschätzte Sprechdauer. Läuft sie: schickt
+    ''Stopp'' an alle Echos und bricht den Timer ab. Angelegt 15.11.2026.'
+  icon: mdi:account-voice
+  mode: single
+  sequence:
+  - if:
+    - condition: state
+      entity_id: timer.mondsmaussion_ansage_lauft
+      state: active
+    then:
+    - repeat:
+        for_each: '{{ states.notify | selectattr(''entity_id'', ''search'', ''_sprechen$'')
+          | rejectattr(''state'', ''eq'', ''unavailable'') | map(attribute=''entity_id'')
+          | list }}'
+        sequence:
+        - action: alexa_devices.send_text_command
+          data:
+            device_id: '{{ device_id(repeat.item) }}'
+            text_command: Stopp
+          continue_on_error: true
+      note: Wie 'Alexa, stopp' auf jedem Echo
+    - action: timer.cancel
+      target:
+        entity_id: timer.mondsmaussion_ansage_lauft
+    else:
+    - action: script.mondsmaussion_ansagen
+    - action: timer.start
+      target:
+        entity_id: timer.mondsmaussion_ansage_lauft
+      data:
+        duration: '{{ (((''Heute ist Tag '' ~ states(''sensor.mondsmaussion_tag'')
+          ~ '' eurer Mondsmäussion. '' ~ states(''sensor.mondsmaussion_besonderheiten''))
+          | length + 80) / 12 + 5) | round(0) | int }}'
+      note: 'Geschätzte Sprechdauer: Text + ca. 80 Zeichen Liebes-Zeile, 12 Zeichen
+        pro Sekunde, plus 5 s Vorlauf'
+drucker_steckdose_schalten:
+  alias: Drucker - Steckdose schalten (mit Drucksperre)
+  description: Schaltet die Steckdose eines 3D-Druckers. Ausschalten wird verweigert,
+    solange der Drucker druckt, pausiert, vorbereitet oder mehr als 'max_watt' zieht
+    (z. B. beim Aufheizen). Genutzt vom Fabrication-Dashboard.
+  icon: mdi:power-plug
+  mode: single
+  fields:
+    steckdose:
+      name: Steckdose
+      required: true
+      selector:
+        entity:
+          domain: switch
+    status:
+      name: Druckstatus-Sensor
+      required: true
+      selector:
+        entity:
+          domain: sensor
+    leistung:
+      name: Leistungs-Sensor (optional)
+      selector:
+        entity:
+          domain: sensor
+          device_class: power
+    max_watt:
+      name: Max. Leistung zum Ausschalten (W)
+      default: 60
+      selector:
+        number:
+          min: 10
+          max: 500
+          unit_of_measurement: W
+    aktion:
+      name: Aktion
+      default: umschalten
+      selector:
+        select:
+          options:
+          - an
+          - aus
+          - umschalten
+  sequence:
+  - variables:
+      soll: '{{ (aktion | default(''umschalten'')) if (aktion | default(''umschalten''))
+        != ''umschalten'' else (''aus'' if is_state(steckdose, ''on'') else ''an'')
+        }}'
+      druckt: '{{ states(status) in [''printing'', ''busy'', ''paused'', ''prepare'',
+        ''running'', ''pause'', ''slicing'', ''init'', ''attention''] }}'
+      watt: '{{ states(leistung) | float(0) if leistung is defined and leistung else
+        0 }}'
+      grenze: '{{ max_watt | default(60) | float(60) }}'
+  - if:
+    - condition: template
+      value_template: '{{ soll == ''an'' }}'
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: '{{ steckdose }}'
+    - stop: Eingeschaltet
+  - if:
+    - condition: template
+      value_template: '{{ druckt }}'
+    then:
+    - stop: 'Ausschalten gesperrt: Drucker ist aktiv ({{ states(status) }}).'
+      error: true
+  - if:
+    - condition: template
+      value_template: '{{ watt > grenze }}'
+    then:
+    - stop: 'Ausschalten gesperrt: Drucker zieht {{ watt | round(0) | int }} W (heizt
+        oder druckt).'
+      error: true
+  - action: switch.turn_off
+    target:
+      entity_id: '{{ steckdose }}'

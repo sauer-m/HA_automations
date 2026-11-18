@@ -179,6 +179,11 @@
                   "grid_options": {
                     "columns": 12
                   }
+                },
+                {
+                  "type": "custom:status-glow-card",
+                  "entity": "sensor.prusa_xl",
+                  "power": "switch.prusa_xl_keller"
                 }
               ]
             },
@@ -354,6 +359,10 @@
                   "grid_options": {
                     "columns": 12
                   }
+                },
+                {
+                  "type": "custom:status-glow-card",
+                  "entity": "sensor.a1mini_0309da442500462_druckstatus"
                 }
               ]
             },
@@ -387,6 +396,10 @@
                 {
                   "type": "markdown",
                   "content": "{% set g = (state_attr('sensor.filaman_spulen','spulen') or []) | selectattr('drucker','eq','H2C') | list %}**{{ g | count }} von 24** Slots belegt\n{% for s in g %}<font color='{{ s.farbe }}'>⬤</font> {{ s.ort }}: {{ s.hersteller }} {{ s.name }} · {{ s.rest_g | int }} g\n{% endfor %}"
+                },
+                {
+                  "type": "custom:status-glow-card",
+                  "entity": "sensor.h2c_noch_nicht_eingebunden"
                 }
               ]
             },
@@ -427,6 +440,32 @@
                   "grid_options": {
                     "columns": "full"
                   }
+                },
+                {
+                  "type": "statistics-graph",
+                  "title": "Stromverbrauch pro Tag (30 Tage)",
+                  "entities": [
+                    {
+                      "entity": "sensor.prusa_xl_keller_energie",
+                      "name": "Prusa XL",
+                      "color": "#ff6f00"
+                    }
+                  ],
+                  "stat_types": [
+                    "change"
+                  ],
+                  "period": "day",
+                  "chart_type": "bar",
+                  "days_to_show": 30,
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": 5
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "<sub>Nur der Prusa XL hängt an einer Messsteckdose. A1 Mini und H2C erscheinen hier, sobald sie eine bekommen.</sub>"
                 }
               ]
             },
@@ -636,6 +675,11 @@
                       ]
                     }
                   ]
+                },
+                {
+                  "type": "custom:status-glow-card",
+                  "entity": "sensor.prusa_xl",
+                  "power": "switch.prusa_xl_keller"
                 }
               ]
             },
@@ -803,6 +847,53 @@
                   "type": "heading",
                   "heading": "Steuerung",
                   "icon": "mdi:gesture-tap-button"
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.prusa_xl_keller",
+                  "name": "Drucker-Strom",
+                  "icon": "mdi:power-plug",
+                  "state_content": [
+                    "state",
+                    "last_changed"
+                  ],
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "script.drucker_steckdose_schalten",
+                    "data": {
+                      "steckdose": "switch.prusa_xl_keller",
+                      "status": "sensor.prusa_xl",
+                      "leistung": "sensor.prusa_xl_keller_leistung",
+                      "max_watt": 60,
+                      "aktion": "umschalten"
+                    },
+                    "confirmation": {
+                      "text": "Steckdose des Prusa XL umschalten? Ausschalten ist gesperrt, solange er druckt oder mehr als 60 W zieht."
+                    }
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "script.drucker_steckdose_schalten",
+                    "data": {
+                      "steckdose": "switch.prusa_xl_keller",
+                      "status": "sensor.prusa_xl",
+                      "leistung": "sensor.prusa_xl_keller_leistung",
+                      "max_watt": 60,
+                      "aktion": "umschalten"
+                    },
+                    "confirmation": {
+                      "text": "Steckdose des Prusa XL umschalten? Ausschalten ist gesperrt, solange er druckt oder mehr als 60 W zieht."
+                    }
+                  },
+                  "hold_action": {
+                    "action": "none"
+                  },
+                  "double_tap_action": {
+                    "action": "none"
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
                 },
                 {
                   "type": "tile",
@@ -1191,6 +1282,10 @@
                       ]
                     }
                   ]
+                },
+                {
+                  "type": "custom:status-glow-card",
+                  "entity": "sensor.a1mini_0309da442500462_druckstatus"
                 }
               ]
             },
@@ -1305,6 +1400,14 @@
                   "type": "heading",
                   "heading": "Steuerung",
                   "icon": "mdi:gesture-tap-button"
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "<ha-icon icon=\"mdi:power-plug-off-outline\"></ha-icon> **Drucker-Strom:** noch keine schaltbare Steckdose. Sobald eine da ist, kommt hier derselbe Einschalter wie beim Prusa XL hin (mit Drucksperre).",
+                  "grid_options": {
+                    "columns": 12
+                  }
                 },
                 {
                   "type": "tile",
