@@ -1,0 +1,622 @@
+{
+ "views": [
+  {
+   "title": "Start",
+   "path": "start",
+   "icon": "mdi:hand-wave",
+   "type": "sections",
+   "max_columns": 2,
+   "sections": [
+    {
+     "type": "grid",
+     "column_span": 2,
+     "cards": [
+      {
+       "type": "markdown",
+       "text_only": true,
+       "content": "{% set h = now().hour %}{% set tage = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'] %}{% set monate = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'] %}{% set wx = {'clear-night':'klar','cloudy':'bewölkt','exceptional':'Unwetter','fog':'Nebel','hail':'Hagel','lightning':'Gewitter','lightning-rainy':'Gewitter','partlycloudy':'teils bewölkt','pouring':'Starkregen','rainy':'Regen','snowy':'Schnee','snowy-rainy':'Schneeregen','sunny':'sonnig','windy':'windig','windy-variant':'windig'} %}{% set w = 'weather.weather_23554_lubeck_deutschland' %}{% set p = ['person.sauerm','person.sarah'] %}{% set zuhause = p | select('is_state','home') | list %}{% set weg = p | reject('is_state','home') | list %}{% set n = states('sensor.hinweise_anzahl') | int(0) %}{% macro wer(e) %}{{ 'du' if state_attr(e,'friendly_name') == user else '**' ~ state_attr(e,'friendly_name') ~ '**' }}{% endmacro %}{% macro wo(e) %}{{ 'unterwegs' if is_state(e,'not_home') else ('auf der Arbeit' if is_state(e,'Arbeit') else 'bei ' ~ states(e)) }}{% endmacro %}<small>{{ tage[now().weekday()] }}, {{ now().day }}. {{ monate[now().month-1] }}</small>\n\n## {% if h < 5 or h >= 23 %}Gute Nacht{% elif h < 11 %}Guten Morgen{% elif h < 18 %}Hallo{% else %}Guten Abend{% endif %} {{ user }}\n\n{% if zuhause | count == 2 %}Ihr seid beide zu Hause{% elif zuhause | count == 1 %}{% set a = wer(zuhause[0]) %}{{ 'Du bist' if a == 'du' else a ~ ' ist' }} zu Hause{% for e in weg %}, {% set b = wer(e) %}{{ b }} {{ 'bist' if b == 'du' else 'ist' }} {{ wo(e) }}{% endfor %}{% else %}Niemand ist zu Hause{% endif %}, {{ 'alles ist abgeschlossen' if is_state('lock.wohnungstur','locked') else '**die Wohnungstür ist offen**' }}. {% if n == 0 %}Nichts zu tun.{% elif n == 1 %}**1 Hinweis.**{% else %}**{{ n }} Hinweise.**{% endif %}\n\n<small>Lübeck {{ state_attr(w,'temperature') | round(1) | string | replace('.',',') }} °C · {{ wx.get(states(w), states(w)) }} · Wind {{ state_attr(w,'wind_speed') | round(0) | int }} km/h · {% if is_state('sun.sun','above_horizon') %}Sonnenuntergang {{ as_timestamp(state_attr('sun.sun','next_setting')) | timestamp_custom('%H:%M') }}{% else %}Sonnenaufgang {{ as_timestamp(state_attr('sun.sun','next_rising')) | timestamp_custom('%H:%M') }}{% endif %}</small>",
+       "grid_options": {
+        "columns": "full"
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "binary_sensor.wohnzimmerfenster",
+       "name": "Fenster offen: Wohnzimmer",
+       "color": "red",
+       "icon": "mdi:window-open-variant",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "binary_sensor.wohnzimmerfenster",
+         "state": "on"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "state_content": [
+        "last_changed"
+       ]
+      },
+      {
+       "type": "tile",
+       "entity": "binary_sensor.esszimmerfenster",
+       "name": "Fenster offen: Esszimmer",
+       "color": "red",
+       "icon": "mdi:window-open-variant",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "binary_sensor.esszimmerfenster",
+         "state": "on"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "state_content": [
+        "last_changed"
+       ]
+      },
+      {
+       "type": "tile",
+       "entity": "binary_sensor.schlafzimmerfenster",
+       "name": "Fenster offen: Schlafzimmer",
+       "color": "red",
+       "icon": "mdi:window-open-variant",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "binary_sensor.schlafzimmerfenster",
+         "state": "on"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "state_content": [
+        "last_changed"
+       ]
+      },
+      {
+       "type": "tile",
+       "entity": "binary_sensor.badezimmerfenster",
+       "name": "Fenster offen: Badezimmer",
+       "color": "red",
+       "icon": "mdi:window-open-variant",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "binary_sensor.badezimmerfenster",
+         "state": "on"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "state_content": [
+        "last_changed"
+       ]
+      },
+      {
+       "type": "tile",
+       "entity": "binary_sensor.terrassentur",
+       "name": "Terrassentür offen",
+       "color": "red",
+       "icon": "mdi:door-open",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "binary_sensor.terrassentur",
+         "state": "on"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "state_content": [
+        "last_changed"
+       ]
+      },
+      {
+       "type": "tile",
+       "entity": "lock.wohnungstur",
+       "name": "Wohnungstür nicht abgeschlossen",
+       "color": "red",
+       "icon": "mdi:lock-open-variant",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "lock.wohnungstur",
+         "state_not": "locked"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "state_content": [
+        "last_changed"
+       ]
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.batterie_flotte_schwache_batterien_ersetzen",
+       "name": "Batterien schwach: ersetzen",
+       "color": "amber",
+       "icon": "mdi:battery-alert-variant-outline",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "binary_sensor.batterie_flotte_schwache_batterien_ersetzen_uberfallig",
+         "state": "on"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "hide_state": true
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.haushalt_open_tasks",
+       "name": "Haushalt: Aufgaben überfällig",
+       "color": "amber",
+       "icon": "mdi:broom",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "binary_sensor.haushalt_overdue",
+         "state": "on"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-haushalt"
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.pflanzen_giessen_anzahl",
+       "name": "Pflanzen gießen",
+       "color": "amber",
+       "icon": "mdi:watering-can",
+       "visibility": [
+        {
+         "condition": "numeric_state",
+         "entity": "sensor.pflanzen_giessen_anzahl",
+         "above": 0
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-pflanzen"
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.waschmaschine_zustand",
+       "name": "Waschmaschine fertig",
+       "color": "blue",
+       "icon": "mdi:washing-machine",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "sensor.waschmaschine_zustand",
+         "state": "finished"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "state_content": [
+        "last_changed"
+       ]
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.trockner_zustand",
+       "name": "Trockner fertig",
+       "color": "blue",
+       "icon": "mdi:tumble-dryer",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "sensor.trockner_zustand",
+         "state": "finished"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "state_content": [
+        "last_changed"
+       ]
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.spulmaschine_zustand",
+       "name": "Spülmaschine fertig",
+       "color": "blue",
+       "icon": "mdi:dishwasher",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "sensor.spulmaschine_zustand",
+         "state": "finished"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "state_content": [
+        "last_changed"
+       ]
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.prusa_xl",
+       "name": "Prusa XL: Druck fertig",
+       "color": "blue",
+       "icon": "mdi:printer-3d",
+       "visibility": [
+        {
+         "condition": "state",
+         "entity": "sensor.prusa_xl",
+         "state": "finished"
+        }
+       ],
+       "grid_options": {
+        "columns": 12
+       },
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-fabrication"
+       },
+       "state_content": [
+        "last_changed"
+       ]
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.hinweise_anzahl",
+       "name": "Alles in Ordnung",
+       "icon": "mdi:check-circle-outline",
+       "color": "green",
+       "hide_state": true,
+       "tap_action": {
+        "action": "none"
+       },
+       "visibility": [
+        {
+         "condition": "numeric_state",
+         "entity": "sensor.hinweise_anzahl",
+         "below": 1
+        }
+       ],
+       "grid_options": {
+        "columns": "full"
+       }
+      }
+     ]
+    },
+    {
+     "type": "grid",
+     "cards": [
+      {
+       "type": "heading",
+       "heading": "Wer ist da",
+       "icon": "mdi:account-group-outline"
+      },
+      {
+       "type": "tile",
+       "entity": "person.sauerm",
+       "name": "Marcel",
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "person.sarah",
+       "name": "Sarah",
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "lock.wohnungstur",
+       "name": "Wohnungstür",
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "lock.haustur",
+       "name": "Haustür",
+       "grid_options": {
+        "columns": 6
+       }
+      }
+     ]
+    },
+    {
+     "type": "grid",
+     "cards": [
+      {
+       "type": "heading",
+       "heading": "Schnellaktionen",
+       "icon": "mdi:gesture-tap-button"
+      },
+      {
+       "type": "shortcut",
+       "label": "Alle Lichter aus",
+       "description": "14 Leuchten",
+       "icon": "mdi:lightbulb-group-off-outline",
+       "tap_action": {
+        "action": "perform-action",
+        "perform_action": "light.turn_off",
+        "target": {
+         "entity_id": [
+          "light.wohnzimmerlicht",
+          "light.stehlampe",
+          "light.ecklampe_wohnzimmer",
+          "light.schlafzimmerlicht",
+          "light.nachttischlampe",
+          "light.badezimmerlicht",
+          "light.badezimmerlicht_hintergrundbeleuchtung",
+          "light.kuche_schaltausgang_kuchenlicht",
+          "light.esszimmerlicht",
+          "light.schalter_flurlicht",
+          "light.ambilight_buro",
+          "light.terrassenlicht",
+          "light.teelichter_esszimmer",
+          "light.teelichter_schlafzimmer"
+         ]
+        },
+        "confirmation": {
+         "text": "Alle Lichter ausschalten?"
+        }
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "input_boolean.abwesenheit",
+       "name": "Abwesend",
+       "icon": "mdi:home-export-outline",
+       "tap_action": {
+        "action": "toggle"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "switch.heimkino",
+       "name": "Heimkino",
+       "icon": "mdi:movie-open",
+       "tap_action": {
+        "action": "toggle"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "shortcut",
+       "label": "Haustür öffnen",
+       "description": "mit Bestätigung",
+       "icon": "mdi:door-open",
+       "tap_action": {
+        "action": "perform-action",
+        "perform_action": "lock.unlock",
+        "target": {
+         "entity_id": "lock.haustur"
+        },
+        "confirmation": {
+         "text": "Haustür öffnen?"
+        }
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      }
+     ]
+    },
+    {
+     "type": "grid",
+     "cards": [
+      {
+       "type": "heading",
+       "heading": "Heute",
+       "icon": "mdi:calendar-today",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-briefing"
+       }
+      },
+      {
+       "type": "markdown",
+       "content": "{% set k = state_attr('sensor.briefing','kurz') %}{% if k %}{% for z in k.split('\\n') if z.strip() and not z.startswith('Systemhinweise: 0') %}- {{ z }}\n{% endfor %}{% else %}Noch kein Briefing abgerufen.\n{% endif %}{% if state_attr('calendar.haushalt_calendar','message') %}- Haushalt: {{ state_attr('calendar.haushalt_calendar','message') }}, {{ as_timestamp(state_attr('calendar.haushalt_calendar','start_time')) | timestamp_custom('%d.%m.') }}\n{% endif %}\n<small>Briefing von {{ as_timestamp(state_attr('sensor.briefing','erstellt_um')) | timestamp_custom('%H:%M') }} Uhr</small>",
+       "grid_options": {
+        "columns": "full"
+       }
+      }
+     ]
+    },
+    {
+     "type": "grid",
+     "cards": [
+      {
+       "type": "heading",
+       "heading": "Kurzstatus",
+       "icon": "mdi:home-analytics"
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.wohnzimmerthermostat_temperature",
+       "name": "Innen",
+       "icon": "mdi:home-thermometer-outline",
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.stromkosten_heute",
+       "name": "Strom heute",
+       "icon": "mdi:lightning-bolt",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-energie/overview"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "vacuum.p50_pro_ultra",
+       "name": "Mova",
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "tile",
+       "entity": "sensor.prusa_xl",
+       "name": "Prusa XL",
+       "icon": "mdi:printer-3d",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-fabrication"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      }
+     ]
+    },
+    {
+     "type": "grid",
+     "column_span": 2,
+     "cards": [
+      {
+       "type": "heading",
+       "heading": "Weiter zu",
+       "heading_style": "subtitle"
+      },
+      {
+       "type": "shortcut",
+       "label": "Home",
+       "icon": "mdi:home-analytics",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-beleuctung"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "shortcut",
+       "label": "Haushalt",
+       "icon": "mdi:washing-machine",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-haushalt"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "shortcut",
+       "label": "Listen",
+       "icon": "mdi:list-box",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-listen"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "shortcut",
+       "label": "Energie",
+       "icon": "mdi:lightning-bolt",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-energie/overview"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "shortcut",
+       "label": "Fabrication",
+       "icon": "mdi:printer-3d-nozzle",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-fabrication"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "shortcut",
+       "label": "Pflanzen",
+       "icon": "mdi:flower",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-pflanzen"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "shortcut",
+       "label": "Mova",
+       "icon": "mdi:robot-vacuum",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-mova"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      },
+      {
+       "type": "shortcut",
+       "label": "Briefing",
+       "icon": "mdi:newspaper-variant-outline",
+       "tap_action": {
+        "action": "navigate",
+        "navigation_path": "/dashboard-briefing"
+       },
+       "grid_options": {
+        "columns": 6
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

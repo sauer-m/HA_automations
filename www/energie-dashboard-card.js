@@ -195,7 +195,7 @@ class EnergieDashboardCard extends HTMLElement {
     });
     return `<div class="donut"><svg viewBox="0 0 200 200" role="img" aria-label="Anteile der Verbraucher">${segs}
       <text x="100" y="96" text-anchor="middle" class="dv">${fmt(tot * P)} €</text><text x="100" y="118" text-anchor="middle" class="lbl">${fmt(tot, 1)} kWh</text></svg>
-      <div class="dl">${rows.map((x) => `<div><i style="background:${x.c}"></i><span>${esc(x.n)}</span><b>${Math.round(x.k / tot * 100)} %</b></div>`).join('')}</div></div>`;
+      <div class="dl">${rows.map((x) => `<div><i style="background:${x.c}"></i><span>${esc(x.n)}</span><span class="k">${fmt(x.k, 1)} kWh</span><b>${Math.round(x.k / tot * 100)} %</b></div>`).join('')}</div></div>`;
   }
 
   _sankey(monDev, col, P) {
@@ -293,11 +293,12 @@ class EnergieDashboardCard extends HTMLElement {
 .sw{width:10px;height:10px;border-radius:3px}.w{font-weight:600;font-variant-numeric:tabular-nums}
 .rank{display:grid;gap:10px}
 .tgl{cursor:pointer}.sw2{margin-left:8px;padding:2px 8px;border:1px solid var(--line);border-radius:999px}
-.donut{display:grid;grid-template-columns:minmax(150px,200px) 1fr;gap:20px;align-items:center}.donut svg{width:100%;height:auto}
+#rankcard{grid-template-rows:auto 1fr}#rankcard .rank{align-content:space-evenly}
+.donut{display:grid;gap:20px;justify-items:center;align-content:center}.donut svg{width:100%;max-width:290px;height:auto}
 .donut .lbl{font-size:13px}
 .dv{font:600 20px 'Space Grotesk',sans-serif;fill:var(--ink)}
-.dl{display:grid;gap:9px}.dl div{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:center}.dl i{width:12px;height:12px;border-radius:3px}.dl b{font-variant-numeric:tabular-nums}
-@media(max-width:500px){.donut{grid-template-columns:1fr}.donut svg{max-width:200px;margin:auto}}
+.dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 28px;width:100%}.dl div{display:grid;grid-template-columns:12px 1fr auto auto;gap:10px;align-items:center}.dl .k{color:var(--ink2);font-variant-numeric:tabular-nums}.dl i{width:12px;height:12px;border-radius:3px}.dl b{font-variant-numeric:tabular-nums}
+@media(max-width:600px){.dl{grid-template-columns:1fr}.donut svg{max-width:240px}}
 .rk{display:grid;grid-template-columns:minmax(90px,140px) minmax(0,1fr) 64px 58px;gap:10px;align-items:center;font-size:13px}
 .track{height:12px;background:var(--sunk);border-radius:0 4px 4px 0;overflow:hidden}.fill{height:100%;border-radius:0 4px 4px 0}
 .r{text-align:right;font-variant-numeric:tabular-nums}.r.e{font-weight:600}
