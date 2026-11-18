@@ -36,7 +36,7 @@ class StatusGlowCard extends HTMLElement {
     if (!h || !c) return null;
     if (c.power) {
       const p = h.states[c.power];
-      if (!p || p.state === 'off' || p.state === 'unavailable') return 'off';
+      if (!p || p.state !== 'on') return 'off'; // gleiche Regel wie der Statustext im Dashboard
     }
     const st = h.states[c.entity] ? h.states[c.entity].state : 'unavailable';
     if ((c.off || DEF_OFF).includes(st)) return 'off';
