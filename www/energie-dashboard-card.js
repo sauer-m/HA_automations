@@ -21,7 +21,7 @@ const fmt = (v, d = 2) => (isFinite(v) ? v : 0).toLocaleString('de-DE', { minimu
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 class EnergieDashboardCard extends HTMLElement {
-  setConfig(c) { this._c = c || {}; this._per = 'tag'; }
+  setConfig(c) { this._c = c || {}; this._per = 'tag'; this._rv = 'donut'; }
   getCardSize() { return 20; }
   getGridOptions() { return { columns: 'full' }; }
   connectedCallback() {
@@ -156,8 +156,10 @@ class EnergieDashboardCard extends HTMLElement {
     <div class="card c7"><div class="ch"><div class="h2">Wohin der Strom geht</div><span class="sub">${MON[now.getMonth()]} bis heute · ${fmt(monTot, 1)} kWh erfasst</span></div>
       ${this._sankey(monDev, col, P)}</div>
 
-    <div class="card c7"><div class="ch"><div class="h2">Größte Verbraucher</div><span class="sub">${MON[now.getMonth()]} · kWh · Euro</span></div>
-      <div class="rank">${rows.map((r) => `<div class="rk"><span>${esc(r.n)}</span><div class="track"><div class="fill" style="width:${(r.k / maxK * 100).toFixed(1)}%;background:${r.c}"></div></div><span class="r">${fmt(r.k, 1)} kWh</span><span class="r e">${fmt(r.k * P)} €</span></div>`).join('')}</div></div>
+    <div class="card c7 tgl" id="rankcard" title="Klicken zum Umschalten"><div class="ch"><div class="h2">Größte Verbraucher</div><span class="sub">${MON[now.getMonth()]} · ${this._rv === 'list' ? 'kWh · Euro' : 'Anteil'} <span class="sw2">${this._rv === 'list' ? '◔ Diagramm' : '☰ Liste'}</span></span></div>
+      ${this._rv === 'list'
+        ? `<div class="rank">${rows.map((r) => `<div class="rk"><span>${esc(r.n)}</span><div class="track"><div class="fill" style="width:${(r.k / maxK * 100).toFixed(1)}%;background:${r.c}"></div></div><span class="r">${fmt(r.k, 1)} kWh</span><span class="r e">${fmt(r.k * P)} €</span></div>`).join('')}</div>`
+        : this._donut(rows, monTot, P)}</div>
 
     <div class="card c5"><div class="ch"><div class="h2">Hinweise</div><span class="sub">aus deinen Daten abgeleitet</span></div>
       <div class="ins">${ins.map(([c, p, t, x]) => `<div class="insight"><div class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${p}"/></svg></div><div><b>${t}</b><p>${x}</p></div></div>`).join('')}</div></div>
@@ -168,11 +170,32 @@ class EnergieDashboardCard extends HTMLElement {
   </div>
 </div>`;
     this.shadowRoot.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => { this._per = b.dataset.p; this._render(); }));
+    const rc = this.shadowRoot.getElementById('rankcard');
+    if (rc) rc.addEventListener('click', () => { this._rv = this._rv === 'list' ? 'donut' : 'list'; this._render(); });
     this.shadowRoot.querySelectorAll('[data-mi]').forEach((el) => el.addEventListener('click', () => {
       const ev = new Event('hass-more-info', { bubbles: true, composed: true });
       ev.detail = { entityId: el.dataset.mi };
       this.dispatchEvent(ev);
     }));
+  }
+
+  _donut(rows, tot, P) {
+    if (!(tot > 0)) return '<div class="muted">Noch keine Werte in diesem Monat.</div>';
+    const R = 80, r = 54, cx = 100, cy = 100, gapA = rows.length > 1 ? 0.025 : 0;
+    let a = -Math.PI / 2, segs = '';
+    const pt = (rad, ang) => `${(cx + rad * Math.cos(ang)).toFixed(2)},${(cy + rad * Math.sin(ang)).toFixed(2)}`;
+    rows.forEach((x) => {
+      const sw = x.k / tot * Math.PI * 2;
+      if (sw <= gapA) { a += sw; return; }
+      const a0 = a + gapA / 2, a1 = a + sw - gapA / 2, big = a1 - a0 > Math.PI ? 1 : 0;
+      segs += sw >= Math.PI * 2 - 1e-6
+        ? `<circle cx="${cx}" cy="${cy}" r="${(R + r) / 2}" fill="none" stroke="${x.c}" stroke-width="${R - r}"><title>${esc(x.n)}</title></circle>`
+        : `<path d="M${pt(R, a0)} A${R},${R} 0 ${big} 1 ${pt(R, a1)} L${pt(r, a1)} A${r},${r} 0 ${big} 0 ${pt(r, a0)} Z" fill="${x.c}"><title>${esc(x.n)}: ${fmt(x.k, 1)} kWh · ${fmt(x.k * P)} €</title></path>`;
+      a += sw;
+    });
+    return `<div class="donut"><svg viewBox="0 0 200 200" role="img" aria-label="Anteile der Verbraucher">${segs}
+      <text x="100" y="96" text-anchor="middle" class="dv">${fmt(tot * P)} €</text><text x="100" y="118" text-anchor="middle" class="lbl">${fmt(tot, 1)} kWh</text></svg>
+      <div class="dl">${rows.map((x) => `<div><i style="background:${x.c}"></i><span>${esc(x.n)}</span><b>${Math.round(x.k / tot * 100)} %</b></div>`).join('')}</div></div>`;
   }
 
   _sankey(monDev, col, P) {
@@ -269,6 +292,12 @@ class EnergieDashboardCard extends HTMLElement {
 .run{display:grid;grid-template-columns:10px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--sunk);cursor:pointer}
 .sw{width:10px;height:10px;border-radius:3px}.w{font-weight:600;font-variant-numeric:tabular-nums}
 .rank{display:grid;gap:10px}
+.tgl{cursor:pointer}.sw2{margin-left:8px;padding:2px 8px;border:1px solid var(--line);border-radius:999px}
+.donut{display:grid;grid-template-columns:minmax(150px,200px) 1fr;gap:20px;align-items:center}.donut svg{width:100%;height:auto}
+.donut .lbl{font-size:13px}
+.dv{font:600 20px 'Space Grotesk',sans-serif;fill:var(--ink)}
+.dl{display:grid;gap:9px}.dl div{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:center}.dl i{width:12px;height:12px;border-radius:3px}.dl b{font-variant-numeric:tabular-nums}
+@media(max-width:500px){.donut{grid-template-columns:1fr}.donut svg{max-width:200px;margin:auto}}
 .rk{display:grid;grid-template-columns:minmax(90px,140px) minmax(0,1fr) 64px 58px;gap:10px;align-items:center;font-size:13px}
 .track{height:12px;background:var(--sunk);border-radius:0 4px 4px 0;overflow:hidden}.fill{height:100%;border-radius:0 4px 4px 0}
 .r{text-align:right;font-variant-numeric:tabular-nums}.r.e{font-weight:600}

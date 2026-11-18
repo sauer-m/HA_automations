@@ -6,8 +6,8 @@
     "config": {
       "views": [
         {
-          "title": "Übersicht",
-          "path": "uebersicht",
+          "title": "Overview",
+          "path": "overview",
           "icon": "mdi:lightning-bolt",
           "type": "panel",
           "cards": [
@@ -17,8 +17,16 @@
           ]
         },
         {
-          "title": "3D-Druck",
-          "path": "druck",
+          "title": "Electricity",
+          "path": "electricity",
+          "icon": "mdi:transmission-tower",
+          "strategy": {
+            "type": "energy"
+          }
+        },
+        {
+          "title": "Fabrication",
+          "path": "fabrication",
           "icon": "mdi:printer-3d-nozzle",
           "type": "sections",
           "max_columns": 2,
