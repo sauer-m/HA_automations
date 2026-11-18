@@ -83,7 +83,7 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "{% set n = 'Prusa XL' %}{% set st = states('sensor.prusa_xl') %}{% set m = {'idle': 'Bereit', 'finished': 'Fertig', 'finish': 'Fertig', 'stopped': 'Abgebrochen', 'failed': 'Abgebrochen', 'printing': 'Druckt', 'running': 'Druckt', 'paused': 'Pausiert', 'pause': 'Pausiert', 'prepare': 'Bereitet vor', 'busy': 'Beschäftigt', 'error': 'Fehler', 'attention': 'Achtung', 'offline': 'Offline', 'unavailable': 'Offline', 'unknown': 'Offline'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
+                  "content": "{% set n = 'Prusa XL' %}{% set st = states('sensor.prusa_xl') %}{% set m = {'idle': 'idle', 'ready': 'idle', 'finished': 'idle', 'finish': 'idle', 'stopped': 'idle', 'failed': 'idle', 'printing': 'running', 'running': 'running', 'paused': 'running', 'pause': 'running', 'prepare': 'running', 'busy': 'running', 'slicing': 'running', 'init': 'running', 'error': 'error', 'attention': 'error', 'offline': 'off', 'unavailable': 'off', 'unknown': 'off'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
                   "visibility": [
                     {
                       "condition": "state",
@@ -95,7 +95,8 @@
                     }
                   ],
                   "grid_options": {
-                    "columns": "full"
+                    "columns": "full",
+                    "rows": 2
                   }
                 },
                 {
@@ -126,6 +127,19 @@
                   "grid_options": {
                     "columns": 12
                   }
+                },
+                {
+                  "type": "custom:status-glow-card",
+                  "entity": "sensor.prusa_xl",
+                  "power": "switch.prusa_xl_keller",
+                  "error": [
+                    "error",
+                    "attention"
+                  ],
+                  "skip": [
+                    "picture-entity",
+                    "picture"
+                  ]
                 },
                 {
                   "type": "tile",
@@ -166,7 +180,11 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "{% set g = (state_attr('sensor.filaman_spulen','spulen') or []) | selectattr('drucker','eq','Prusa XL') | sort(attribute='ort') | list %}**{{ g | count }} von 5** Köpfen belegt\n{% for s in g %}<font color='{{ s.farbe }}'>⬤</font> **Kopf {{ (s.ort[-1] | int(-1)) + 1 if s.ort[-1] is match('\\d') else '?' }}**: {{ s.hersteller }} {{ s.name }} · {{ s.rest_g | int }} g\n{% endfor %}"
+                  "content": "{% set g = (state_attr('sensor.filaman_spulen','spulen') or []) | selectattr('drucker','eq','Prusa XL') | list %}**{{ g | count }} von 5** Köpfen belegt\n{% for i in range(5) %}{% set s = g | selectattr('ort','search', ' ' ~ i ~ '$') | first | default(none) %}{% if s %}<font color='{{ s.farbe }}'>⬤</font> **Kopf {{ i + 1 }}**: {{ s.hersteller }} {{ s.name }} · {{ s.rest_g | int }} g{% else %}◯ **Kopf {{ i + 1 }}**: leer{% endif %}\n{% endfor %}",
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": 3
+                  }
                 },
                 {
                   "type": "shortcut",
@@ -179,11 +197,6 @@
                   "grid_options": {
                     "columns": 12
                   }
-                },
-                {
-                  "type": "custom:status-glow-card",
-                  "entity": "sensor.prusa_xl",
-                  "power": "switch.prusa_xl_keller"
                 }
               ]
             },
@@ -260,7 +273,7 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "{% set n = 'A1 Mini' %}{% set st = states('sensor.a1mini_0309da442500462_druckstatus') %}{% set m = {'idle': 'Bereit', 'finished': 'Fertig', 'finish': 'Fertig', 'stopped': 'Abgebrochen', 'failed': 'Abgebrochen', 'printing': 'Druckt', 'running': 'Druckt', 'paused': 'Pausiert', 'pause': 'Pausiert', 'prepare': 'Bereitet vor', 'busy': 'Beschäftigt', 'error': 'Fehler', 'attention': 'Achtung', 'offline': 'Offline', 'unavailable': 'Offline', 'unknown': 'Offline'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
+                  "content": "{% set n = 'A1 Mini' %}{% set st = states('sensor.a1mini_0309da442500462_druckstatus') %}{% set m = {'idle': 'idle', 'ready': 'idle', 'finished': 'idle', 'finish': 'idle', 'stopped': 'idle', 'failed': 'idle', 'printing': 'running', 'running': 'running', 'paused': 'running', 'pause': 'running', 'prepare': 'running', 'busy': 'running', 'slicing': 'running', 'init': 'running', 'error': 'error', 'attention': 'error', 'offline': 'off', 'unavailable': 'off', 'unknown': 'off'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
                   "visibility": [
                     {
                       "condition": "state",
@@ -273,7 +286,8 @@
                     }
                   ],
                   "grid_options": {
-                    "columns": "full"
+                    "columns": "full",
+                    "rows": 2
                   }
                 },
                 {
@@ -305,6 +319,18 @@
                   "grid_options": {
                     "columns": 12
                   }
+                },
+                {
+                  "type": "custom:status-glow-card",
+                  "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                  "error": [
+                    "error",
+                    "attention"
+                  ],
+                  "skip": [
+                    "picture-entity",
+                    "picture"
+                  ]
                 },
                 {
                   "type": "tile",
@@ -346,7 +372,11 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "{% set p = 'sensor.a1mini_0309da442500462_' %}{% set sl = [p ~ 'ams_1_slot_1', p ~ 'ams_1_slot_2', p ~ 'ams_1_slot_3', p ~ 'ams_1_slot_4', p ~ 'externalspool_externe_spule'] %}**{{ sl | select('is_state_attr', 'empty', false) | list | count }} von 5** Slots belegt (AMS + extern)\n{% set p = 'sensor.a1mini_0309da442500462_' %}{% set fm = state_attr('sensor.filaman_spulen','spulen') or [] %}{% for e in [p ~ 'ams_1_slot_1', p ~ 'ams_1_slot_2', p ~ 'ams_1_slot_3', p ~ 'ams_1_slot_4', p ~ 'externalspool_externe_spule'] %}{% set n = 'Extern' if 'external' in e else 'Slot ' ~ e[-1] %}{% set a = states[e].attributes if states[e] is not none else {} %}{% set leer = a.get('empty', true) %}{% set s = fm | selectattr('ort','eq','A1 Mini - ' ~ n) | first | default(none) %}{{ '◯' if leer else \"<font color='\" ~ (a.get('color') or '#888888')[:7] ~ \"'>⬤</font>\" }} **{{ n }}**{{ ' ▶' if a.get('active') }}: {{ 'leer' if leer else states(e) }}{% if s %} · FilaMan: {{ s.hersteller }} {{ s.name }}, {{ s.rest_g | int }} g{% elif not leer %} · *keine FilaMan-Spule zugeordnet*{% endif %}\n{% endfor %}"
+                  "content": "{% set p = 'sensor.a1mini_0309da442500462_' %}{% set sl = [p ~ 'ams_1_slot_1', p ~ 'ams_1_slot_2', p ~ 'ams_1_slot_3', p ~ 'ams_1_slot_4', p ~ 'externalspool_externe_spule'] %}**{{ sl | select('is_state_attr', 'empty', false) | list | count }} von 5** Slots belegt (AMS + extern)\n{% set p = 'sensor.a1mini_0309da442500462_' %}{% set fm = state_attr('sensor.filaman_spulen','spulen') or [] %}{% for e in [p ~ 'ams_1_slot_1', p ~ 'ams_1_slot_2', p ~ 'ams_1_slot_3', p ~ 'ams_1_slot_4', p ~ 'externalspool_externe_spule'] %}{% set n = 'Extern' if 'external' in e else 'Slot ' ~ e[-1] %}{% set a = states[e].attributes if states[e] is not none else {} %}{% set leer = a.get('empty', true) %}{% set s = fm | selectattr('ort','eq','A1 Mini - ' ~ n) | first | default(none) %}{{ '◯' if leer else \"<font color='\" ~ (a.get('color') or '#888888')[:7] ~ \"'>⬤</font>\" }} **{{ n }}**{{ ' ▶' if a.get('active') }}: {{ 'leer' if leer else states(e) }}{% if s %} · FilaMan: {{ s.hersteller }} {{ s.name }}, {{ s.rest_g | int }} g{% elif not leer %} · *keine FilaMan-Spule zugeordnet*{% endif %}\n{% endfor %}",
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": 3
+                  }
                 },
                 {
                   "type": "shortcut",
@@ -359,10 +389,6 @@
                   "grid_options": {
                     "columns": 12
                   }
-                },
-                {
-                  "type": "custom:status-glow-card",
-                  "entity": "sensor.a1mini_0309da442500462_druckstatus"
                 }
               ]
             },
@@ -388,18 +414,34 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "**Nicht eingebunden**\nAnbindung folgt über die Bambu-Lab-Integration wie beim A1 Mini.",
+                  "content": "**aktuell noch nicht eingebunden**\nAnbindung folgt über die Bambu-Lab-Integration wie beim A1 Mini.",
                   "grid_options": {
-                    "columns": "full"
+                    "columns": "full",
+                    "rows": 2
                   }
-                },
-                {
-                  "type": "markdown",
-                  "content": "{% set g = (state_attr('sensor.filaman_spulen','spulen') or []) | selectattr('drucker','eq','H2C') | list %}**{{ g | count }} von 24** Slots belegt\n{% for s in g %}<font color='{{ s.farbe }}'>⬤</font> {{ s.ort }}: {{ s.hersteller }} {{ s.name }} · {{ s.rest_g | int }} g\n{% endfor %}"
                 },
                 {
                   "type": "custom:status-glow-card",
                   "entity": "sensor.h2c_noch_nicht_eingebunden"
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set g = (state_attr('sensor.filaman_spulen','spulen') or []) | selectattr('drucker','eq','H2C') | list %}**{{ g | count }} von 24** Slots belegt\n{% for s in g %}<font color='{{ s.farbe }}'>⬤</font> {{ s.ort }}: {{ s.hersteller }} {{ s.name }} · {{ s.rest_g | int }} g\n{% endfor %}",
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": 3
+                  }
+                },
+                {
+                  "type": "shortcut",
+                  "label": "Details folgen",
+                  "icon": "mdi:arrow-right",
+                  "tap_action": {
+                    "action": "none"
+                  },
+                  "grid_options": {
+                    "columns": 12
+                  }
                 }
               ]
             },
@@ -575,7 +617,7 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "{% set n = 'Prusa XL' %}{% set st = states('sensor.prusa_xl') %}{% set m = {'idle': 'Bereit', 'finished': 'Fertig', 'finish': 'Fertig', 'stopped': 'Abgebrochen', 'failed': 'Abgebrochen', 'printing': 'Druckt', 'running': 'Druckt', 'paused': 'Pausiert', 'pause': 'Pausiert', 'prepare': 'Bereitet vor', 'busy': 'Beschäftigt', 'error': 'Fehler', 'attention': 'Achtung', 'offline': 'Offline', 'unavailable': 'Offline', 'unknown': 'Offline'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
+                  "content": "{% set n = 'Prusa XL' %}{% set st = states('sensor.prusa_xl') %}{% set m = {'idle': 'idle', 'ready': 'idle', 'finished': 'idle', 'finish': 'idle', 'stopped': 'idle', 'failed': 'idle', 'printing': 'running', 'running': 'running', 'paused': 'running', 'pause': 'running', 'prepare': 'running', 'busy': 'running', 'slicing': 'running', 'init': 'running', 'error': 'error', 'attention': 'error', 'offline': 'off', 'unavailable': 'off', 'unknown': 'off'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
                   "visibility": [
                     {
                       "condition": "state",
@@ -620,6 +662,19 @@
                         "unknown"
                       ]
                     }
+                  ]
+                },
+                {
+                  "type": "custom:status-glow-card",
+                  "entity": "sensor.prusa_xl",
+                  "power": "switch.prusa_xl_keller",
+                  "error": [
+                    "error",
+                    "attention"
+                  ],
+                  "skip": [
+                    "picture-entity",
+                    "picture"
                   ]
                 },
                 {
@@ -675,11 +730,6 @@
                       ]
                     }
                   ]
-                },
-                {
-                  "type": "custom:status-glow-card",
-                  "entity": "sensor.prusa_xl",
-                  "power": "switch.prusa_xl_keller"
                 }
               ]
             },
@@ -1139,7 +1189,7 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "{% set n = 'A1 Mini' %}{% set st = states('sensor.a1mini_0309da442500462_druckstatus') %}{% set m = {'idle': 'Bereit', 'finished': 'Fertig', 'finish': 'Fertig', 'stopped': 'Abgebrochen', 'failed': 'Abgebrochen', 'printing': 'Druckt', 'running': 'Druckt', 'paused': 'Pausiert', 'pause': 'Pausiert', 'prepare': 'Bereitet vor', 'busy': 'Beschäftigt', 'error': 'Fehler', 'attention': 'Achtung', 'offline': 'Offline', 'unavailable': 'Offline', 'unknown': 'Offline'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
+                  "content": "{% set n = 'A1 Mini' %}{% set st = states('sensor.a1mini_0309da442500462_druckstatus') %}{% set m = {'idle': 'idle', 'ready': 'idle', 'finished': 'idle', 'finish': 'idle', 'stopped': 'idle', 'failed': 'idle', 'printing': 'running', 'running': 'running', 'paused': 'running', 'pause': 'running', 'prepare': 'running', 'busy': 'running', 'slicing': 'running', 'init': 'running', 'error': 'error', 'attention': 'error', 'offline': 'off', 'unavailable': 'off', 'unknown': 'off'} %}**{{ m.get(st, st) }}**{% set l = (state_attr('sensor.druck_historie','drucke') or []) | selectattr('drucker','eq',n) | first | default(none) %}{% if l %}\nLetzter Druck: {{ l.name }}{{ ' ✕' if l.status == 'abgebrochen' }}\n{{ (as_datetime(l.ende) | as_local).strftime('%d.%m. %H:%M') }}{{ ' · ' ~ (('%.2f' | format(l.gesamt)) | replace('.', ',')) ~ ' €' if l.gesamt is not none }}{{ ' · ' ~ (l.g | round(0) | int) ~ ' g' if l.g }}{% endif %}",
                   "visibility": [
                     {
                       "condition": "state",
@@ -1186,6 +1236,18 @@
                         "prepare"
                       ]
                     }
+                  ]
+                },
+                {
+                  "type": "custom:status-glow-card",
+                  "entity": "sensor.a1mini_0309da442500462_druckstatus",
+                  "error": [
+                    "error",
+                    "attention"
+                  ],
+                  "skip": [
+                    "picture-entity",
+                    "picture"
                   ]
                 },
                 {
@@ -1282,10 +1344,6 @@
                       ]
                     }
                   ]
-                },
-                {
-                  "type": "custom:status-glow-card",
-                  "entity": "sensor.a1mini_0309da442500462_druckstatus"
                 }
               ]
             },
@@ -1717,7 +1775,7 @@
         {
           "title": "Laser",
           "path": "laser",
-          "icon": "mdi:laser-pointer",
+          "icon": "fab:laser",
           "type": "sections",
           "max_columns": 3,
           "sections": [
@@ -1727,7 +1785,14 @@
                 {
                   "type": "heading",
                   "heading": "CO2-Laser 80 W (Ruida)",
-                  "icon": "mdi:laser-pointer"
+                  "icon": "fab:laser"
+                },
+                {
+                  "type": "picture",
+                  "image": "/local/fabrication/laser.svg?v=1",
+                  "grid_options": {
+                    "columns": "full"
+                  }
                 },
                 {
                   "type": "markdown",
