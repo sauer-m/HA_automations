@@ -1,0 +1,227 @@
+# Tagesbriefing für Sarah, komplett in Home Assistant (ohne A.R.E.S.)
+#
+# Gleiches Textformat wie Marcels sensor.briefing (Attribute "voll" und "kurz"), damit
+# custom:briefing-card und die Willkommen-Karte es ohne Umbau anzeigen.
+# Inhalt: Wetter (met.no zu Hause), Zuhause (Wohnzimmer, Sarahs iPhone-Akku, schwache Batterien),
+# Verkehr (Waze: Arbeit Lübeck und Ahrensburg), Haushalt-Kalender (nur Sarahs oder ohne Zuständigen).
+# Bewusst nicht drin: Mails, Dienstkalender, Geburtstage (liegen nur bei A.R.E.S. für Marcel).
+#
+# Liegt in HA unter /config/packages/briefing_sarah.yaml. Quelle: Smarthome/ha/briefing_sarah.yaml
+# Angelegt 19.11.2026.
+
+input_button:
+  briefing_sarah_aktualisieren:
+    name: "Briefing Sarah aktualisieren"
+    icon: mdi:refresh
+
+template:
+  - triggers:
+      # Morgens bis abends alle 15 min frisch (Verkehr und Wetter ändern sich).
+      - trigger: time_pattern
+        minutes: "/15"
+      - trigger: homeassistant
+        event: start
+      - trigger: state
+        entity_id: input_button.briefing_sarah_aktualisieren
+    actions:
+      - action: weather.get_forecasts
+        target:
+          entity_id: weather.forecast_home
+        data:
+          type: daily
+        response_variable: wetter
+        continue_on_error: true
+      - action: calendar.get_events
+        target:
+          entity_id: calendar.haushalt_calendar
+        data:
+          duration:
+            days: 8
+        response_variable: kal
+        continue_on_error: true
+      - variables:
+          b: >-
+            {%- set cond = {'clear-night':'klar','cloudy':'bewölkt','exceptional':'Unwetter','fog':'Nebel','hail':'Hagel','lightning':'Gewitter','lightning-rainy':'Gewitter mit Regen','partlycloudy':'teilweise bewölkt','pouring':'Starkregen','rainy':'Regen','snowy':'Schnee','snowy-rainy':'Schneeregen','sunny':'sonnig','windy':'windig','windy-variant':'windig, bewölkt'} -%}
+            {%- set w = 'weather.forecast_home' -%}
+            {%- set heute = now().date() -%}
+            {%- set fc = (wetter[w].forecast if wetter is defined and w in wetter else []) -%}
+            {%- set f0 = fc | selectattr('datetime', 'search', heute.isoformat()) | first | default(none) -%}
+            {%- set zustand = cond.get(states(w), states(w)) -%}
+            {%- set aufg = as_local(as_datetime(state_attr('sun.sun', 'next_rising'))) -%}
+            {%- set unterg = as_local(as_datetime(state_attr('sun.sun', 'next_setting'))) -%}
+            {#- Sarahs iPhone: Akku nur aus dem Tracker-Attribut (App im Energiesparmodus, oft alt) -#}
+            {%- set tr = states.device_tracker.iphone_17_pro -%}
+            {%- set akku = tr.attributes.battery_level if tr is not none else none -%}
+            {%- set alter_h = ((now() - tr.last_updated).total_seconds() / 3600) if tr is not none else 999 -%}
+            {%- set akku_txt = none if akku is none else (akku ~ ' %' ~ ('' if alter_h < 6 else ' · Stand ' ~ ('gestern ' if tr.last_updated.astimezone(now().tzinfo).date() < heute else '') ~ as_local(tr.last_updated).strftime('%H:%M'))) -%}
+            {%- set schwach = states.sensor | selectattr('attributes.device_class', 'defined') | selectattr('attributes.device_class', 'eq', 'battery') | rejectattr('entity_id', 'search', 'iphone|sm_f741b') | list -%}
+            {%- set ns = namespace(bat=[]) -%}
+            {%- for s in schwach if s.state | is_number and s.state | float < 25 -%}{%- set ns.bat = ns.bat + [s.name ~ ': ' ~ (s.state | float | round(0) | int) ~ ' %'] -%}{%- endfor -%}
+            {#- Haushalt-Kalender: nur Sarahs Aufgaben oder solche ohne Zuständigen -#}
+            {%- set evs = (kal['calendar.haushalt_calendar'].events if kal is defined and 'calendar.haushalt_calendar' in kal else []) -%}
+            {%- set ns2 = namespace(heute=[], aus={}) -%}
+            {%- for e in evs if ('👤' not in (e.description or '')) or ('👤 Sarah' in (e.description or '')) -%}
+              {%- set ganz = 'T' not in e.start -%}
+              {%- set d = (e.start | as_datetime | as_local).date() if not ganz else strptime(e.start, '%Y-%m-%d').date() -%}
+              {%- set z = 'Ganztägig - ' ~ e.summary if ganz else (as_local(as_datetime(e.start)).strftime('%H:%M') ~ ' - ' ~ as_local(as_datetime(e.end)).strftime('%H:%M') ~ ' - ' ~ e.summary) -%}
+              {%- set n = (d - heute).days -%}
+              {%- if n <= 0 -%}{%- set ns2.heute = ns2.heute + [z] -%}
+              {%- else -%}{%- set t = 'Morgen' if n == 1 else ('Übermorgen' if n == 2 else 'In ' ~ n ~ ' Tagen') -%}{%- set ns2.aus = dict(ns2.aus, **{t: ns2.aus.get(t, []) + [z]}) -%}{%- endif -%}
+            {%- endfor -%}
+            {%- set wz_t = states('sensor.wohnzimmerthermostat_temperature') -%}
+            {%- set wz_h = states('sensor.wohnzimmerthermostat_humidity') -%}
+            {%- set routen = [('Arbeit Lübeck', 'sensor.special_ahrensburg_arbeit_verkehr_geniner_strasse_aus_luebeck'), ('Arbeit Ahrensburg', 'sensor.waze_verkehr_ahrensburg_aus_luebeck')] -%}
+            {%- set ns3 = namespace(v=[]) -%}
+            {%- for name, sid in routen if states(sid) | is_number -%}
+              {%- set ns3.v = ns3.v + ['Zu ' ~ name ~ ': ca. ' ~ (states(sid) | float | round(0) | int) ~ ' min' ~ ((', ' ~ (state_attr(sid, 'distance') | float | round(1)) ~ ' km') if state_attr(sid, 'distance') is not none else '')] -%}
+            {%- endfor -%}
+            {{ {
+              'datum': heute.isoformat(),
+              'zustand': zustand,
+              'temp': state_attr(w, 'temperature'),
+              'feuchte': state_attr(w, 'humidity'),
+              'wolken': state_attr(w, 'cloud_coverage'),
+              'wind': state_attr(w, 'wind_speed'),
+              'boeen': state_attr(w, 'wind_gust_speed'),
+              'druck': state_attr(w, 'pressure'),
+              'max': f0.temperature if f0 else none,
+              'min': f0.templow if f0 else none,
+              'regen': f0.precipitation_probability if f0 else none,
+              'aufg': aufg.strftime('%H:%M'),
+              'unterg': unterg.strftime('%H:%M'),
+              'akku': akku_txt,
+              'bat': ns.bat,
+              'wz': (wz_t ~ ' °C bei ' ~ wz_h ~ ' % Luftfeuchtigkeit') if wz_t | is_number else none,
+              'verkehr': ns3.v,
+              'heute': ns2.heute,
+              'aus': ns2.aus
+            } }}
+          voll: |-
+            {%- set tage = ['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'] -%}
+            # Tagesbriefing - {{ b.datum }}
+
+            Guten Morgen Sarah.
+            Hier ist dein Briefing für {{ tage[now().weekday()] }}, den {{ now().strftime('%d.%m.%Y') }}.
+
+            ## Wetter
+            - Wetter zu Hause (Lübeck)
+            - Draußen: {{ b.temp }} °C, {{ b.zustand }}{% if b.wolken is not none %} ({{ b.wolken | round(0) | int }} % Wolken){% endif %}, Luftfeuchtigkeit {{ b.feuchte }} %
+            - Wind: {{ b.wind }} km/h{% if b.boeen %}, Böen bis {{ b.boeen }} km/h{% endif %}
+            {% if b.max is not none %}- Heute: maximal {{ b.max }} °C, minimal {{ b.min }} °C{% if b.regen %}, Regenrisiko {{ b.regen | round(0) | int }} %{% endif %}
+            {% endif %}- Sonnenaufgang: {{ b.aufg }} · Sonnenuntergang: {{ b.unterg }}
+
+            ## Zuhause
+            {% if b.wz %}- Wohnzimmer: {{ b.wz }}
+            {% endif %}{% if b.akku %}- Smartphone Sarah: {{ b.akku }}
+            {% endif %}{% for x in b.bat %}- Niedrige Batterien: {{ x }}
+            {% endfor %}
+            ## Verkehr
+            {% for x in b.verkehr %}- {{ x }}
+            {% else %}- Keine Verkehrsdaten.
+            {% endfor %}- Quelle: Home Assistant / Waze Live-Verkehr.
+
+            ## Termine heute
+            {% for x in b.heute %}- {{ x }}
+            {% else %}- Keine Termine.
+            {% endfor %}
+            {%- if b.aus %}
+            ## Ausblick
+            {% for t, items in b.aus.items() %}
+            ### {{ t }}
+            {% for x in items %}- {{ x }}
+            {% endfor %}{% endfor %}{% endif %}
+          kurz: |-
+            Wetter: {{ b.zustand }}{% if b.max is not none %}, {{ b.min }} bis {{ b.max }} °C{% endif %}
+            {% if b.heute %}Termine heute: {{ b.heute | count }}
+            Erster: {{ b.heute[0] }}
+            {% endif %}{% for x in b.verkehr %}{% if loop.first %}Verkehr: {{ x | replace('Zu ', '', 1) }}{% else %}{{ x.split(':')[0] | replace('Zu ', '') }}: {{ x.split(': ', 1)[1] }}{% endif %}
+            {% endfor %}{% if b.akku %}Handy: {{ b.akku }}{% endif %}
+    sensor:
+      - name: "Briefing Sarah"
+        unique_id: briefing_sarah
+        icon: mdi:newspaper-variant-outline
+        # Zustand = Zeitstempel des Laufs; Inhalte nur als Attribute (State max. 255 Zeichen).
+        state: "{{ now().isoformat() }}"
+        attributes:
+          ausloeser: "{{ 'manual' if trigger.platform == 'state' else 'scheduled' }}"
+          voll: "{{ voll }}"
+          kurz: "{{ kurz | trim }}"
+          erstellt_um: "{{ now().isoformat() }}"
+
+# Briefing-Text nicht in die Historie (ändert sich alle 15 min, groß).
+recorder:
+  exclude:
+    entities:
+      - sensor.briefing_sarah
+
+# Push an Sarahs iPhone, Zeiten und an/aus im Briefing-Reiter einstellbar.
+input_datetime:
+  briefing_sarah_push_werktag:
+    name: "Briefing Sarah Push Mo–Fr"
+    has_date: false
+    has_time: true
+    icon: mdi:briefcase-clock-outline
+  briefing_sarah_push_wochenende:
+    name: "Briefing Sarah Push Sa/So"
+    has_date: false
+    has_time: true
+    icon: mdi:calendar-weekend-outline
+
+input_boolean:
+  briefing_sarah_push_werktag:
+    name: "Briefing Sarah Push Mo–Fr aktiv"
+    icon: mdi:bell-ring-outline
+  briefing_sarah_push_wochenende:
+    name: "Briefing Sarah Push Sa/So aktiv"
+    icon: mdi:bell-ring-outline
+
+automation:
+  - id: briefing_sarah_push
+    alias: "Briefing Sarah: Push zur eingestellten Zeit"
+    description: "Schickt Sarahs Tagesbriefing (kurz) an ihr iPhone. Quelle Smarthome/ha/briefing_sarah.yaml"
+    mode: single
+    triggers:
+      - trigger: time
+        at: input_datetime.briefing_sarah_push_werktag
+        id: werktag
+      - trigger: time
+        at: input_datetime.briefing_sarah_push_wochenende
+        id: wochenende
+    conditions:
+      - condition: or
+        conditions:
+          - condition: and
+            conditions:
+              - condition: trigger
+                id: werktag
+              - condition: time
+                weekday: [mon, tue, wed, thu, fri]
+              - condition: state
+                entity_id: input_boolean.briefing_sarah_push_werktag
+                state: "on"
+          - condition: and
+            conditions:
+              - condition: trigger
+                id: wochenende
+              - condition: time
+                weekday: [sat, sun]
+              - condition: state
+                entity_id: input_boolean.briefing_sarah_push_wochenende
+                state: "on"
+    actions:
+      # Frisch erstellen, dann senden.
+      - action: input_button.press
+        target:
+          entity_id: input_button.briefing_sarah_aktualisieren
+      - wait_for_trigger:
+          - trigger: state
+            entity_id: sensor.briefing_sarah
+        timeout: "00:00:30"
+      - action: notify.mobile_app_iphone_17_pro
+        data:
+          title: "Tagesbriefing"
+          message: "{{ state_attr('sensor.briefing_sarah', 'kurz') }}"
+          data:
+            url: /dashboard-willkommen/briefing
+            group: briefing
+            tag: briefing

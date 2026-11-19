@@ -55,11 +55,17 @@ class BriefingCard extends HTMLElement {
         document.head.appendChild(l);
       }
     }
-    const ids = [this._c.entity, ...(this._c.push || []).flatMap((p) => [p.time, p.on]), ...(this._c.targets || []).map((t) => t.on)];
-    const sig = ids.map((id) => { const o = h.states[id]; return o ? o.last_updated : '-'; }).join('|') + '|' + (h.themes && h.themes.darkMode) + '|' + Math.floor(Date.now() / 60000);
+    const cc = this._cfg();
+    const ids = [cc.entity, ...(cc.push || []).flatMap((p) => [p.time, p.on]), ...(cc.targets || []).map((t) => t.on)];
+    const sig = (h.user && h.user.id) + '|' + ids.map((id) => { const o = h.states[id]; return o ? o.last_updated : '-'; }).join('|') + '|' + (h.themes && h.themes.darkMode) + '|' + Math.floor(Date.now() / 60000);
     if (sig !== this._sig) { this._sig = sig; this._render(); }
   }
 
+  // users: { <user_id>: { entity, push, targets, source, hint } } überschreibt die Grundwerte je Benutzer.
+  _cfg() {
+    const u = this._hass && this._hass.user && this._c.users && this._c.users[this._hass.user.id];
+    return u ? { ...this._c, ...u } : this._c;
+  }
   _o(id) { return this._hass.states[id]; }
   _s(id) { const o = this._o(id); return o ? o.state : 'unavailable'; }
   _a(id, k) { const o = this._o(id); return o ? o.attributes[k] : undefined; }
@@ -90,7 +96,7 @@ class BriefingCard extends HTMLElement {
   }
 
   _render() {
-    const h = this._hass, c = this._c;
+    const h = this._hass, c = this._cfg();
     if (!h || !this.shadowRoot) return;
     const dark = !!(h.themes && h.themes.darkMode);
     const voll = this._a(c.entity, 'voll');
@@ -100,7 +106,7 @@ class BriefingCard extends HTMLElement {
     const hhmm = (d) => d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
     if (!voll) {
-      this.shadowRoot.innerHTML = `<style>${this._css(dark)}</style><div class="view"><div class="card empty">${bic('info')}<div><b>Noch kein Briefing abgerufen.</b><small>Home Assistant holt es werktags ab 05:15 von A.R.E.S.</small></div></div>${this._push()}</div>`;
+      this.shadowRoot.innerHTML = `<style>${this._css(dark)}</style><div class="view"><div class="card empty">${bic('info')}<div><b>Noch kein Briefing abgerufen.</b><small>${besc(c.hint || 'Home Assistant holt es werktags ab 05:15 von A.R.E.S.')}</small></div></div>${this._push()}</div>`;
       return;
     }
 
@@ -145,10 +151,11 @@ class BriefingCard extends HTMLElement {
       ${ev.length ? `<div class="tl">${ev.map((e, i) => `<div class="ev${i === nextIdx ? ' next' : ''}${nextIdx >= 0 && i < nextIdx ? ' past' : ''}"><time>${e.von}</time><span class="dot"></span><div><b>${besc(e.t)}</b>${i === nextIdx ? '<span class="tag">als Nächstes</span>' : ''}${e.bis ? `<small>bis ${e.bis}</small>` : ''}</div></div>`).join('')}</div>` : allday.length ? '' : '<p class="muted">Keine Termine.</p>'}</section>`;
 
     // Verkehr
-    const V = take('Verkehr').items; const vm = V.map((x) => x.match(/^Zu\s+(.+?):\s*ca\.\s*([\d.,]+)\s*min(?:,\s*([\d.,]+)\s*km)?/)).find(Boolean);
+    const V = take('Verkehr').items; const vms = V.map((x) => x.match(/^Zu\s+(.+?):\s*ca\.\s*([\d.,]+)\s*min(?:,\s*([\d.,]+)\s*km)?/)).filter(Boolean); const vm = vms[0];
     const vq = (V.find((x) => /^Quelle/.test(x)) || '').replace(/^Quelle:\s*/, '').replace(/Home Assistant \/\s*/, '').replace(/\.$/, '');
+    const vMore = vms.slice(1).map((m) => ` · ${besc(m[1])} ${Math.round(parseFloat(m[2]))} min`).join('');
     const vKpi = vm ? `<div class="card kpi"><div class="ico">${bic('car')}</div><span class="lab">Arbeitsweg</span>
-      <span class="big">${Math.round(parseFloat(vm[2]))} min${vm[3] ? ` · ${bnum(vm[3])} km` : ''}</span><span class="sub">${besc(vm[1])}${vq ? ' · ' + besc(vq) : ''}</span></div>`
+      <span class="big">${Math.round(parseFloat(vm[2]))} min${vm[3] ? ` · ${bnum(vm[3])} km` : ''}</span><span class="sub">${besc(vm[1])}${vMore}${vq && !vMore ? ' · ' + besc(vq) : ''}</span></div>`
       : V.length ? `<div class="card kpi"><div class="ico">${bic('car')}</div><span class="lab">Verkehr</span><span class="sub">${besc(V[0])}</span></div>` : '';
 
     // Demnächst: Ausblick + Geburtstage
@@ -213,7 +220,7 @@ class BriefingCard extends HTMLElement {
 
     const kpis = [wKpi, tKpi, vKpi].filter(Boolean);
     const aus = this._a(c.entity, 'ausloeser');
-    const foot = `<p class="foot">${aus === 'manual' ? 'Manuell abgerufen' : 'Automatisch erstellt'}${tStand ? ' ' + hhmm(tStand) : ''} · Quelle A.R.E.S.</p>`;
+    const foot = `<p class="foot">${aus === 'manual' ? 'Manuell abgerufen' : 'Automatisch erstellt'}${tStand ? ' ' + hhmm(tStand) : ''} · Quelle ${besc(c.source || 'A.R.E.S.')}</p>`;
 
     this.shadowRoot.innerHTML = `<style>${this._css(dark)}</style><div class="view">${head}
       <section class="kpis k${kpis.length}">${kpis.join('')}</section>
@@ -222,12 +229,12 @@ class BriefingCard extends HTMLElement {
   }
 
   _push() {
-    const c = this._c; const P = c.push || [], T = c.targets || [];
+    const c = this._cfg(); const P = c.push || [], T = c.targets || [];
     if (!P.length && !T.length) return '';
     const tm = (id) => (this._s(id) || '').slice(0, 5);
     const on = (id) => this._s(id) === 'on';
     const sumP = P.filter((p) => on(p.on)).map((p) => `${p.short || p.label} ${tm(p.time)}`).join(' · ') || 'aus';
-    const sumT = T.filter((t) => on(t.on)).map((t) => t.label).join(', ') || 'kein Gerät';
+    const sumT = T.length ? (T.filter((t) => on(t.on)).map((t) => t.label).join(', ') || 'kein Gerät') : (c.push_to || 'Handy');
     return `<details class="push"${this._open ? ' open' : ''}><summary>${bic('bell')}<span><b>Push-Nachricht</b> · ${besc(sumP)} · an ${besc(sumT)}</span>${bic('chev')}</summary>
       <div class="pushgrid">${P.map((p) => `<div class="pg"><span>${besc(p.label)}</span><b data-mi="${p.time}" title="Uhrzeit ändern">${tm(p.time)}</b><i class="sw${on(p.on) ? ' on' : ''}" data-tg="${p.on}" role="switch" aria-checked="${on(p.on)}"></i></div>`).join('')}
       ${T.map((t) => `<div class="pg"><span>${besc(t.label)}</span><i class="sw${on(t.on) ? ' on' : ''}" data-tg="${t.on}" role="switch" aria-checked="${on(t.on)}"></i></div>`).join('')}</div></details>`;

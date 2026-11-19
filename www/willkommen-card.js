@@ -47,7 +47,7 @@ const WIN = [['binary_sensor.wohnzimmerfenster', 'Wohnzimmerfenster'], ['binary_
 const GERAETE = [['sensor.waschmaschine_zustand', 'Waschmaschine', 'hwr_waschmaschine'], ['sensor.trockner_zustand', 'Trockner', 'hwr_trockner'], ['sensor.spulmaschine_zustand', 'Spülmaschine', 'kuche_spulmaschine']];
 const LIGHTS = ['light.wohnzimmerlicht', 'light.stehlampe', 'light.ecklampe_wohnzimmer', 'light.schlafzimmerlicht', 'light.nachttischlampe', 'light.badezimmerlicht', 'light.badezimmerlicht_hintergrundbeleuchtung', 'light.kuche_schaltausgang_kuchenlicht', 'light.esszimmerlicht', 'light.schalter_flurlicht', 'light.ambilight_buro', 'light.terrassenlicht', 'light.teelichter_esszimmer', 'light.teelichter_schlafzimmer'];
 // Briefing-Sensor je Benutzer (user.id). Wer keinen hat, sieht keine Briefing-Inhalte.
-const BRIEFING = { d2389a10564e41eb9bd0bed86ae20b40: 'sensor.briefing' };
+const BRIEFING = { d2389a10564e41eb9bd0bed86ae20b40: 'sensor.briefing', c9575fe71bdd4630abbd97185a784bfa: 'sensor.briefing_sarah' };
 const BOTH = 'script.turen_nacheinander_offnen'; // Haustür sofort, Wohnungstür nach 5 s
 const SEVTXT ={ crit: 'Kritisch', warn: 'Achtung', info: 'Info' };
 
