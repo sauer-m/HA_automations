@@ -1,0 +1,95 @@
+# Custom Sidebar (elchininet/custom-sidebar) – Konfiguration
+# Liegt in HA unter /config/www/custom-sidebar-config.yaml
+# Stand 19.11.2026 – Konzept: Alltag | Themen | System (Info ist in Willkommen aufgegangen)
+# divider: true zeichnet die Linie UNTER dem Eintrag.
+
+order:
+  # ---------- Alltag ----------
+  - item: /dashboard-willkommen
+    match: href
+    order: 1
+  - item: /dashboard-beleuctung
+    match: href
+    name: Zuhause
+    order: 2
+  - item: /dashboard-haushalt
+    match: href
+    order: 3
+  - item: /todo
+    match: href
+    name: To-do
+    order: 4
+  - item: /dashboard-pflanzen
+    match: href
+    order: 5
+    divider: true
+
+  # ---------- Themen ----------
+  - item: /dashboard-fabrication
+    match: href
+    order: 6
+  - item: /dashboard-energie
+    match: href
+    order: 7
+    divider: true
+
+  # ---------- System ----------
+  - item: /map
+    match: href
+    order: 9
+  - item: /history
+    match: href
+    order: 10
+  - item: /logbook
+    match: href
+    order: 11
+  - item: /media-browser
+    match: href
+    order: 12
+  - item: maintenance
+    match: href
+    order: 13
+  - item: Node-RED
+    order: 15
+  - item: Zigbee2MQTT
+    order: 16
+  - item: ESPHome
+    order: 17
+  - item: File editor
+    order: 18
+  - item: NetAlertX
+    order: 19
+  - item: Matter
+    order: 21
+
+exceptions:
+  # Sarah: Alltag + Themen, aus dem System-Block nur die Karte.
+  # Einstellungen/Profil bleiben unten erhalten.
+  - user:
+      - Sarah
+    extend_from: base
+    order:
+      - item: /history
+        match: href
+        hide: true
+      - item: /logbook
+        match: href
+        hide: true
+      - item: /media-browser
+        match: href
+        hide: true
+      - item: maintenance
+        match: href
+        hide: true
+      - item: Node-RED
+        hide: true
+      - item: Zigbee2MQTT
+        hide: true
+      - item: ESPHome
+        hide: true
+      - item: File editor
+        hide: true
+      - item: NetAlertX
+        hide: true
+      - item: Matter
+        hide: true

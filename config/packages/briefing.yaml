@@ -1,0 +1,260 @@
+# Daily Briefing über Home Assistant (ADR-020 Nachtrag 2026-11-10, WP-041)
+#
+# Package für Home Assistant. Marcel spielt es selbst ein (Anleitung: README.md daneben);
+# der Assistent ändert an Home Assistant nichts (ADR-018 Punkt 7).
+#
+# Datenfluss: Home Assistant holt das Briefing per GET /api/ha/briefing von ares (Pull),
+# ausschließlich 05:15–09:00 alle 5 min (kein eigenes Polling, kein Abruf beim Start).
+# ares baut keine Verbindung zu Home Assistant auf, um zu senden.
+#
+# Voraussetzung in secrets.yaml (Wert nie ins Repo):
+#   ares_briefing_authorization: "Bearer <Wert von ASSISTANT_HA_BRIEFING_KEY>"
+
+rest_command:
+  ares_briefing:
+    url: https://ares.sauerstofff.de/api/ha/briefing
+    method: GET
+    headers:
+      Authorization: !secret ares_briefing_authorization
+    timeout: 20
+
+template:
+  # Triggerbasierter Sensor: nur die Zeitfenster-Trigger lösen einen Abruf aus.
+  - triggers:
+      - trigger: time_pattern
+        minutes: "/5"
+    conditions:
+      - condition: time
+        after: "05:15:00"
+        before: "09:00:00"
+    actions:
+      - action: rest_command.ares_briefing
+        response_variable: antwort
+        # 404 (noch kein Briefing) oder Netzfehler: Sensor behält den letzten Stand.
+        continue_on_error: true
+    sensor:
+      - name: "Briefing"
+        unique_id: ares_briefing
+        icon: mdi:newspaper-variant-outline
+        # Zustand = stand (UUID des Laufs); Inhalte nur als Attribute (State max. 255 Zeichen).
+        # rest_command liefert content als Mapping (JSON geparst) oder als Text; beides wird
+        # angenommen. 404 oder Fehler: der letzte Stand bleibt.
+        state: >-
+          {%- set c = antwort.content if antwort is defined and antwort.content is mapping else (antwort.content | from_json(default=none) if antwort is defined and antwort.content is string else none) -%}{%- set ok = antwort is defined and antwort.status == 200 and c is mapping -%}
+          {{ c.stand if ok else (this.state if this is defined and this.state is not none else 'unknown') }}
+        attributes:
+          ausloeser: >-
+            {%- set c = antwort.content if antwort is defined and antwort.content is mapping else (antwort.content | from_json(default=none) if antwort is defined and antwort.content is string else none) -%}{%- set ok = antwort is defined and antwort.status == 200 and c is mapping -%}
+            {{ c.ausloeser if ok else (this.attributes.get('ausloeser') if this is defined else none) }}
+          kurz: >-
+            {%- set c = antwort.content if antwort is defined and antwort.content is mapping else (antwort.content | from_json(default=none) if antwort is defined and antwort.content is string else none) -%}{%- set ok = antwort is defined and antwort.status == 200 and c is mapping -%}
+            {{ c.kurz if ok else (this.attributes.get('kurz') if this is defined else none) }}
+          voll: >-
+            {%- set c = antwort.content if antwort is defined and antwort.content is mapping else (antwort.content | from_json(default=none) if antwort is defined and antwort.content is string else none) -%}{%- set ok = antwort is defined and antwort.status == 200 and c is mapping -%}
+            {{ c.voll if ok else (this.attributes.get('voll') if this is defined else none) }}
+          erstellt_um: >-
+            {%- set c = antwort.content if antwort is defined and antwort.content is mapping else (antwort.content | from_json(default=none) if antwort is defined and antwort.content is string else none) -%}{%- set ok = antwort is defined and antwort.status == 200 and c is mapping -%}
+            {{ c.erstellt_um if ok else (this.attributes.get('erstellt_um') if this is defined else none) }}
+          # Push-Daten nur aus planmäßigen Läufen: ein manueller Lauf ändert das Dashboard, aber nie
+          # Inhalt und Datum des Pushs (sonst fiele der planmäßige Push nach einem manuellen Lauf aus).
+          push_kurz: >-
+            {%- set c = antwort.content if antwort is defined and antwort.content is mapping else (antwort.content | from_json(default=none) if antwort is defined and antwort.content is string else none) -%}{%- set ok = antwort is defined and antwort.status == 200 and c is mapping -%}
+            {{ c.kurz if ok and c.ausloeser == 'scheduled' else (this.attributes.get('push_kurz') if this is defined else none) }}
+          push_erstellt_um: >-
+            {%- set c = antwort.content if antwort is defined and antwort.content is mapping else (antwort.content | from_json(default=none) if antwort is defined and antwort.content is string else none) -%}{%- set ok = antwort is defined and antwort.status == 200 and c is mapping -%}
+            {{ c.erstellt_um if ok and c.ausloeser == 'scheduled' else (this.attributes.get('push_erstellt_um') if this is defined else none) }}
+
+# Keine Briefing-Historie in Home Assistant (ADR-020 Nachtrag Punkt 2e und 3).
+recorder:
+  exclude:
+    entities:
+      - sensor.briefing
+
+# Push-Zeiten und Push an/aus je Tagesart (Entscheidung Marcel 2026-11-13), im Dashboard einstellbar.
+# Bewusst ohne "initial": Home Assistant behält die eingestellten Werte über Neustarts.
+input_datetime:
+  briefing_push_werktag:
+    name: "Briefing-Push Mo–Fr"
+    has_date: false
+    has_time: true
+    icon: mdi:briefcase-clock-outline
+  briefing_push_samstag:
+    name: "Briefing-Push Samstag"
+    has_date: false
+    has_time: true
+    icon: mdi:calendar-weekend-outline
+  briefing_push_sonntag:
+    name: "Briefing-Push Sonntag"
+    has_date: false
+    has_time: true
+    icon: mdi:calendar-weekend
+
+input_boolean:
+  briefing_push_werktag:
+    name: "Briefing-Push Mo–Fr aktiv"
+    icon: mdi:bell-ring-outline
+  briefing_push_samstag:
+    name: "Briefing-Push Samstag aktiv"
+    icon: mdi:bell-ring-outline
+  briefing_push_sonntag:
+    name: "Briefing-Push Sonntag aktiv"
+    icon: mdi:bell-ring-outline
+  # Endgeräte für den Push (Mehrfachauswahl). Ein weiteres Gerät: Schalter hier und Block unter
+  # "actions" ergänzen; Gerätename unter Entwicklerwerkzeuge → Aktionen → "notify.mobile_app_".
+  briefing_ziel_samsung:
+    name: "Briefing-Push an Samsung (SM-F741B)"
+    icon: mdi:cellphone
+  briefing_ziel_iphone:
+    name: "Briefing-Push an iPhone 17 Pro"
+    icon: mdi:cellphone
+
+automation:
+  - id: ares_briefing_push
+    alias: "Briefing: Push zur eingestellten Zeit (höchstens einmal je Tag)"
+    mode: single
+    # Traces enthielten den Sensorzustand samt Volltext; deshalb keine gespeicherten Traces.
+    trace:
+      stored_traces: 0
+    triggers:
+      # Zur eingestellten Zeit des Tages (jede Zeit löst täglich aus; die Bedingungen wählen den Tag).
+      - trigger: time
+        at: input_datetime.briefing_push_werktag
+        id: zeit
+      - trigger: time
+        at: input_datetime.briefing_push_samstag
+        id: zeit
+      - trigger: time
+        at: input_datetime.briefing_push_sonntag
+        id: zeit
+      # Kommt das Briefing erst nach der eingestellten Zeit an, geht der Push bei Eingang raus.
+      - trigger: state
+        entity_id: sensor.briefing
+        id: eingang
+    conditions:
+      # Heute ist Push an und die eingestellte Zeit für heute erreicht.
+      - condition: or
+        conditions:
+          - condition: and
+            conditions:
+              - condition: time
+                weekday: [mon, tue, wed, thu, fri]
+                after: input_datetime.briefing_push_werktag
+              - condition: state
+                entity_id: input_boolean.briefing_push_werktag
+                state: "on"
+          - condition: and
+            conditions:
+              - condition: time
+                weekday: sat
+                after: input_datetime.briefing_push_samstag
+              - condition: state
+                entity_id: input_boolean.briefing_push_samstag
+                state: "on"
+          - condition: and
+            conditions:
+              - condition: time
+                weekday: sun
+                after: input_datetime.briefing_push_sonntag
+              - condition: state
+                entity_id: input_boolean.briefing_push_sonntag
+                state: "on"
+      # Bei Eingang nur, wenn der gerade abgeholte Lauf planmäßig ist; ein manueller Lauf löst nie einen
+      # Push aus. Zur Push-Zeit gelten die gespeicherten push_*-Daten des letzten planmäßigen Laufs.
+      - condition: or
+        conditions:
+          - condition: trigger
+            id: zeit
+          - condition: state
+            entity_id: sensor.briefing
+            attribute: ausloeser
+            state: scheduled
+      # Mindestens ein Endgerät ist ausgewählt (sonst würde der Lauf den Push des Tages ohne Nachricht
+      # verbrauchen).
+      - condition: or
+        conditions:
+          - condition: state
+            entity_id: input_boolean.briefing_ziel_samsung
+            state: "on"
+          - condition: state
+            entity_id: input_boolean.briefing_ziel_iphone
+            state: "on"
+      # Ein gültiges Briefing liegt vor.
+      - condition: not
+        conditions:
+          - condition: state
+            entity_id: sensor.briefing
+            state: ["unknown", "unavailable"]
+      # Nur ein heute erstelltes planmäßiges Briefing (push_* kommt nur aus planmäßigen Läufen; um 05:15
+      # liegt ggf. noch das von gestern, TTL 24 h).
+      - condition: template
+        value_template: >-
+          {% set erstellt = state_attr('sensor.briefing', 'push_erstellt_um') %}
+          {{ erstellt is not none and as_local(as_datetime(erstellt)).date() == now().date() }}
+      # Höchstens ein Push je Kalendertag.
+      - condition: template
+        value_template: >-
+          {{ this.attributes.last_triggered is none
+             or as_local(this.attributes.last_triggered).date() != now().date() }}
+    actions:
+      # Je ausgewähltem Endgerät ein Push. Tippen öffnet das Dashboard "Briefing"
+      # (Android: clickAction, iOS: url).
+      - if:
+          - condition: state
+            entity_id: input_boolean.briefing_ziel_samsung
+            state: "on"
+        then:
+          - action: notify.mobile_app_sm_f741b
+            data:
+              title: "Tagesbriefing"
+              message: "{{ state_attr('sensor.briefing', 'push_kurz') }}"
+              data:
+                clickAction: /dashboard-willkommen/briefing
+                url: /dashboard-willkommen/briefing
+                group: briefing
+                tag: briefing
+      - if:
+          - condition: state
+            entity_id: input_boolean.briefing_ziel_iphone
+            state: "on"
+        then:
+          - action: notify.mobile_app_iphone_17_pro
+            data:
+              title: "Tagesbriefing"
+              message: "{{ state_attr('sensor.briefing', 'push_kurz') }}"
+              data:
+                url: /dashboard-willkommen/briefing
+                clickAction: /dashboard-willkommen/briefing
+                group: briefing
+                tag: briefing
+
+# Dashboard "Briefing" (Einstellungen → Dashboards → Dashboard hinzufügen → "Neues Dashboard
+# von Grund auf", Titel "Briefing", URL "dashboard-briefing"; dann Bearbeiten →
+# Raw-Konfigurationseditor und Folgendes einfügen):
+#
+# views:
+#   - title: Briefing
+#     path: "0"
+#     type: masonry
+#     cards:
+#       - type: markdown
+#         content: >-
+#           {% set voll = state_attr('sensor.briefing', 'voll') %}
+#           {% if voll %}{{ voll }}
+#
+#           <sub>Stand {{ as_timestamp(state_attr('sensor.briefing', 'erstellt_um'))
+#           | timestamp_custom('%d.%m.%Y %H:%M') }}{% if state_attr('sensor.briefing',
+#           'ausloeser') == 'manual' %} (manuell){% endif %}</sub>
+#           {% else %}Noch kein Briefing abgerufen.{% endif %}
+#       - type: entities
+#         title: Push-Zeiten
+#         entities:
+#           - input_datetime.briefing_push_werktag
+#           - input_boolean.briefing_push_werktag
+#           - input_datetime.briefing_push_samstag
+#           - input_boolean.briefing_push_samstag
+#           - input_datetime.briefing_push_sonntag
+#           - input_boolean.briefing_push_sonntag
+#           - type: section
+#             label: Endgeräte
+#           - input_boolean.briefing_ziel_samsung
+#           - input_boolean.briefing_ziel_iphone

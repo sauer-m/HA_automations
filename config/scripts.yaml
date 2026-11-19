@@ -450,3 +450,18 @@ drucker_steckdose_schalten:
   - action: switch.turn_off
     target:
       entity_id: '{{ steckdose }}'
+turen_nacheinander_offnen:
+  alias: Haustür und Wohnungstür nacheinander öffnen
+  description: 'Willkommen-Karte, langer Druck auf Haustür: Haustür sofort, Wohnungstür
+    nach 5 s. Abbruch = script.turn_off innerhalb der 5 s.'
+  icon: mdi:door-open
+  mode: single
+  sequence:
+  - action: lock.unlock
+    target:
+      entity_id: lock.haustur
+  - delay:
+      seconds: 5
+  - action: lock.open
+    target:
+      entity_id: lock.wohnungstur

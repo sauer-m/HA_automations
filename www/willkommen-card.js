@@ -46,7 +46,10 @@ const PERSONS = ['person.sauerm', 'person.sarah'];
 const WIN = [['binary_sensor.wohnzimmerfenster', 'Wohnzimmerfenster'], ['binary_sensor.esszimmerfenster', 'Esszimmerfenster'], ['binary_sensor.schlafzimmerfenster', 'Schlafzimmerfenster'], ['binary_sensor.badezimmerfenster', 'Badezimmerfenster'], ['binary_sensor.terrassentur', 'Terrassentür']];
 const GERAETE = [['sensor.waschmaschine_zustand', 'Waschmaschine', 'hwr_waschmaschine'], ['sensor.trockner_zustand', 'Trockner', 'hwr_trockner'], ['sensor.spulmaschine_zustand', 'Spülmaschine', 'kuche_spulmaschine']];
 const LIGHTS = ['light.wohnzimmerlicht', 'light.stehlampe', 'light.ecklampe_wohnzimmer', 'light.schlafzimmerlicht', 'light.nachttischlampe', 'light.badezimmerlicht', 'light.badezimmerlicht_hintergrundbeleuchtung', 'light.kuche_schaltausgang_kuchenlicht', 'light.esszimmerlicht', 'light.schalter_flurlicht', 'light.ambilight_buro', 'light.terrassenlicht', 'light.teelichter_esszimmer', 'light.teelichter_schlafzimmer'];
-const SEVTXT = { crit: 'Kritisch', warn: 'Achtung', info: 'Info' };
+// Briefing-Sensor je Benutzer (user.id). Wer keinen hat, sieht keine Briefing-Inhalte.
+const BRIEFING = { d2389a10564e41eb9bd0bed86ae20b40: 'sensor.briefing' };
+const BOTH = 'script.turen_nacheinander_offnen'; // Haustür sofort, Wohnungstür nach 5 s
+const SEVTXT ={ crit: 'Kritisch', warn: 'Achtung', info: 'Info' };
 
 class WillkommenCard extends HTMLElement {
   setConfig(c) { this._c = c || {}; this._arm = null; }
@@ -56,7 +59,18 @@ class WillkommenCard extends HTMLElement {
     this._hass = h;
     if (!this.shadowRoot) {
       this.attachShadow({ mode: 'open' });
-      this.shadowRoot.addEventListener('click', (e) => this._click(e));
+      const sr = this.shadowRoot;
+      sr.addEventListener('click', (e) => this._click(e));
+      // Langer Druck auf "Haustür öffnen" -> Popup für beide Türen
+      sr.addEventListener('pointerdown', (e) => {
+        this._lp = false;
+        const b = e.target.closest('[data-qa="door"]');
+        if (!b || this._bothActive()) return;
+        clearTimeout(this._lpT);
+        this._lpT = setTimeout(() => { this._lp = true; this._arm = null; this._dlg = true; this._render(); if (navigator.vibrate) navigator.vibrate(30); }, 600);
+      });
+      ['pointerup', 'pointercancel'].forEach((t) => sr.addEventListener(t, () => clearTimeout(this._lpT), true));
+      sr.addEventListener('contextmenu', (e) => { if (e.target.closest('[data-qa="door"]')) e.preventDefault(); });
       if (!document.getElementById('wk-fonts')) {
         const l = document.createElement('link');
         l.id = 'wk-fonts'; l.rel = 'stylesheet';
@@ -84,9 +98,39 @@ class WillkommenCard extends HTMLElement {
     if (m < 1440) return `seit ${Math.round(m / 60)} h`;
     return `seit ${Math.round(m / 1440)} Tagen`;
   }
+  // Countdown läuft, solange das Skript läuft (oder gerade gestartet wurde, Zustand noch nicht da)
+  _bothActive() {
+    if (this._s(BOTH) === 'on') return true;
+    return !!this._both && Date.now() - this._both < 1500;
+  }
+  _bothLeft() {
+    const lt = Date.parse(this._a(BOTH, 'last_triggered') || '');
+    const st = Math.max(this._both || 0, isFinite(lt) ? lt : 0) || Date.now();
+    return Math.max(0, Math.ceil((st + 5000 - Date.now()) / 1000));
+  }
+  _tick() {
+    clearInterval(this._tk);
+    this._tk = setInterval(() => {
+      this._render();
+      if (!this._bothActive()) { clearInterval(this._tk); this._tk = null; this._both = 0; this._render(); }
+    }, 250);
+  }
   _hhmm(t) { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); }
 
   _click(e) {
+    if (this._lp) { this._lp = false; return; } // Klick nach Langdruck schlucken
+    const dl = e.target.closest('[data-dlg]');
+    if (dl) {
+      const ok = dl.dataset.dlg === 'ok';
+      if (dl.dataset.dlg === 'bg' && e.target !== dl) return;
+      this._dlg = false;
+      if (ok) {
+        this._both = Date.now(); this._cancelled = 0;
+        this._hass.callService('script', 'turn_on', { entity_id: BOTH });
+        this._tick();
+      }
+      this._render(); return;
+    }
     const el = e.target.closest('[data-nav],[data-mi],[data-qa]');
     if (!el) return;
     if (el.dataset.nav) {
@@ -101,6 +145,12 @@ class WillkommenCard extends HTMLElement {
 
   _qa(k) {
     const h = this._hass;
+    if (k === 'door' && this._bothActive()) { // ABBRUCH: Wohnungstür bleibt zu
+      h.callService('script', 'turn_off', { entity_id: BOTH });
+      this._both = 0; this._cancelled = Date.now(); this._arm = null;
+      setTimeout(() => this._render(), 3100);
+      this._render(); return;
+    }
     const confirmFirst = { lights: 1, door: 1 };
     if (confirmFirst[k] && this._arm !== k) {
       this._arm = k; clearTimeout(this._armT);
@@ -135,7 +185,7 @@ class WillkommenCard extends HTMLElement {
     if (this._s('binary_sensor.haushalt_overdue') === 'on') {
       const msg = this._a('calendar.haushalt_calendar', 'message');
       const st = new Date(this._a('calendar.haushalt_calendar', 'start_time'));
-      A.push({ sev: 'warn', ic: 'list', t: 'Haushalt: Aufgaben überfällig', s: `${this._n('sensor.haushalt_open_tasks') ?? '–'} offen${msg ? ` · nächster Termin: ${msg}, ${TAGK[st.getDay()]} ${st.getDate()}.${st.getMonth() + 1}.` : ''}`, go: ['Aufgaben', '/todo?entity_id=todo.haushalt'] });
+      A.push({ sev: 'warn', ic: 'list', t: 'Haushalt: Aufgaben überfällig', s: `${this._n('sensor.haushalt_open_tasks') ?? '–'} offen${msg ? ` · nächster Termin: ${msg}, ${TAGK[st.getDay()]} ${st.getDate()}.${st.getMonth() + 1}.` : ''}`, go: ['Aufgaben', '/dashboard-haushalt/aufgaben'] });
     }
     const plants = Object.keys(this._hass.states).filter((id) => id.startsWith('binary_sensor.simple_plant_todo_') && this._s(id) === 'on')
       .map((id) => id.replace('binary_sensor.simple_plant_todo_', '').split('_').map((w) => w[0].toUpperCase() + w.slice(1)).join(' '));
@@ -144,17 +194,17 @@ class WillkommenCard extends HTMLElement {
     GERAETE.forEach(([id, name, pre]) => {
       if (this._s(id) === 'finished') {
         const k = this._n(`sensor.${pre}_kosten_des_letzten_zyklus`);
-        A.push({ sev: 'info', ic: 'wash', t: `${name} fertig`, s: `${this._ago(id).replace('seit', 'vor')}${k != null ? ` · letzter Zyklus ${fmt(k, 2)} €` : ''}`, go: ['Haushalt', '/dashboard-haushalt'] });
+        A.push({ sev: 'info', ic: 'wash', t: `${name} fertig`, s: `${this._ago(id).replace('seit', 'vor')}${k != null ? ` · letzter Zyklus ${fmt(k, 2)} €` : ''}`, go: ['Haushalt', '/dashboard-haushalt/geraete'] });
       }
     });
     if (this._s('sensor.prusa_xl') === 'finished')
-      A.push({ sev: 'info', ic: 'printer', t: 'Prusa XL: Druck fertig', s: 'Steckdose schaltet nach 30 min Leerlauf ab', go: ['Fabrication', '/dashboard-fabrication'] });
+      A.push({ sev: 'info', ic: 'printer', t: 'Prusa XL: Druck fertig', s: 'Steckdose schaltet nach 30 min Leerlauf ab', go: ['Werkstatt', '/dashboard-fabrication'] });
     const ord = { crit: 0, warn: 1, info: 2 };
     return A.sort((a, b) => ord[a.sev] - ord[b.sev]);
   }
 
-  _today() {
-    const k = this._a('sensor.briefing', 'kurz') || '';
+  _today(sid) {
+    const k = (sid && this._a(sid, 'kurz')) || '';
     const rows = [];
     k.split('\n').map((z) => z.trim()).filter(Boolean).forEach((z) => {
       const i = z.indexOf(':'); if (i < 0) return;
@@ -169,7 +219,7 @@ class WillkommenCard extends HTMLElement {
     if (rows.length && rows[0][0] === 'cal' && rows[1] && rows[1][1] === 'Erster Termin') { rows[0][2] = `erster: ${rows[1][2]}`; rows.splice(1, 1); }
     const msg = this._a('calendar.haushalt_calendar', 'message');
     if (msg) { const st = new Date(this._a('calendar.haushalt_calendar', 'start_time')); rows.push(['coffee', 'Haushalt-Kalender', `${esc(msg)} · <b>${TAGK[st.getDay()]}</b>`]); }
-    const t = this._a('sensor.briefing', 'erstellt_um');
+    const t = sid ? this._a(sid, 'erstellt_um') : null;
     return { rows, stand: t ? this._hhmm(t) : '' };
   }
 
@@ -223,18 +273,29 @@ class WillkommenCard extends HTMLElement {
 
     const lightsOn = LIGHTS.filter((l) => this._s(l) === 'on').length;
     const awayOn = this._s('input_boolean.abwesenheit') === 'on', cinOn = this._s('switch.heimkino') === 'on';
+    const bothOn = this._bothActive();
+    if (bothOn && !this._tk) this._tick(); // auch wenn das Skript woanders gestartet wurde
+    const cancelled = this._cancelled && Date.now() - this._cancelled < 3000;
     const QA = [
       ['lights', 'light', 'Alle Lichter aus', this._arm === 'lights' ? 'Nochmal tippen zum Ausschalten' : lightsOn ? `${lightsOn} von 14 an` : 'alle aus', false],
       ['away', 'away', 'Abwesend', awayOn ? 'an · Heizung auf Urlaub' : 'aus', awayOn],
       ['cinema', 'film', 'Heimkino', cinOn ? 'läuft' : 'aus', cinOn],
-      ['door', 'door', 'Haustür öffnen', this._arm === 'door' ? 'Nochmal tippen zum Öffnen' : 'mit Bestätigung', false],
+      bothOn ? ['door', 'door', 'ABBRUCH', `Wohnungstür öffnet in ${this._bothLeft()} s`, false, 'abort']
+        : cancelled ? ['door', 'door', 'Abgebrochen', 'Wohnungstür bleibt zu', false]
+        : ['door', 'door', 'Haustür öffnen', this._arm === 'door' ? 'Nochmal tippen zum Öffnen' : 'Tippen · lang: beide Türen', false],
     ];
     const quick = `<div class="card quick"><div class="ch"><h3>Schnellaktionen</h3><span class="sub">${tod === 'abend' || tod === 'nacht' ? 'Abendauswahl' : 'Tagesauswahl'}</span></div>
-      <div class="qas">${QA.map(([k, i, t, s, on]) => `<button class="qa ${on ? 'on' : ''} ${this._arm === k ? 'armed' : ''}" data-qa="${k}">${ic(i)}<b>${t}</b><small>${esc(s)}</small></button>`).join('')}</div></div>`;
+      <div class="qas">${QA.map(([k, i, t, s, on, x]) => `<button class="qa ${on ? 'on' : ''} ${this._arm === k ? 'armed' : ''} ${x || ''}" data-qa="${k}">${ic(i)}<b>${t}</b><small>${esc(s)}</small></button>`).join('')}</div></div>`;
+    const dlg = this._dlg ? `<div class="dlg-bg" data-dlg="bg"><div class="dlg" role="dialog" aria-modal="true">
+      <div class="dlg-ic">${ic('door')}</div><h3>Beide Türen öffnen?</h3>
+      <p>Die <b>Haustür</b> öffnet sofort, die <b>Wohnungstür</b> 5 Sekunden später. Bis dahin kannst du die Wohnungstür mit einem Tipp auf den Knopf abbrechen.</p>
+      <div class="dlg-b"><button class="btn" data-dlg="no">Abbrechen</button><button class="btn pri" data-dlg="ok">Öffnen</button></div></div></div>` : '';
 
-    const td = this._today();
-    const today = `<div class="card today"><div class="ch"><h3>Heute</h3><span class="sub" data-nav="/dashboard-briefing">aus dem Briefing${td.stand ? ' · ' + td.stand : ''} →</span></div><div class="rows">
-      ${td.rows.length ? td.rows.map(([i, l, v]) => `<div class="row" data-nav="/dashboard-briefing">${ic(i)}<span>${l}</span><span class="v">${v}</span></div>`).join('') : '<div class="muted">Noch kein Briefing abgerufen.</div>'}</div></div>`;
+    const bs = BRIEFING[h.user && h.user.id];
+    const td = this._today(bs);
+    const bnav = bs ? ' data-nav="/dashboard-willkommen/briefing"' : '';
+    const today = `<div class="card today"><div class="ch"><h3>Heute</h3>${bs ? `<span class="sub"${bnav}>aus dem Briefing${td.stand ? ' · ' + td.stand : ''} →</span>` : ''}</div><div class="rows">
+      ${td.rows.length ? td.rows.map(([i, l, v]) => `<div class="row"${bnav}>${ic(i)}<span>${l}</span><span class="v">${v}</span></div>`).join('') : `<div class="muted">${bs ? 'Noch kein Briefing abgerufen.' : 'Heute steht nichts an.'}</div>`}</div></div>`;
 
     const pw = this._n('sensor.energie_leistung_erfasst'), ck = this._n('sensor.stromkosten_heute');
     const vac = this._s('vacuum.p50_pro_ultra'), pr = this._s('sensor.prusa_xl'), plug = this._s('switch.prusa_xl_keller');
@@ -251,19 +312,19 @@ class WillkommenCard extends HTMLElement {
     const einkauf = this._n('todo.einkaufsliste');
     const termine = (td.rows.find((r) => r[0] === 'cal') || [])[1];
     const NAV = [
-      ['home', 'Home', 'Licht, Klima, Kameras', '/dashboard-beleuctung'],
+      ['home', 'Zuhause', 'Licht, Klima, Kameras', '/dashboard-beleuctung'],
       ['wash', 'Haushalt', `${this._n('sensor.haushalt_open_tasks') ?? '–'} offen`, '/dashboard-haushalt'],
-      ['list', 'Listen', einkauf ? `Einkauf: ${einkauf}` : 'Einkauf leer', '/dashboard-listen'],
+      ['list', 'To-do', einkauf ? `Einkauf: ${einkauf}` : 'Einkauf leer', '/todo?entity_id=todo.einkaufsliste'],
       ['bolt', 'Energie', `${ck != null ? fmt(ck, 2) : '–'} € heute`, '/dashboard-energie/overview'],
-      ['cube', 'Fabrication', `Prusa XL ${plug === 'off' ? 'aus' : PRUSA[pr] || 'offline'}`, '/dashboard-fabrication'],
+      ['cube', 'Werkstatt', `Prusa XL ${plug === 'off' ? 'aus' : PRUSA[pr] || 'offline'}`, '/dashboard-fabrication'],
       ['leaf', 'Pflanzen', plantsDue ? `${plantsDue} gießen` : `${plantsN} Pflanzen`, '/dashboard-pflanzen'],
-      ['robot', 'Mova', VAC[vac] || vac, '/dashboard-mova'],
-      ['news', 'Briefing', termine || 'Tagesüberblick', '/dashboard-briefing'],
-    ];
+      ['robot', 'Mova', VAC[vac] || vac, '/dashboard-haushalt/saugroboter'],
+      bs && ['news', 'Briefing', termine || 'Tagesüberblick', '/dashboard-willkommen/briefing'],
+    ].filter(Boolean);
     const nav = `<div class="navgrid">${NAV.map(([i, l, s, p]) => `<div class="tile" data-nav="${p}" role="link" tabindex="0"><span class="tb">${ic(i)}</span><span>${l}<small>${esc(s)}</small></span></div>`).join('')}</div>`;
 
     const order = tod === 'morgen' ? [hello, attention, today, status, who, quick, nav] : [hello, attention, who, quick, today, status, nav];
-    this.shadowRoot.innerHTML = `<style>${this._css(dark)}</style><div class="view">${order.join('')}</div>`;
+    this.shadowRoot.innerHTML = `<style>${this._css(dark)}</style><div class="view">${order.join('')}</div>${dlg}`;
   }
 
   _css(dark) {
@@ -314,6 +375,17 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .qa svg{color:var(--accent)}.qa b{font-size:13px;font-weight:600}.qa small{font-size:11.5px;color:var(--muted);line-height:1.3}
 .qa.on{background:var(--accent-soft);border-color:var(--accent)}
 .qa.armed{border-color:var(--warn);background:var(--warn-soft)}.qa.armed small{color:var(--warn);font-weight:600}
+.qa{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+.qa.abort{border:2px solid var(--crit);background:var(--crit-soft);padding:11px 9px;animation:qa-pulse 1s ease-in-out infinite}
+.qa.abort svg,.qa.abort b,.qa.abort small{color:var(--crit)}.qa.abort b{letter-spacing:.06em}.qa.abort small{font-weight:600}
+@keyframes qa-pulse{50%{box-shadow:0 0 0 4px var(--crit-soft)}}
+.dlg-bg{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px}
+.dlg{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:22px;max-width:360px;width:100%;font-family:var(--fb);font-size:14px;line-height:1.5;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.dlg h3{margin:10px 0 6px;font-family:var(--fd);font-size:18px;font-weight:600}.dlg p{margin:0 0 18px;color:var(--muted)}.dlg p b{color:var(--ink)}
+.dlg-ic{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--warn-soft);color:var(--warn)}
+.dlg-b{display:flex;gap:8px;justify-content:flex-end}
+.btn{appearance:none;font:inherit;font-weight:600;border-radius:10px;padding:10px 16px;border:1px solid var(--line);background:var(--sunk);color:var(--ink);cursor:pointer}
+.btn.pri{background:var(--warn);border-color:var(--warn);color:#fff}
 .qa:focus-visible,.alert:focus-visible,.tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rows{display:grid}
 .row{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:8px 4px;border-top:1px solid var(--line);border-radius:6px}

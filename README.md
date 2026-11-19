@@ -5,11 +5,12 @@ Spiegel der Home-Assistant-Konfiguration von Marcel (HA OS 2026.10 als VM auf Pr
 | Ordner | Inhalt | Quelle in HA |
 |---|---|---|
 | `config/` | `automations.yaml`, `scripts.yaml`, `scenes.yaml`, `configuration.yaml`, `light_groups.yaml` | `/config` |
-| `config/packages/` | Heimkino Wohnzimmer und Schlafzimmer (YAML-Packages) | `/config/packages` |
+| `config/packages/` | Heimkino Wohnzimmer und Schlafzimmer, Fabrication, Briefing (YAML-Packages) | `/config/packages` |
 | `esphome/` | Eigene ESPHome-Geräte (BenQ, Brunnen, Steckdose, Landroid-Kamera, ProfiCook, XGIMI-Remote) | `/config/esphome` |
-| `dashboards/` | Lovelace-Dashboards (Beleuchtung/Klima/Sicherheit/Media, Listen, Tools, Karte) | `.storage/lovelace*` |
+| `dashboards/` | Lovelace-Dashboards (Willkommen, Zuhause, Energie, Werkstatt, Pflanzen, Karte) | `.storage/lovelace*` |
 | `helpers/` | `input_boolean`, `input_number` aus der UI | `.storage/input_*` |
-| `docs/` | Doku je Komponente (z. B. Fabrication-Dashboard) | – |
+| `www/` | Eigene Karten (Willkommen, Briefing, Energie, Status-Glow) und Custom-Sidebar-Config | `/config/www` |
+| `docs/` | Doku je Komponente (Fabrication-Dashboard, Willkommen/Briefing/Seitenleiste) | – |
 | `tools/export.sh` | Aktualisiert den Spiegel vom Samba-Share und schwärzt Secrets | – |
 
 Nicht im Repo: `secrets.yaml`, Zigbee2MQTT-Konfiguration (enthält den Netzwerkschlüssel), Datenbank, eigene Blueprints in `blueprints/automation/sauer-m` (ein Dateiname mit `<>` lässt sich unter Windows nicht kopieren).
