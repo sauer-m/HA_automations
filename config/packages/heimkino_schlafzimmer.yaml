@@ -24,7 +24,7 @@ template:
              and is_state('input_select.hdmi_switch_schlafzimmer', 'Eingang 1') }}
         availability: >-
           {{ states('button.xgimi_halo_remote_xgimi_projector_wakeup')
-               not in ['unknown', 'unavailable'] }}
+               != 'unavailable' }}
         turn_on:
           - action: script.heimkino_schlafzimmer_firetv_aktivieren
         turn_off:
@@ -38,7 +38,7 @@ template:
              and is_state('input_select.hdmi_switch_schlafzimmer', 'Eingang 2') }}
         availability: >-
           {{ states('button.xgimi_halo_remote_xgimi_projector_wakeup')
-               not in ['unknown', 'unavailable'] }}
+               != 'unavailable' }}
         turn_on:
           - action: script.heimkino_schlafzimmer_switch_aktivieren
         turn_off:
