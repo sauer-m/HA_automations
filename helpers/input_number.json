@@ -41,6 +41,27 @@
         "max": 5.0,
         "step": 1.0,
         "mode": "box"
+      },
+      {
+        "id": "marcel_gewicht",
+        "name": "Marcel Gewicht",
+        "icon": "mdi:scale-bathroom",
+        "min": 40.0,
+        "max": 150.0,
+        "step": 0.05,
+        "unit_of_measurement": "kg",
+        "mode": "box",
+        "device_class": "weight"
+      },
+      {
+        "id": "marcel_koerperfett",
+        "name": "Marcel Körperfett",
+        "icon": "mdi:percent",
+        "min": 3.0,
+        "max": 60.0,
+        "step": 0.1,
+        "unit_of_measurement": "%",
+        "mode": "box"
       }
     ]
   }

@@ -1660,3 +1660,40 @@
     target:
       entity_id: switch.prusa_xl_keller
   mode: single
+- id: '1795455237737'
+  alias: 'Waage: Marcel an openScale sync'
+  description: Schickt jede neue Messung aus input_number.marcel_gewicht (und Körperfett,
+    wenn frisch gesetzt) retained an openScale sync auf Marcels Handy. Ein Topic pro
+    Messung, damit Messungen erhalten bleiben, wenn das Handy nicht zu Hause ist. openScale
+    sync importiert sie und exportiert nach Health Connect.
+  mode: queued
+  max: 10
+  triggers:
+  - trigger: state
+    entity_id: input_number.marcel_gewicht
+    to: null
+    not_from:
+    - unknown
+    - unavailable
+    note: 'to: null = nur Zustandswechsel, keine Attributänderungen; not_from verhindert
+      Senden nach Neustart.'
+  conditions: []
+  actions:
+  - variables:
+      ts: '{{ (as_timestamp(trigger.to_state.last_changed) * 1000) | int }}'
+      weight: '{{ trigger.to_state.state | float }}'
+      fett: '{{ states(''input_number.marcel_koerperfett'') }}'
+      fett_ok: '{{ is_number(fett) and fett | float > 3 and (now() - states.input_number.marcel_koerperfett.last_updated).total_seconds()
+        < 600 }}'
+    note: Körperfett zählt nur, wenn > Minimum (3 = Platzhalter) und in den letzten
+      10 min gesetzt; die Filter-Automation setzt Körperfett vor dem Gewicht.
+  - action: mqtt.publish
+    data:
+      topic: openScaleSync/inbound/1/{{ ts }}
+      retain: true
+      qos: 1
+      payload: '{% if fett_ok %}{{ {''date'': ts, ''weight'': weight, ''body_fat'':
+        fett | float} | to_json }}{% else %}{{ {''date'': ts, ''weight'': weight} |
+        to_json }}{% endif %}'
+    note: 'Payload laut openScale-sync-Wiki MQTT support: date in epoch ms, weight
+      kg, body_fat %. userId 1 = Marcel in openScale.'
