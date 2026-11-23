@@ -20,9 +20,12 @@ const E = {
   totalKcal: H('total_calories_burned'), weight: H('weight'), fat: H('body_fat'), lean: H('lean_body_mass'),
   weightIn: 'input_number.marcel_gewicht', fatIn: 'input_number.marcel_koerperfett',
   garmin: 'sensor.garmin_connect_gerate',
+  bb: 'sensor.garmin_connect_body_battery', bbLow: 'sensor.garmin_connect_body_battery_tiefstwert', bbHigh: 'sensor.garmin_connect_body_battery_hochstwert',
+  tr: 'sensor.garmin_connect_trainingsbereitschaft', stress: 'sensor.garmin_connect_durchschnittliches_stresslevel',
+  eaten: 'sensor.garmin_connect_aufgenommene_kalorien', acts: 'sensor.garmin_connect_letzte_aktivitaten',
   sport: 'counter.bodyos_sport_woche', yoga: 'counter.bodyos_yoga_woche',
 };
-const HIST = [E.sleep, E.rhr, E.hrv, E.temp, E.weight, E.weightIn, E.fat, E.sport, E.yoga];
+const HIST = [E.bb, E.tr, E.stress, E.sleep, E.rhr, E.hrv, E.temp, E.weight, E.weightIn, E.fat, E.sport, E.yoga];
 const C = { cyan: '#33e1ff', violet: '#9b7bff', lime: '#7dff9b', amber: '#ffbf47', pink: '#ff5fa2' };
 const TAGK = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -143,7 +146,7 @@ function spark(vals, col) {
 class BodyOSCard extends HTMLElement {
   setConfig(c) {
     this._c = Object.assign({ steps_goal: 7000, sport_goal: 2, yoga_goal: 2, kcal: 2250, protein: 170, fat: 75, carbs: 225,
-      sleep_goal_h: 7.5, tandoor_url: 'https://cookbook.sauerstofff.de', shopping_entity: 'todo.mealprep', meals: [],
+      sleep_goal_h: 7.5, min_activity_min: 10, tandoor_url: 'https://cookbook.sauerstofff.de', shopping_entity: 'todo.mealprep', meals: [],
       breakfast_kcal: 500, breakfast_protein: 35, lunch_kcal: 750, lunch_protein: 50 }, c || {});
   }
   getCardSize() { return 30; }
@@ -160,7 +163,7 @@ class BodyOSCard extends HTMLElement {
         document.head.appendChild(l);
       }
     }
-    const sig = Object.values(E).map((id) => h.states[id]?.state).join('|');
+    const sig = Object.values(E).map((id) => h.states[id]?.state).join('|') + (h.states[E.acts]?.last_updated || '');
     if (sig !== this._sig) { this._sig = sig; this._render(); }
     if (!this._histAt || Date.now() - this._histAt > 15 * 60e3) this._loadHist();
   }
@@ -250,6 +253,10 @@ class BodyOSCard extends HTMLElement {
     };
     const [rhrT, rhrC] = delta(rhr, rhrA, 'bpm', true), [hrvT, hrvC] = delta(hrv, hrvA, 'ms', false);
     const tempOk = temp == null || Math.abs(temp) < 0.3;
+    const bb = n(E.bb), bbLo = n(E.bbLow), bbHi = n(E.bbHigh), trS = n(E.tr), st = n(E.stress);
+    const bbD = this._daily(E.bb, 8), trD = this._daily(E.tr, 8), stD = this._daily(E.stress, 8);
+    const TRL = { PRIME: 'top', HIGH: 'hoch', MODERATE: 'mittel', LOW: 'niedrig', POOR: 'schwach' };
+    const trTxt = TRL[this._hass.states[E.tr]?.attributes?.level] || '';
 
     // Schlaf
     const sl = n(E.sleep), ph = [['Tief', n(E.deep), C.violet], ['REM', n(E.rem), C.cyan], ['Leicht', n(E.light), '#3b5a8a'], ['Wach', n(E.awake), '#5a2c40']];
@@ -262,9 +269,19 @@ class BodyOSCard extends HTMLElement {
     const dist = n(E.dist), floors = n(E.floors), aK = n(E.activeKcal), tK = n(E.totalKcal);
 
     // Training
-    const sp = n(E.sport) ?? 0, yo = n(E.yoga) ?? 0;
     const monday = new Date(now); monday.setHours(0, 0, 0, 0); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
     const marks = {};
+    // Garmin-Aktivitäten dieser Woche (auch die aus MyFitnessPal): Yoga = Yoga, Gehen zählt nicht (steckt in Schritten),
+    // alles andere ab min_activity_min Minuten = Sport. Zähler (Tippen) kommen für nicht erfasste Einheiten dazu.
+    const actsW = (this._hass.states[E.acts]?.attributes?.last_activities || []).map((a) => {
+      const t = new Date(a.startTime), ty = String(a.activityType || '').toLowerCase(), nm = String(a.activityName || '');
+      const kind = ty.includes('yoga') || /yoga/i.test(nm) ? 'yoga' : (ty === 'walking' || ty.includes('walk') || (a.duration || 0) < c.min_activity_min * 60) ? null : 'sport';
+      return { t, kind, name: nm.replace(/ - MyFitnessPal$/, ''), min: Math.round((a.duration || 0) / 60), mfp: / - MyFitnessPal$/.test(nm) };
+    }).filter((a) => a.kind && a.t >= monday && !isNaN(a.t)).sort((a, b) => b.t - a.t);
+    const gSp = actsW.filter((a) => a.kind === 'sport').length, gYo = actsW.filter((a) => a.kind === 'yoga').length;
+    const sp = (n(E.sport) ?? 0) + gSp, yo = (n(E.yoga) ?? 0) + gYo;
+    for (const a of actsW) { const k = dayKey(a.t); marks[k] = marks[k] && marks[k] !== a.kind ? 'both' : a.kind; }
+    const lastAct = actsW[0];
     for (const [id, kind] of [[E.sport, 'sport'], [E.yoga, 'yoga']]) {
       let prev = null;
       for (const r of this._hist?.[id] || []) {
@@ -295,6 +312,7 @@ class BodyOSCard extends HTMLElement {
         </div>`;
 
     // Ernährung + Mealprep
+    const eat = n(E.eaten);
     const macros = [['Eiweiß', c.protein, C.pink], ['Fett', c.fat, C.amber], ['Kohlenh.', c.carbs, C.cyan]]
       .map(([l, g, col]) => `<div class="macro"><span class="lbl">${l}</span><div class="track"><div class="fill" style="width:0%;--c1:${col};--c2:${col}"></div></div><span class="n">— / ${g} g</span></div>`).join('');
     const days = ['Mo', 'Di', 'Mi', 'Do', 'Fr'], todayK = TAGK[now.getDay()];
@@ -339,11 +357,16 @@ class BodyOSCard extends HTMLElement {
     </section>
 
     <section class="panel" style="--c:var(--pink)">
-      <div class="ph"><h2>Vitalwerte</h2><span class="src">NACHT · OURA / GARMIN</span></div>
+      <div class="ph"><h2>Vitalwerte</h2><span class="src">OURA · GARMIN</span></div>
       <div class="tiles">
         ${tile('Ruhepuls', rhr == null ? null : de(rhr), 'bpm', rhrT, rhrC, rhrD, C.pink, E.rhr)}
         ${tile('HRV', hrv == null ? null : de(hrv), 'ms', hrvT, hrvC, hrvD, C.lime, E.hrv)}
         ${tile('Temp.', temp == null ? null : (temp > 0 ? '+' : '') + de(temp, 1), '°C', temp == null ? '' : tempOk ? 'im Rahmen' : temp > 0 ? 'erhöht' : 'niedrig', tempOk ? 'flat' : 'down', tempD, C.amber, E.temp)}
+      </div>
+      <div class="tiles" style="margin-top:8px">
+        ${tile('Body Battery', bb == null ? null : de(bb), '%', bbLo == null ? '' : `heute ${de(bbLo)}–${de(bbHi)} %`, bb == null ? 'flat' : bb >= 50 ? 'up' : 'down', bbD, C.cyan, E.bb)}
+        ${tile('Bereitschaft', trS == null ? null : de(trS), '%', trTxt, trS == null ? 'flat' : trS >= 60 ? 'up' : 'down', trD, C.lime, E.tr)}
+        ${tile('Stress Ø', st == null ? null : de(st), '', st == null ? '' : st <= 25 ? 'ruhig' : st <= 50 ? 'mittel' : 'hoch', st == null ? 'flat' : st <= 25 ? 'up' : st <= 50 ? 'flat' : 'down', stD, C.violet, E.stress)}
       </div>
     </section>
 
@@ -374,10 +397,11 @@ class BodyOSCard extends HTMLElement {
     </section>
 
     <section class="panel" style="--c:var(--violet)">
-      <div class="ph"><h2>Trainingswoche</h2><span class="src">ZIEL ${c.sport_goal}× SPORT · ${c.yoga_goal}× YOGA</span></div>
+      <div class="ph"><h2>Trainingswoche</h2><span class="src">GARMIN · ZIEL ${c.sport_goal}+${c.yoga_goal}</span></div>
       <div class="mini">${mr('Sport', sp, c.sport_goal, C.cyan, E.sport)}${mr('Yoga', yo, c.yoga_goal, C.violet, E.yoga)}</div>
       <div class="week">${week}</div>
-      <div class="hint">Tippen = Einheit eintragen · lange drücken = zurücknehmen · Reset montags 0 Uhr</div>
+      ${lastAct ? `<div class="row" style="margin-top:10px"><span class="lbl">Zuletzt</span><span style="font-size:12px;color:var(--ink2)">${esc(lastAct.name)} · ${TAGK[lastAct.t.getDay()]} · ${lastAct.min} min${lastAct.mfp ? ' · MFP' : ''}</span></div>` : ''}
+      <div class="hint">Zählt automatisch aus Garmin (auch in MyFitnessPal eingetragene Einheiten, Gehen nicht). Tippen = nicht erfasste Einheit dazu · lange drücken = zurücknehmen</div>
     </section>
 
     <section class="panel" id="s-koerper" style="--c:var(--amber)">
@@ -386,11 +410,12 @@ class BodyOSCard extends HTMLElement {
     </section>
 
     <section class="panel" id="s-ernaehrung" style="--c:var(--lime)">
-      <div class="ph"><h2>Ernährung</h2><span class="src">MYFITNESSPAL · FOLGT</span></div>
+      <div class="ph"><h2>Ernährung</h2><span class="src">MYFITNESSPAL · ÜBER GARMIN</span></div>
       <div class="kcal">
-        <div class="ring" style="width:84px;height:84px"><svg viewBox="0 0 120 120">${ring(50, 12, 0, C.lime)}<circle cx="60" cy="60" r="50" stroke="rgba(125,255,155,.35)" stroke-width="12" fill="none" stroke-dasharray="4 7"/></svg><div class="center"><span class="lbl">Ist</span><b style="font-family:var(--fd)">—</b></div></div>
+        <div class="ring" style="width:84px;height:84px"><svg viewBox="0 0 120 120">${eat == null ? `${ring(50, 12, 0, C.lime)}<circle cx="60" cy="60" r="50" stroke="rgba(125,255,155,.35)" stroke-width="12" fill="none" stroke-dasharray="4 7"/>` : ring(50, 12, eat / c.kcal * 100, eat > c.kcal * 1.05 ? C.amber : C.lime)}</svg><div class="center" data-more="${E.eaten}" style="cursor:pointer"><span class="lbl">Ist</span><b style="font-family:var(--fd)">${eat == null ? '—' : de(eat)}</b></div></div>
         <div><div class="lbl">Tagesziel</div><span class="big" style="font-size:24px">${de(c.kcal)}</span><span class="unit">kcal</span>
-          <div style="font-size:11.5px;color:var(--amber);margin-top:2px">Ist-Werte kommen, sobald MFP in HA ist</div></div>
+          <div style="font-size:11.5px;color:${eat ? 'var(--ink2)' : 'var(--amber)'};margin-top:2px">${eat == null ? 'Keine Daten von Garmin' : eat === 0 ? 'Heute noch nichts in MyFitnessPal' : eat <= c.kcal ? `noch ${de(c.kcal - eat)} kcal frei` : `${de(eat - c.kcal)} kcal über Ziel`}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Makros folgen (MFP-Brücke)</div></div>
       </div>
       <div style="display:grid;gap:8px;margin-top:12px">${macros}</div>
     </section>
