@@ -19,7 +19,6 @@ const E = {
   rhr: H('resting_heart_rate'), steps: H('daily_steps'), dist: H('daily_distance'), floors: H('daily_floors'),
   totalKcal: H('total_calories_burned'), weight: H('weight'), fat: H('body_fat'), lean: H('lean_body_mass'),
   weightIn: 'input_number.marcel_gewicht', fatIn: 'input_number.marcel_koerperfett',
-  garmin: 'sensor.garmin_connect_gerate',
   bb: 'sensor.garmin_connect_body_battery', bbLow: 'sensor.garmin_connect_body_battery_tiefstwert', bbHigh: 'sensor.garmin_connect_body_battery_hochstwert',
   tr: 'sensor.garmin_connect_trainingsbereitschaft', stress: 'sensor.garmin_connect_durchschnittliches_stresslevel',
   eaten: 'sensor.garmin_connect_aufgenommene_kalorien', acts: 'sensor.garmin_connect_letzte_aktivitaten',
@@ -328,18 +327,12 @@ class BodyOSCard extends HTMLElement {
 
     const syncS = this._hass.states[E.sync]?.state, sync = syncS && !isNaN(Date.parse(syncS)) ? new Date(syncS) : null;
     const fmtT = (t) => t.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    // Uhr: Garmin Connect liefert keinen Akkustand der Fenix E, daher letzte Synchronisierung der Uhr
-    const gLast = this._hass.states[E.garmin]?.attributes?.last_used_device?.lastSyncTime;
-    const gSync = gLast && !isNaN(Date.parse(gLast)) ? new Date(gLast) : null;
-    const gOld = !gSync || Date.now() - gSync > 12 * 3600e3;
-    const gTxt = !gSync ? '—' : dayKey(gSync) === dayKey(now) ? fmtT(gSync) : `${TAGK[gSync.getDay()]} ${fmtT(gSync)}`;
     const ok = (id) => this._hass.states[id] && !['unknown', 'unavailable'].includes(this._hass.states[id].state);
 
     d.innerHTML = `
     <div class="top span3">
       <div class="logo">${ICON.logo}<div><b>BODYOS</b><small>${TAGK[now.getDay()].toUpperCase()} ${now.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} · ${fmtT(now)}</small></div></div>
-      <span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><span class="chip" data-more="${E.ring}" style="cursor:pointer"><span class="dot ${ringB != null && ringB < 20 ? 'warn' : ''}"></span>Ring ${ringB == null ? '—' : de(ringB)} %</span>
-        <span class="chip" data-more="${E.garmin}" style="cursor:pointer" title="Letzte Synchronisierung der Fenix E"><span class="dot ${gOld ? 'warn' : ''}"></span>Uhr ${gTxt}</span></span>
+      <span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><span class="chip" data-more="${E.ring}" style="cursor:pointer"><span class="dot ${ringB != null && ringB < 20 ? 'warn' : ''}"></span>Ring ${ringB == null ? '—' : de(ringB)} %</span></span>
     </div>
     <nav class="tabs span3">
       <button class="on" data-jump="s-heute">Heute</button><button data-jump="s-schlaf">Schlaf</button><button data-jump="s-aktiv">Aktivität</button><button data-jump="s-koerper">Körper</button><button data-jump="s-ernaehrung">Ernährung</button>
