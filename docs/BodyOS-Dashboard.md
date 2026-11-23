@@ -1,6 +1,6 @@
 # BodyOS – Gesundheits-Cockpit
 
-Stand 23.11.2026. Dashboard `dashboard-bodyos` (Seitenleiste „Themen“, nach Energie), eine Panel-View `heute`
+Stand 23.11.2026. Zusätzlich als Reiter `bodyos` in `dashboard-willkommen`. Dashboard `dashboard-bodyos` (Seitenleiste „Themen“, nach Energie), eine Panel-View `heute`
 mit `custom:bodyos-card` (`www/bodyos-card.js`, in HA `/config/www/bodyos-card.js`, Ressource `/local/bodyos-card.js?v=1`).
 Bei Änderungen Datei per Samba kopieren und `?v=` hochzählen. Sichtbar nur für Marcel (view `visible`); Custom Sidebar blendet den Eintrag für Sarah aus.
 
