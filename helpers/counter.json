@@ -1,0 +1,4 @@
+[
+  { "id": "bodyos_sport_woche", "name": "BodyOS Sport Woche", "icon": "mdi:dumbbell", "initial": 0, "minimum": 0, "step": 1, "restore": true },
+  { "id": "bodyos_yoga_woche", "name": "BodyOS Yoga Woche", "icon": "mdi:yoga", "initial": 0, "minimum": 0, "step": 1, "restore": true }
+]

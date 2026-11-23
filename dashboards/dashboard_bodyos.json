@@ -1,0 +1,27 @@
+{
+  "url_path": "dashboard-bodyos",
+  "title": "BodyOS",
+  "icon": "mdi:heart-pulse",
+  "show_in_sidebar": true,
+  "require_admin": false,
+  "config": {
+    "views": [
+      {
+        "title": "Heute",
+        "path": "heute",
+        "icon": "mdi:heart-pulse",
+        "type": "panel",
+        "visible": [{ "user": "d2389a10564e41eb9bd0bed86ae20b40" }],
+        "cards": [
+          {
+            "type": "custom:bodyos-card",
+            "steps_goal": 7000, "sport_goal": 2, "yoga_goal": 2,
+            "kcal": 2250, "protein": 170, "fat": 75, "carbs": 225,
+            "tandoor_url": "https://cookbook.sauerstofff.de"
+          }
+        ]
+      }
+    ]
+  },
+  "resource": { "id": "812558194b56460780ca9c8f36441a88", "url": "/local/bodyos-card.js?v=1", "type": "module" }
+}

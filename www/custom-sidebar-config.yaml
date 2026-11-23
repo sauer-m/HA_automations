@@ -1,6 +1,6 @@
 # Custom Sidebar (elchininet/custom-sidebar) – Konfiguration
 # Liegt in HA unter /config/www/custom-sidebar-config.yaml
-# Stand 19.11.2026 – Konzept: Alltag | Themen | System (Info ist in Willkommen aufgegangen)
+# Stand 23.11.2026 (BodyOS ergänzt) – Konzept: Alltag | Themen | System (Info ist in Willkommen aufgegangen)
 # divider: true zeichnet die Linie UNTER dem Eintrag.
 
 order:
@@ -31,6 +31,9 @@ order:
   - item: /dashboard-energie
     match: href
     order: 7
+  - item: /dashboard-bodyos
+    match: href
+    order: 8
     divider: true
 
   # ---------- System ----------
@@ -69,6 +72,9 @@ exceptions:
       - Sarah
     extend_from: base
     order:
+      - item: /dashboard-bodyos
+        match: href
+        hide: true
       - item: /history
         match: href
         hide: true

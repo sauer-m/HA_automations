@@ -1697,3 +1697,21 @@
         to_json }}{% endif %}'
     note: 'Payload laut openScale-sync-Wiki MQTT support: date in epoch ms, weight
       kg, body_fat %. userId 1 = Marcel in openScale.'
+- id: '1795456254372'
+  alias: BodyOS Trainingszähler Wochenstart
+  description: Setzt Sport- und Yoga-Zähler der BodyOS-Trainingswoche montags 00:00
+    auf 0.
+  triggers:
+  - trigger: time
+    at: 00:00:00
+  conditions:
+  - condition: time
+    weekday:
+    - mon
+  actions:
+  - action: counter.reset
+    target:
+      entity_id:
+      - counter.bodyos_sport_woche
+      - counter.bodyos_yoga_woche
+  mode: single
