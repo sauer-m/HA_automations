@@ -1,7 +1,7 @@
 # BodyOS – Gesundheits-Cockpit
 
 Stand 23.11.2026. Zusätzlich als Reiter `bodyos` in `dashboard-willkommen`. Dashboard `dashboard-bodyos` (Seitenleiste „Themen“, nach Energie), eine Panel-View `heute`
-mit `custom:bodyos-card` (`www/bodyos-card.js`, in HA `/config/www/bodyos-card.js`, Ressource `/local/bodyos-card.js?v=1`).
+mit `custom:bodyos-card` (`www/bodyos-card.js`, in HA `/config/www/bodyos-card.js`, Ressource `/local/bodyos-card.js?v=4`).
 Bei Änderungen Datei per Samba kopieren und `?v=` hochzählen. Sichtbar nur für Marcel (view `visible`); Custom Sidebar blendet den Eintrag für Sarah aus.
 
 ## Aufbau (eine lange Seite, Reiter oben = Sprungmarken, bleiben beim Scrollen stehen)
@@ -17,6 +17,9 @@ Bei Änderungen Datei per Samba kopieren und `?v=` hochzählen. Sichtbar nur fü
 ## Helfer und Automation
 - `counter.bodyos_sport_woche`, `counter.bodyos_yoga_woche` (`helpers/counter.json`)
 - `automation.bodyos_trainingszahler_wochenstart`: setzt beide montags 00:00 zurück.
+
+## Garmin Connect (HACS, seit 23.11.2026)
+Kopfzeile zeigt neben dem Ring-Akku die letzte Synchronisierung der Fenix E (`sensor.garmin_connect_gerate`, Attribut `last_used_device.lastSyncTime`, gelb ab 12 h). Einen Akkustand der Uhr liefert Garmin Connect nicht.
 
 ## Offen
 - MyFitnessPal-Ist-Werte, Tandoor-Speiseplan als HA-Sensor (dann `meals` automatisch).

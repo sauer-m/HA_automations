@@ -5,7 +5,8 @@
 //
 // type: custom:bodyos-card
 // optional: steps_goal (7000), sport_goal (2), yoga_goal (2), kcal/protein/fat/carbs (2250/170/75/225),
-//           tandoor_url (https://cookbook.sauerstofff.de), meals: [{day: Mo, breakfast: .., lunch: ..}, ...]
+//           tandoor_url (https://cookbook.sauerstofff.de, nur Essensplan), shopping_entity (todo.mealprep = Bring-Liste Mealprep),
+//           meals: [{day: Mo, breakfast: .., lunch: ..}, ...]
 
 const O = (k) => `sensor.oura_ring_${k}`;
 const H = (k) => `sensor.sm_f741b_${k}`;
@@ -18,6 +19,7 @@ const E = {
   rhr: H('resting_heart_rate'), steps: H('daily_steps'), dist: H('daily_distance'), floors: H('daily_floors'),
   totalKcal: H('total_calories_burned'), weight: H('weight'), fat: H('body_fat'), lean: H('lean_body_mass'),
   weightIn: 'input_number.marcel_gewicht', fatIn: 'input_number.marcel_koerperfett',
+  garmin: 'sensor.garmin_connect_gerate',
   sport: 'counter.bodyos_sport_woche', yoga: 'counter.bodyos_yoga_woche',
 };
 const HIST = [E.sleep, E.rhr, E.hrv, E.temp, E.weight, E.weightIn, E.fat, E.sport, E.yoga];
@@ -141,7 +143,7 @@ function spark(vals, col) {
 class BodyOSCard extends HTMLElement {
   setConfig(c) {
     this._c = Object.assign({ steps_goal: 7000, sport_goal: 2, yoga_goal: 2, kcal: 2250, protein: 170, fat: 75, carbs: 225,
-      sleep_goal_h: 7.5, tandoor_url: 'https://cookbook.sauerstofff.de', meals: [],
+      sleep_goal_h: 7.5, tandoor_url: 'https://cookbook.sauerstofff.de', shopping_entity: 'todo.mealprep', meals: [],
       breakfast_kcal: 500, breakfast_protein: 35, lunch_kcal: 750, lunch_protein: 50 }, c || {});
   }
   getCardSize() { return 30; }
@@ -185,8 +187,12 @@ class BodyOSCard extends HTMLElement {
   }
   _n(id) { const v = parseFloat(this._hass.states[id]?.state); return isFinite(v) ? v : null; }
   _click(e) {
-    const t = e.target.closest('[data-jump],[data-more]'); if (!t) return;
-    if (t.dataset.jump) {
+    const t = e.target.closest('[data-jump],[data-more],[data-nav]'); if (!t) return;
+    if (t.dataset.nav) {
+      e.preventDefault();
+      history.pushState(null, '', t.dataset.nav);
+      window.dispatchEvent(new CustomEvent('location-changed', { detail: { replace: false } }));
+    } else if (t.dataset.jump) {
       const el = this.shadowRoot.getElementById(t.dataset.jump);
       this.shadowRoot.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('on', b === t));
       el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -300,15 +306,22 @@ class BodyOSCard extends HTMLElement {
       return `<div class="meal ${dn === todayK ? 'today' : ''}"><span class="dd">${dn.toUpperCase()}</span><span class="t">${lunch}<small>${br}</small></span><span class="k">${de(dayKcal)} kcal<br>${dayP} g EW</span></div>`;
     }).join('');
     const tu = String(c.tandoor_url).replace(/\/$/, '');
+    const shopUrl = `/todo?entity_id=${encodeURIComponent(c.shopping_entity)}`, shopN = n(c.shopping_entity);
 
     const syncS = this._hass.states[E.sync]?.state, sync = syncS && !isNaN(Date.parse(syncS)) ? new Date(syncS) : null;
     const fmtT = (t) => t.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    // Uhr: Garmin Connect liefert keinen Akkustand der Fenix E, daher letzte Synchronisierung der Uhr
+    const gLast = this._hass.states[E.garmin]?.attributes?.last_used_device?.lastSyncTime;
+    const gSync = gLast && !isNaN(Date.parse(gLast)) ? new Date(gLast) : null;
+    const gOld = !gSync || Date.now() - gSync > 12 * 3600e3;
+    const gTxt = !gSync ? '—' : dayKey(gSync) === dayKey(now) ? fmtT(gSync) : `${TAGK[gSync.getDay()]} ${fmtT(gSync)}`;
     const ok = (id) => this._hass.states[id] && !['unknown', 'unavailable'].includes(this._hass.states[id].state);
 
     d.innerHTML = `
     <div class="top span3">
       <div class="logo">${ICON.logo}<div><b>BODYOS</b><small>${TAGK[now.getDay()].toUpperCase()} ${now.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} · ${fmtT(now)}</small></div></div>
-      <span class="chip" data-more="${E.ring}" style="cursor:pointer"><span class="dot ${ringB != null && ringB < 20 ? 'warn' : ''}"></span>Ring ${ringB == null ? '—' : de(ringB)} %</span>
+      <span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><span class="chip" data-more="${E.ring}" style="cursor:pointer"><span class="dot ${ringB != null && ringB < 20 ? 'warn' : ''}"></span>Ring ${ringB == null ? '—' : de(ringB)} %</span>
+        <span class="chip" data-more="${E.garmin}" style="cursor:pointer" title="Letzte Synchronisierung der Fenix E"><span class="dot ${gOld ? 'warn' : ''}"></span>Uhr ${gTxt}</span></span>
     </div>
     <nav class="tabs span3">
       <button class="on" data-jump="s-heute">Heute</button><button data-jump="s-schlaf">Schlaf</button><button data-jump="s-aktiv">Aktivität</button><button data-jump="s-koerper">Körper</button><button data-jump="s-ernaehrung">Ernährung</button>
@@ -383,10 +396,10 @@ class BodyOSCard extends HTMLElement {
     </section>
 
     <section class="panel span2" style="--c:var(--cyan)">
-      <div class="ph"><h2>Mealprep-Woche</h2><span class="src">TANDOOR</span></div>
+      <div class="ph"><h2>Mealprep-Woche</h2><span class="src">TANDOOR · BRING</span></div>
       <div class="meals">${meals}</div>
       <div class="row" style="margin-top:10px"><span class="lbl">Vorgeplant Mo–Fr</span><span style="font-family:var(--fm);font-size:11px;color:var(--ink2)">≈ ${de(dayKcal)} kcal · ${dayP} g Eiweiß / Tag</span></div>
-      <div class="btns"><a class="btn cyan" href="${esc(tu)}/mealplan" target="_blank" rel="noopener">${ICON.cal}Essensplan</a><a class="btn cyan" href="${esc(tu)}/shopping" target="_blank" rel="noopener">${ICON.list}Einkaufsliste</a></div>
+      <div class="btns"><a class="btn cyan" href="${esc(tu)}/mealplan" target="_blank" rel="noopener">${ICON.cal}Essensplan</a><a class="btn cyan" href="${esc(shopUrl)}" data-nav="${esc(shopUrl)}">${ICON.list}Einkaufsliste${shopN ? ` (${shopN})` : ''}</a></div>
     </section>
 
     <div class="foot span3">SYNC ${sync ? fmtT(sync) : '—'} · OURA ${ok(E.ready) ? '✓' : '—'} · HEALTH CONNECT ${ok(E.steps) ? '✓' : '—'} · WAAGE ${w != null ? '✓' : '—'} · MFP —</div>`;
