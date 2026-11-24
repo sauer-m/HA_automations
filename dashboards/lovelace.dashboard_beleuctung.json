@@ -590,7 +590,22 @@
                   "type": "heading",
                   "heading": "Luft",
                   "heading_style": "title",
-                  "icon": "mdi:weather-windy"
+                  "icon": "mdi:weather-windy",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-beleuctung/luftreiniger"
+                  },
+                  "badges": [
+                    {
+                      "type": "button",
+                      "icon": "mdi:calendar-clock",
+                      "text": "Zeitplan",
+                      "tap_action": {
+                        "action": "navigate",
+                        "navigation_path": "/dashboard-beleuctung/luftreiniger"
+                      }
+                    }
+                  ]
                 },
                 {
                   "type": "tile",
@@ -600,7 +615,7 @@
                   "features": [
                     {
                       "type": "fan-preset-modes",
-                      "style": "icons"
+                      "style": "dropdown"
                     }
                   ],
                   "grid_options": {
@@ -2862,6 +2877,279 @@
                       ]
                     }
                   ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Luftreiniger",
+          "path": "luftreiniger",
+          "subview": true,
+          "back_path": "/dashboard-beleuctung/klima",
+          "type": "sections",
+          "max_columns": 3,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Wohnzimmer",
+                  "heading_style": "title",
+                  "icon": "mdi:air-purifier"
+                },
+                {
+                  "type": "tile",
+                  "entity": "fan.ac1715_cloud_luftreiniger",
+                  "name": "Philips 1000i",
+                  "icon": "mdi:air-purifier",
+                  "features": [
+                    {
+                      "type": "fan-preset-modes",
+                      "style": "dropdown"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.ac1715_cloud_pm2_5",
+                  "name": "PM2,5",
+                  "icon": "mdi:blur",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.ac1715_cloud_innenraumluftindex",
+                  "name": "Luftindex",
+                  "icon": "mdi:gauge",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zeitplan · leisester Modus: Schlaf",
+                  "heading_style": "subtitle"
+                },
+                {
+                  "type": "entities",
+                  "state_color": true,
+                  "entities": [
+                    {
+                      "entity": "input_boolean.luftreiniger_wz_zeitplan",
+                      "name": "Zeitplan aktiv"
+                    },
+                    {
+                      "entity": "input_datetime.luftreiniger_wz_nacht_so_do",
+                      "name": "Nacht So–Do"
+                    },
+                    {
+                      "entity": "input_datetime.luftreiniger_wz_nacht_fr_sa",
+                      "name": "Nacht Fr + Sa"
+                    },
+                    {
+                      "entity": "input_datetime.luftreiniger_wz_morgens_auto",
+                      "name": "Morgens Auto"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "heading",
+                  "heading": "Filter",
+                  "heading_style": "subtitle"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.ac1715_cloud_filterreinigung_verbleibend",
+                  "name": "Vorfilter reinigen in",
+                  "icon": "mdi:air-filter",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.ac1715_cloud_filterwechsel_verbleibend",
+                  "name": "Filterwechsel in",
+                  "icon": "mdi:air-filter",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Schlafzimmer",
+                  "heading_style": "title",
+                  "icon": "mdi:air-purifier"
+                },
+                {
+                  "type": "tile",
+                  "entity": "fan.luftreiniger_schlafzimmer",
+                  "name": "IKEA Starkvind",
+                  "icon": "mdi:air-purifier",
+                  "features": [
+                    {
+                      "type": "fan-speed"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.0x348d13fffe52a975_pm25",
+                  "name": "PM2,5",
+                  "icon": "mdi:blur",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.0x348d13fffe52a975_voc_index",
+                  "name": "VOC-Index",
+                  "icon": "mdi:molecule",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "heading",
+                  "heading": "Zeitplan · leisester Modus: Stufe 1",
+                  "heading_style": "subtitle"
+                },
+                {
+                  "type": "entities",
+                  "state_color": true,
+                  "entities": [
+                    {
+                      "entity": "input_boolean.luftreiniger_sz_zeitplan",
+                      "name": "Zeitplan aktiv"
+                    },
+                    {
+                      "entity": "input_datetime.luftreiniger_sz_nacht_so_do",
+                      "name": "Nacht So–Do"
+                    },
+                    {
+                      "entity": "input_datetime.luftreiniger_sz_nacht_fr_sa",
+                      "name": "Nacht Fr + Sa"
+                    },
+                    {
+                      "entity": "input_datetime.luftreiniger_sz_morgens_auto",
+                      "name": "Morgens Auto"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "heading",
+                  "heading": "Filter",
+                  "heading_style": "subtitle"
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.luftreiniger_schlafzimmer_replace_filter",
+                  "name": "Filter wechseln",
+                  "icon": "mdi:air-filter",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.luftreiniger_schlafzimmer_filter_age",
+                  "name": "Filteralter",
+                  "icon": "mdi:air-filter",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Verlauf",
+                  "heading_style": "title",
+                  "icon": "mdi:chart-timeline-variant"
+                },
+                {
+                  "type": "history-graph",
+                  "title": "PM2,5 · 24 Stunden",
+                  "hours_to_show": 24,
+                  "entities": [
+                    {
+                      "entity": "sensor.ac1715_cloud_pm2_5",
+                      "name": "Wohnzimmer"
+                    },
+                    {
+                      "entity": "sensor.0x348d13fffe52a975_pm25",
+                      "name": "Schlafzimmer"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "history-graph",
+                  "title": "Lüfter · 24 Stunden",
+                  "hours_to_show": 24,
+                  "entities": [
+                    {
+                      "entity": "sensor.ac1715_cloud_luftergeschwindigkeit",
+                      "name": "Wohnzimmer (Stufe)"
+                    },
+                    {
+                      "entity": "sensor.luftreiniger_schlafzimmer_fan_speed",
+                      "name": "Schlafzimmer (Stufe)"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "Abends schaltet der Zeitplan einen laufenden Reiniger in den leisesten Modus, morgens zurück auf Auto, aber nur wenn er noch im Nachtmodus steht. Ein ausgeschalteter Reiniger bleibt aus.",
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
                 }
               ]
             }

@@ -45,3 +45,9 @@ Philips 1000i (AC1715, Wohnzimmer): Integration Philips HomeID (renaudallard, Do
 - Medien: Nintendo Switch Schlafzimmer (`switch.nintendo_switch_schlafzimmer`) ergänzt.
 
 - Philips 1000i in zuhause-card (Wohnzimmer-Popup mit Modi), haushalt-card (Luft WZ / Luft SZ, Filter-Punkt), Klima (Tile + PM2,5/Luftindex, Verlauf), Geräte, Wartung (Filter, halten = Timer zurücksetzen). Ressourcen v=2.
+
+## Luftreiniger-Zeitplan (25.11.)
+
+- Unterseite `/dashboard-beleuctung/luftreiniger` (Link: Klima → Luft „Zeitplan“, Raum-Popups, Haushalt-Gerätefenster).
+- Helfer je Reiniger (wz/sz): `input_boolean.luftreiniger_<r>_zeitplan`, `input_datetime.luftreiniger_<r>_nacht_so_do` (21:00), `_nacht_fr_sa` (23:00), `_morgens_auto` (07:00). Ohne `initial`, damit Neustarts nichts überschreiben.
+- `automation.luftreiniger_zeitplan_nachtmodus`: abends WZ Preset `sleep`, SZ Stufe 1 (11 %), nur wenn Zeitplan an und Reiniger an; morgens zurück auf `auto`, nur wenn noch im Nachtmodus.

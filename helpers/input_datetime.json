@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "input_datetime",
+  "data": {
+    "items": [
+      {
+        "id": "mondsmaussion_start",
+        "name": "Mondsmäussion Start",
+        "icon": "mdi:moon-waning-crescent",
+        "has_date": true,
+        "has_time": false
+      },
+      {
+        "id": "luftreiniger_wz_nacht_so_do",
+        "name": "Luftreiniger WZ Nacht So-Do",
+        "icon": "mdi:weather-night",
+        "has_time": true,
+        "has_date": false
+      },
+      {
+        "id": "luftreiniger_wz_nacht_fr_sa",
+        "name": "Luftreiniger WZ Nacht Fr-Sa",
+        "icon": "mdi:weather-night",
+        "has_time": true,
+        "has_date": false
+      },
+      {
+        "id": "luftreiniger_wz_morgens_auto",
+        "name": "Luftreiniger WZ Morgens Auto",
+        "icon": "mdi:weather-sunset-up",
+        "has_time": true,
+        "has_date": false
+      },
+      {
+        "id": "luftreiniger_sz_nacht_so_do",
+        "name": "Luftreiniger SZ Nacht So-Do",
+        "icon": "mdi:weather-night",
+        "has_time": true,
+        "has_date": false
+      },
+      {
+        "id": "luftreiniger_sz_nacht_fr_sa",
+        "name": "Luftreiniger SZ Nacht Fr-Sa",
+        "icon": "mdi:weather-night",
+        "has_time": true,
+        "has_date": false
+      },
+      {
+        "id": "luftreiniger_sz_morgens_auto",
+        "name": "Luftreiniger SZ Morgens Auto",
+        "icon": "mdi:weather-sunset-up",
+        "has_time": true,
+        "has_date": false
+      }
+    ]
+  }
+}

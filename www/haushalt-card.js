@@ -278,7 +278,9 @@ class HaushaltCard extends HTMLElement {
     else if (d.k === 'mova') { const k = 'vacuum|return_to_base|' + d.e, s = 'vacuum|start|' + d.e;
       acts = btn('play', this._arm === s ? 'Nochmal tippen' : 'Starten', 'ganze Wohnung', `data-svc="${s}"`) + btn('home', this._arm === k ? 'Nochmal tippen' : 'Zur Station', 'zurückfahren', `data-svc="${k}"`) + btn('vac', 'Saugroboter', 'Räume, Modi, Karte', 'data-nav="/dashboard-haushalt/saugroboter"'); }
     else if (d.k === 'mower') acts = btn('mow', 'Details', 'Mähroboter', `data-mi="${d.e}"`);
-    else acts = btn('bolt', ['on', 'heat'].includes(this._s(d.e)) ? 'Ausschalten' : 'Einschalten', d.k === 'kocher' ? `auf ${this._a(d.e, 'temperature')} °C` : d.k === 'kaffee' ? 'Steckdose' : d.loc, `data-tg="${d.e}"`) + btn('list', 'Details', 'Verlauf, Einstellungen', `data-mi="${d.e}"`);
+    else acts = btn('bolt', ['on', 'heat'].includes(this._s(d.e)) ? 'Ausschalten' : 'Einschalten', d.k === 'kocher' ? `auf ${this._a(d.e, 'temperature')} °C` : d.k === 'kaffee' ? 'Steckdose' : d.loc, `data-tg="${d.e}"`) + (d.k === 'luft' || d.k === 'luftwz'
+      ? btn('list', 'Zeitplan', `Nachtmodus ${this._on(d.k === 'luftwz' ? 'input_boolean.luftreiniger_wz_zeitplan' : 'input_boolean.luftreiniger_sz_zeitplan') ? 'an' : 'aus'}`, 'data-nav="/dashboard-beleuctung/luftreiniger"')
+      : btn('list', 'Details', 'Verlauf, Einstellungen', `data-mi="${d.e}"`));
     return `<div class="scrim"><div class="sheet" role="dialog" aria-label="${d.n}" style="--c:${d.col}"><header>${ic(d.ic)}<h3>${d.n}</h3><button class="x" data-close aria-label="Schließen">${ic('x')}</button></header>
       ${head}${dots}${facts.length ? `<div class="facts">${facts.map((f) => `<div>${esc(f)}</div>`).join('')}</div>` : ''}<div class="acts">${acts}</div></div></div>`;
   }

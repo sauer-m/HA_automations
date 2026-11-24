@@ -694,7 +694,7 @@
   description: Öffnet die Tür bei einem im Pepper C1 hinterlegten NFC-Tag
   triggers:
   - trigger: webhook
-    webhook_id: !secret REDACTED_webhook_id  # im Repo geschwärzt
+    webhook_id: cCBgtiyK47PX45772vxUw6s
     allowed_methods:
     - POST
     local_only: true
@@ -1607,7 +1607,7 @@
     plus HA-Glocke. Ersetzt die OMV-Mails seit 17.11.2026. Angelegt von NetOps.
   triggers:
   - trigger: webhook
-    webhook_id: !secret REDACTED_webhook_id  # im Repo geschwärzt
+    webhook_id: netops-omv-66fb359adc4ae83850de2ec19e787946
     allowed_methods:
     - POST
     local_only: true
@@ -1664,14 +1664,12 @@
   alias: 'Waage: Marcel an openScale sync'
   description: Schickt jede neue Messung aus input_number.marcel_gewicht (und Körperfett,
     wenn frisch gesetzt) retained an openScale sync auf Marcels Handy. Ein Topic pro
-    Messung, damit Messungen erhalten bleiben, wenn das Handy nicht zu Hause ist. openScale
-    sync importiert sie und exportiert nach Health Connect.
-  mode: queued
-  max: 10
+    Messung, damit Messungen erhalten bleiben, wenn das Handy nicht zu Hause ist.
+    openScale sync importiert sie und exportiert nach Health Connect.
   triggers:
   - trigger: state
     entity_id: input_number.marcel_gewicht
-    to: null
+    to:
     not_from:
     - unknown
     - unavailable
@@ -1693,10 +1691,12 @@
       retain: true
       qos: 1
       payload: '{% if fett_ok %}{{ {''date'': ts, ''weight'': weight, ''body_fat'':
-        fett | float} | to_json }}{% else %}{{ {''date'': ts, ''weight'': weight} |
-        to_json }}{% endif %}'
+        fett | float} | to_json }}{% else %}{{ {''date'': ts, ''weight'': weight}
+        | to_json }}{% endif %}'
     note: 'Payload laut openScale-sync-Wiki MQTT support: date in epoch ms, weight
       kg, body_fat %. userId 1 = Marcel in openScale.'
+  mode: queued
+  max: 10
 - id: '1795456254372'
   alias: BodyOS Trainingszähler Wochenstart
   description: Setzt Sport- und Yoga-Zähler der BodyOS-Trainingswoche montags 00:00
@@ -1715,3 +1715,140 @@
       - counter.bodyos_sport_woche
       - counter.bodyos_yoga_woche
   mode: single
+- id: luftreiniger_zeitplan
+  alias: Luftreiniger Zeitplan (Nachtmodus)
+  description: Abends in den leisesten Modus (So-Do und Fr-Sa getrennte Zeiten), morgens
+    zurück auf Auto. Nur wenn der jeweilige Zeitplan-Schalter an ist und der Reiniger
+    läuft. Wohnzimmer = Philips 1000i (Preset sleep), Schlafzimmer = IKEA Starkvind
+    (Stufe 1 = 11 %). Zeiten in den input_datetime-Helfern, einstellbar auf der Seite
+    Luftreiniger im Dashboard Zuhause.
+  triggers:
+  - trigger: time
+    at: input_datetime.luftreiniger_wz_nacht_so_do
+    id: wz_nacht_woche
+  - trigger: time
+    at: input_datetime.luftreiniger_wz_nacht_fr_sa
+    id: wz_nacht_we
+  - trigger: time
+    at: input_datetime.luftreiniger_wz_morgens_auto
+    id: wz_morgen
+  - trigger: time
+    at: input_datetime.luftreiniger_sz_nacht_so_do
+    id: sz_nacht_woche
+  - trigger: time
+    at: input_datetime.luftreiniger_sz_nacht_fr_sa
+    id: sz_nacht_we
+  - trigger: time
+    at: input_datetime.luftreiniger_sz_morgens_auto
+    id: sz_morgen
+  conditions: []
+  actions:
+  - choose:
+    - alias: 'Wohnzimmer: Nachtmodus'
+      conditions:
+      - condition: state
+        entity_id: input_boolean.luftreiniger_wz_zeitplan
+        state: 'on'
+      - condition: state
+        entity_id: fan.ac1715_cloud_luftreiniger
+        state: 'on'
+      - condition: or
+        conditions:
+        - condition: and
+          conditions:
+          - condition: trigger
+            id: wz_nacht_woche
+          - condition: time
+            weekday:
+            - sun
+            - mon
+            - tue
+            - wed
+            - thu
+        - condition: and
+          conditions:
+          - condition: trigger
+            id: wz_nacht_we
+          - condition: time
+            weekday:
+            - fri
+            - sat
+      sequence:
+      - action: fan.set_preset_mode
+        target:
+          entity_id: fan.ac1715_cloud_luftreiniger
+        data:
+          preset_mode: sleep
+    - alias: 'Wohnzimmer: morgens zurück auf Auto'
+      conditions:
+      - condition: trigger
+        id: wz_morgen
+      - condition: state
+        entity_id: input_boolean.luftreiniger_wz_zeitplan
+        state: 'on'
+      - condition: state
+        entity_id: fan.ac1715_cloud_luftreiniger
+        attribute: preset_mode
+        state: sleep
+      sequence:
+      - action: fan.set_preset_mode
+        target:
+          entity_id: fan.ac1715_cloud_luftreiniger
+        data:
+          preset_mode: auto
+    - alias: 'Schlafzimmer: Nachtmodus (Stufe 1)'
+      conditions:
+      - condition: state
+        entity_id: input_boolean.luftreiniger_sz_zeitplan
+        state: 'on'
+      - condition: state
+        entity_id: fan.luftreiniger_schlafzimmer
+        state: 'on'
+      - condition: or
+        conditions:
+        - condition: and
+          conditions:
+          - condition: trigger
+            id: sz_nacht_woche
+          - condition: time
+            weekday:
+            - sun
+            - mon
+            - tue
+            - wed
+            - thu
+        - condition: and
+          conditions:
+          - condition: trigger
+            id: sz_nacht_we
+          - condition: time
+            weekday:
+            - fri
+            - sat
+      sequence:
+      - action: fan.set_percentage
+        target:
+          entity_id: fan.luftreiniger_schlafzimmer
+        data:
+          percentage: 11
+    - alias: 'Schlafzimmer: morgens zurück auf Auto'
+      conditions:
+      - condition: trigger
+        id: sz_morgen
+      - condition: state
+        entity_id: input_boolean.luftreiniger_sz_zeitplan
+        state: 'on'
+      - condition: state
+        entity_id: fan.luftreiniger_schlafzimmer
+        state: 'on'
+      - condition: numeric_state
+        entity_id: fan.luftreiniger_schlafzimmer
+        attribute: percentage
+        below: 12
+      sequence:
+      - action: fan.set_preset_mode
+        target:
+          entity_id: fan.luftreiniger_schlafzimmer
+        data:
+          preset_mode: auto
+  mode: queued

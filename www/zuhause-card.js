@@ -295,7 +295,8 @@ class ZuhauseCard extends HTMLElement {
       const on = this._on(r.fan), pm = this._n(r.pm), filt = this._filter(r.fan);
       const modes = this._a(r.fan, 'preset_modes') || [], cur = this._a(r.fan, 'preset_mode');
       extra.push(`<div class="drow ${on ? 'on' : ''}" style="--c:var(--air)">${ic('fan')}<button class="lname" data-mi="${r.fan}">Luftreiniger<small>${on ? this._fanTxt(r.fan) : 'aus'}${pm != null ? ' · PM2,5 ' + Math.round(pm) : ''}${filt ? ' · ' + filt : ''}</small></button><button class="tog ${on ? 'on' : ''}" data-tg="${r.fan}" aria-label="Luftreiniger schalten"></button></div>`);
-      if (modes.length > 1) extra.push(`<div class="chips">${modes.map((m) => `<button class="chip ${on && m === cur ? 'on' : ''}" data-fm="${r.fan}|${m}">${FANM[m] || m}</button>`).join('')}</div>`);
+      const zp = this._on(`input_boolean.luftreiniger_${r.id}_zeitplan`);
+      extra.push(`<div class="chips">${modes.length > 1 ? modes.map((m) => `<button class="chip ${on && m === cur ? 'on' : ''}" data-fm="${r.fan}|${m}">${FANM[m] || m}</button>`).join('') : ''}<button class="chip" data-nav="/dashboard-beleuctung/luftreiniger">${ic('moon')}Zeitplan ${zp ? 'an' : 'aus'}</button></div>`);
     }
     (r.dev || []).forEach(([did, n, i]) => {
       const st = this._s(did), on = st === 'on' || st === 'heat';
