@@ -54,7 +54,7 @@ const LN = {
 };
 const LIGHTS = Object.keys(LN);
 const ROOMS = [
-  { id: 'wz', n: 'Wohnzimmer', ic: 'sofa', t: 'sensor.wohnzimmerthermostat_temperature', h: 'sensor.wohnzimmerthermostat_humidity', cl: 'climate.wohnzimmer', v: 'sensor.heizkorperthermostat_wohnzimmer_heating', w: 'binary_sensor.wohnzimmerfenster', L: ['light.wohnzimmerlicht', 'light.stehlampe', 'light.ecklampe_wohnzimmer'], kino: 'switch.heimkino' },
+  { id: 'wz', n: 'Wohnzimmer', ic: 'sofa', t: 'sensor.wohnzimmerthermostat_temperature', h: 'sensor.wohnzimmerthermostat_humidity', cl: 'climate.wohnzimmer', v: 'sensor.heizkorperthermostat_wohnzimmer_heating', w: 'binary_sensor.wohnzimmerfenster', L: ['light.wohnzimmerlicht', 'light.stehlampe', 'light.ecklampe_wohnzimmer'], kino: 'switch.heimkino', fan: 'fan.ac1715_cloud_luftreiniger', pm: 'sensor.ac1715_cloud_pm2_5' },
   { id: 'ez', n: 'Esszimmer', ic: 'fork', t: 'sensor.heizkorperthermostat_esszimmer_temperature', v: 'sensor.heizkorperthermostat_esszimmer_heating', w: 'binary_sensor.esszimmerfenster', L: ['light.esszimmerlicht', 'light.teelichter_esszimmer'], sel: 'input_select.teelichter_esszimmer_modus' },
   { id: 'ku', n: 'Küche', ic: 'chef', L: ['light.kuche_schaltausgang_kuchenlicht'], dev: [['switch.kaffeemaschine', 'Kaffeemaschine', 'coffee'], ['climate.proficook_pc_wks_1167g_kettle', 'Wasserkocher', 'kettle']] },
   { id: 'sz', n: 'Schlafzimmer', ic: 'bed', t: 'sensor.heizkorperthermostat_schlafzimmer_temperature', h: 'sensor.0x348d13fffe52a975_humidity', cl: 'climate.schlafzimmer', v: 'sensor.heizkorperthermostat_schlafzimmer_heating', w: 'binary_sensor.schlafzimmerfenster', L: ['light.schlafzimmerlicht', 'light.nachttischlampe', 'light.teelichter_schlafzimmer'], sel: 'input_select.teelichter_schlafzimmer_modus', cover: 'cover.rollo_schlafzimmer', fan: 'fan.luftreiniger_schlafzimmer', pm: 'sensor.0x348d13fffe52a975_pm25', kino: 'switch.heimkino_schlafzimmer' },
@@ -67,6 +67,7 @@ const PERSONS = ['person.sauerm', 'person.sarah'];
 const NIGHT = 'script.gute_nacht';
 const KINO = [['switch.heimkino', 'Kino Wohnzimmer', 'film', 'BenQ · Denon · Fire TV'], ['switch.heimkino_schlafzimmer', 'Kino Schlafzimmer', 'proj', 'XGIMI · Fire TV · Rollo']];
 const WASH = [['waschmaschine', 'Waschmaschine', 'wash', '#2f86e0'], ['trockner', 'Trockner', 'dry', '#e08a1f'], ['spulmaschine', 'Spülmaschine', 'dish', '#14a3b8']];
+const FANM = { auto: 'Auto', medium: 'Mittel', fast: 'Schnell', sleep: 'Schlaf', turbo: 'Turbo' };
 const ALARM = { disarmed: 'unscharf', armed_home: 'intern scharf', armed_away: 'scharf', armed_night: 'Nacht scharf', triggered: 'ausgelöst', arming: 'wird scharf', pending: 'Verzögerung' };
 
 class ZuhauseCard extends HTMLElement {
@@ -103,11 +104,17 @@ class ZuhauseCard extends HTMLElement {
   _nav(p) { history.pushState(null, '', p); window.dispatchEvent(new CustomEvent('location-changed', { detail: { replace: false } })); }
   _flash(k, ms = 2500) { this._busy[k] = Date.now() + ms; setTimeout(() => this._render(true), ms + 50); }
   _isBusy(k) { return (this._busy[k] || 0) > Date.now(); }
+  _fanTxt(id) { const m = this._a(id, 'preset_mode'); return m ? (FANM[m] || m) : (this._a(id, 'percentage') || 0) + ' %'; }
+  _filter(id) {
+    if (id === 'fan.luftreiniger_schlafzimmer') return this._on('binary_sensor.luftreiniger_schlafzimmer_replace_filter') ? 'Filter wechseln' : '';
+    const c = this._n('sensor.ac1715_cloud_filterreinigung_verbleibend'), w = this._n('sensor.ac1715_cloud_filterwechsel_verbleibend');
+    return w != null && w <= 72 ? 'Filter wechseln' : c != null && c <= 24 ? 'Filter reinigen' : '';
+  }
 
   _click(e) {
     const t = e.target;
     if (this._room && (t.classList.contains('scrim') || t.closest('[data-close]'))) { this._room = null; this._render(true); return; }
-    const el = t.closest('[data-room],[data-rl],[data-act],[data-mi],[data-nav],[data-lt],[data-br],[data-th],[data-sel],[data-cv],[data-tg],[data-lock]');
+    const el = t.closest('[data-room],[data-rl],[data-act],[data-mi],[data-nav],[data-lt],[data-br],[data-th],[data-sel],[data-cv],[data-tg],[data-lock],[data-fm]');
     if (!el) return;
     const d = el.dataset, h = this._hass;
     if (d.room) { this._room = d.room; this._render(true); return; }
@@ -133,6 +140,7 @@ class ZuhauseCard extends HTMLElement {
       const step = parseFloat(this._a(id, 'target_temp_step')) || 0.5;
       this._svc('climate', 'set_temperature', { entity_id: id, temperature: Math.round((cur + (dir === '+' ? step : -step)) * 10) / 10 }); return;
     }
+    if (d.fm) { const [id, m] = d.fm.split('|'); this._svc('fan', 'set_preset_mode', { entity_id: id, preset_mode: m }); return; }
     if (d.sel) { const [id, opt] = d.sel.split('|'); this._svc('input_select', 'select_option', { entity_id: id, option: opt }); return; }
     if (d.cv) { const [id, s] = d.cv.split('|'); this._svc('cover', s, { entity_id: id }); return; }
     if (d.tg) {
@@ -215,8 +223,8 @@ class ZuhauseCard extends HTMLElement {
       let ex;
       if (x.win) ex = `<div class="x crit">${ic('window')}${r.wn || 'Fenster'} offen · ${x.winMin} min</div>`;
       else if (r.kino && this._on(r.kino)) ex = `<div class="x acc">${ic('film')}Kino läuft</div>`;
-      else if (r.fan && this._on(r.fan)) ex = `<div class="x acc">${ic('fan')}Luftreiniger an</div>`;
       else if (x.t != null && x.soll != null && x.valve != null && x.valve >= 30 && x.t < x.soll) ex = `<div class="x heat">${ic('flame')}heizt auf ${de(x.soll)} °C</div>`;
+      else if (r.fan && this._on(r.fan)) ex = `<div class="x acc">${ic('fan')}Luftreiniger ${this._fanTxt(r.fan)}</div>`;
       else if (r.cover && this._s(r.cover) === 'closed') ex = `<div class="x">${ic('blind')}Rollo zu</div>`;
       else if (r.dev && r.dev.some(([id]) => this._s(id) === 'on' || this._s(id) === 'heat')) { const dv = r.dev.find(([id]) => this._s(id) === 'on' || this._s(id) === 'heat'); ex = `<div class="x acc">${ic(dv[2])}${dv[1]} an</div>`; }
       else ex = `<div class="x">${x.soll != null ? `Soll ${de(x.soll)} °C` : `${r.L.length} ${r.L.length > 1 ? 'Leuchten' : 'Leuchte'}`}</div>`;
@@ -247,7 +255,6 @@ class ZuhauseCard extends HTMLElement {
       runs.push(`<button class="run" data-nav="/dashboard-haushalt/saugroboter"><span class="mini" style="color:var(--vac)">${p ? ring(p, 'var(--vac)') : ''}${ic('vac')}</span><span>Mova<small>${vs === 'returning' ? 'fährt zurück' : vs === 'paused' ? 'pausiert' : 'saugt'}${p ? ' · ' + p + ' %' : ''}</small></span></button>`);
     }
     KINO.forEach(([id, n, i]) => { if (this._on(id)) runs.push(`<button class="run" data-nav="/dashboard-beleuctung/media-control"><span class="mini" style="color:var(--accent)">${ic(i)}</span><span>${n}<small>läuft</small></span></button>`); });
-    if (this._on('fan.luftreiniger_schlafzimmer')) runs.push(`<button class="run" data-room="sz"><span class="mini" style="color:var(--air)">${ic('fan')}</span><span>Luftreiniger<small>Schlafzimmer · ${this._a('fan.luftreiniger_schlafzimmer', 'percentage') || 0} %</small></span></button>`);
     if (this._on('switch.kaffeemaschine')) runs.push(`<button class="run" data-room="ku"><span class="mini" style="color:var(--brew)">${ic('coffee')}</span><span>Kaffeemaschine<small>an · ${Math.round(this._n('sensor.kaffeemaschine_leistung') || 0)} W</small></span></button>`);
     if (this._s('climate.proficook_pc_wks_1167g_kettle') === 'heat') runs.push(`<button class="run" data-room="ku"><span class="mini" style="color:var(--kettle)">${ic('kettle')}</span><span>Wasserkocher<small>${Math.round(this._a('climate.proficook_pc_wks_1167g_kettle', 'current_temperature') || 0)} von ${this._a('climate.proficook_pc_wks_1167g_kettle', 'temperature')} °C</small></span></button>`);
 
@@ -285,8 +292,10 @@ class ZuhauseCard extends HTMLElement {
       extra.push(`<div class="blk"><div class="lbl">${ic('blind')}Rollo <small>${cs === 'closed' ? 'zu' : cs === 'open' ? 'offen' : cs === 'opening' ? 'fährt hoch' : cs === 'closing' ? 'fährt runter' : cs}${pos != null && cs === 'open' ? ' · ' + pos + ' %' : ''}</small></div><div class="chips"><button class="chip" data-cv="${r.cover}|open_cover">${ic('up')}Hoch</button><button class="chip" data-cv="${r.cover}|stop_cover">${ic('stop')}Stopp</button><button class="chip" data-cv="${r.cover}|close_cover">${ic('down')}Runter</button></div></div>`);
     }
     if (r.fan) {
-      const on = this._on(r.fan), pm = this._n(r.pm), filt = this._on('binary_sensor.luftreiniger_schlafzimmer_replace_filter');
-      extra.push(`<div class="drow ${on ? 'on' : ''}" style="--c:var(--air)">${ic('fan')}<button class="lname" data-mi="${r.fan}">Luftreiniger<small>${on ? (this._a(r.fan, 'preset_mode') === 'auto' ? 'Auto' : (this._a(r.fan, 'percentage') || 0) + ' %') : 'aus'}${pm != null ? ' · PM2,5 ' + Math.round(pm) : ''}${filt ? ' · Filter wechseln' : ''}</small></button><button class="tog ${on ? 'on' : ''}" data-tg="${r.fan}" aria-label="Luftreiniger schalten"></button></div>`);
+      const on = this._on(r.fan), pm = this._n(r.pm), filt = this._filter(r.fan);
+      const modes = this._a(r.fan, 'preset_modes') || [], cur = this._a(r.fan, 'preset_mode');
+      extra.push(`<div class="drow ${on ? 'on' : ''}" style="--c:var(--air)">${ic('fan')}<button class="lname" data-mi="${r.fan}">Luftreiniger<small>${on ? this._fanTxt(r.fan) : 'aus'}${pm != null ? ' · PM2,5 ' + Math.round(pm) : ''}${filt ? ' · ' + filt : ''}</small></button><button class="tog ${on ? 'on' : ''}" data-tg="${r.fan}" aria-label="Luftreiniger schalten"></button></div>`);
+      if (modes.length > 1) extra.push(`<div class="chips">${modes.map((m) => `<button class="chip ${on && m === cur ? 'on' : ''}" data-fm="${r.fan}|${m}">${FANM[m] || m}</button>`).join('')}</div>`);
     }
     (r.dev || []).forEach(([did, n, i]) => {
       const st = this._s(did), on = st === 'on' || st === 'heat';

@@ -448,6 +448,22 @@
                     "columns": 12,
                     "rows": 1
                   }
+                },
+                {
+                  "type": "tile",
+                  "entity": "fan.ac1715_cloud_luftreiniger",
+                  "name": "Luftreiniger Wohnzimmer",
+                  "icon": "mdi:air-purifier",
+                  "features": [
+                    {
+                      "type": "fan-preset-modes",
+                      "style": "icons"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 2
+                  }
                 }
               ]
             },
@@ -1274,6 +1290,46 @@
                   "entity": "sensor.luftreiniger_schlafzimmer_filter_age",
                   "name": "Filteralter",
                   "icon": "mdi:air-filter",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.ac1715_cloud_filterreinigung_verbleibend",
+                  "name": "Philips Vorfilter",
+                  "icon": "mdi:air-filter",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.ac1715_cloud_filterreinigungs_timer_zurucksetzen"
+                    },
+                    "confirmation": {
+                      "text": "Philips Vorfilter: Timer zurücksetzen (erledigt)?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.ac1715_cloud_filterwechsel_verbleibend",
+                  "name": "Philips Filter",
+                  "icon": "mdi:air-filter",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.ac1715_cloud_filterwechsel_timer_zurucksetzen"
+                    },
+                    "confirmation": {
+                      "text": "Philips Filter: Timer zurücksetzen (erledigt)?"
+                    }
+                  },
                   "grid_options": {
                     "columns": 6,
                     "rows": 1

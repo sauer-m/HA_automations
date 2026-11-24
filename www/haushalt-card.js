@@ -27,7 +27,8 @@ const ring = (p, w = 3) => { const r = 28, c = 2 * Math.PI * r;
 const TODO = 'todo.haushalt';
 const LISTS = [['todo.einkaufsliste_2', 'Einkaufsliste'], ['todo.hl', 'HL'], ['todo.rossmann', 'Rossmann'], ['todo.mealprep', 'Mealprep'], ['todo.baumarkt', 'Baumarkt']];
 const RUN = ['running', 'starting', 'ending', 'paused', 'user_paused', 'delay_wait'];
-const DONE = ['finished', 'anti_wrinkle', 'clean'];
+const FANM = { auto: 'Auto', medium: 'Mittel', fast: 'Schnell', sleep: 'Schlaf', turbo: 'Turbo' };
+const DONE =['finished', 'anti_wrinkle', 'clean'];
 const ERR = ['interrupted', 'force_stopped'];
 const MOW_ERR = { upside_down: 'umgedreht', lifted: 'angehoben', trapped: 'festgefahren', outside_wire: 'außerhalb des Begrenzungsdrahts', wire_missing: 'Begrenzungsdraht fehlt', battery_low: 'Akku leer', rain_delay: 'Regenverzögerung', close_door_to_mow: 'Klappe schließen', close_door_to_go_home: 'Klappe schließen', blade_motor_blocked: 'Messermotor blockiert', wheel_motor_blocked: 'Radmotor blockiert', locked: 'gesperrt' };
 // Geräte: key, Name, Icon, Farbe (hell, dunkel), Maintenance-Präfix, Stichworte für Haushaltsaufgaben
@@ -38,7 +39,8 @@ const DEVS = [
   { k: 'mova', h: 'flur_p50_pro_ultra', n: 'Mova', ic: 'vac', c: ['#16a085', '#33c09f'], kw: /mova|saugroboter/i, e: 'vacuum.p50_pro_ultra' },
   { k: 'kaffee', n: 'Kaffee', ic: 'coffee', c: ['#8b5a3c', '#c48a63'], kw: /kaffee|kapsel|siebträger|espresso/i, e: 'switch.kaffeemaschine' },
   { k: 'kocher', n: 'Wasserkocher', ic: 'kettle', c: ['#d1492e', '#f06a4c'], kw: /wasserkocher/i, e: 'climate.proficook_pc_wks_1167g_kettle' },
-  { k: 'luft', n: 'Luftreiniger', ic: 'fan', c: ['#5f7ee0', '#8aa2f2'], kw: /luftreiniger|luftfilter/i, e: 'fan.luftreiniger_schlafzimmer' },
+  { k: 'luftwz', n: 'Luft WZ', ic: 'fan', c: ['#5f7ee0', '#8aa2f2'], kw: /luftreiniger wohnzimmer|philips/i, e: 'fan.ac1715_cloud_luftreiniger', pm: 'sensor.ac1715_cloud_pm2_5', loc: 'Wohnzimmer' },
+  { k: 'luft', n: 'Luft SZ', ic: 'fan', c: ['#5f7ee0', '#8aa2f2'], kw: /luftreiniger schlafzimmer|starkvind/i, e: 'fan.luftreiniger_schlafzimmer', pm: 'sensor.0x348d13fffe52a975_pm25', loc: 'Schlafzimmer' },
   { k: 'mower', n: 'Landroid', ic: 'mow', c: ['#4c9a2a', '#79c255'], kw: /landroid|mähroboter|rasenmäher/i, e: 'lawn_mower.m500p' },
 ];
 
@@ -133,11 +135,16 @@ class HaushaltCard extends HTMLElement {
       if (er && !['OK', 'unknown', 'unavailable'].includes(er)) { st = 'err'; txt = `Fehler: ${er}`; }
       else if (v === 'heat') { st = 'run'; p = tgt ? Math.round((cur / tgt) * 100) : null; txt = `${Math.round(cur || 0)} von ${tgt} °C`; }
       else if (v === 'unavailable') { st = 'idle'; txt = 'offline'; } else txt = `aus · ${Math.round(cur || 0)} °C`;
-    } else if (d.k === 'luft') {
-      const v = this._s(d.e), pm = this._n('sensor.0x348d13fffe52a975_pm25');
-      if (v === 'on') { st = 'run'; txt = `${this._a(d.e, 'preset_mode') === 'auto' ? 'Auto' : (this._a(d.e, 'percentage') || 0) + ' %'}${pm != null ? ' · PM2,5 ' + Math.round(pm) : ''}`; }
-      else if (v === 'unavailable') { st = 'idle'; txt = 'offline'; } else txt = `aus · Schlafzimmer`;
-      if (this._on('binary_sensor.luftreiniger_schlafzimmer_replace_filter')) dots.push({ n: 'Filter wechseln' });
+    } else if (d.k === 'luft' || d.k === 'luftwz') {
+      const v = this._s(d.e), pm = this._n(d.pm), m = this._a(d.e, 'preset_mode');
+      if (v === 'on') { st = 'run'; txt = `${m ? (FANM[m] || m) : (this._a(d.e, 'percentage') || 0) + ' %'}${pm != null ? ' · PM2,5 ' + Math.round(pm) : ''}`; }
+      else if (v === 'unavailable') { st = 'idle'; txt = 'offline'; } else txt = `aus · ${d.loc}`;
+      if (d.k === 'luft' && this._on('binary_sensor.luftreiniger_schlafzimmer_replace_filter')) dots.push({ n: 'Filter wechseln' });
+      if (d.k === 'luftwz') {
+        const fc = this._n('sensor.ac1715_cloud_filterreinigung_verbleibend'), fw = this._n('sensor.ac1715_cloud_filterwechsel_verbleibend');
+        if (fw != null && fw <= 72) dots.push({ n: `Filter wechseln (noch ${Math.round(fw)} h)`, btn: 'button.ac1715_cloud_filterwechsel_timer_zurucksetzen' });
+        else if (fc != null && fc <= 24) dots.push({ n: `Vorfilter reinigen (noch ${Math.round(fc)} h)`, btn: 'button.ac1715_cloud_filterreinigungs_timer_zurucksetzen' });
+      }
     } else if (d.k === 'mower') {
       const v = this._s(d.e), er = this._s('sensor.m500p_fehler');
       if (v === 'unavailable') { st = 'idle'; txt = new Date().getMonth() >= 10 || new Date().getMonth() <= 1 ? 'Winterpause' : 'offline'; }
@@ -260,7 +267,10 @@ class HaushaltCard extends HTMLElement {
     }
     if (d.k === 'kaffee') facts.push(`Verbrauch gesamt ${de(this._n('sensor.kaffeemaschine_energie') || 0, 1)} kWh`);
     if (d.k === 'luft') { const pm = this._n('sensor.0x348d13fffe52a975_pm25'), voc = this._n('sensor.0x348d13fffe52a975_voc_index');
-      facts.push(`Schlafzimmer${pm != null ? ' · PM2,5 ' + Math.round(pm) + ' µg/m³' : ''}${voc != null ? ' · VOC ' + Math.round(voc) : ''}`); facts.push('Philips 800i (Wohnzimmer) ist noch nicht in HA eingebunden'); }
+      facts.push(`IKEA Starkvind · Schlafzimmer${pm != null ? ' · PM2,5 ' + Math.round(pm) + ' µg/m³' : ''}${voc != null ? ' · VOC ' + Math.round(voc) : ''}`); }
+    if (d.k === 'luftwz') { const pm = this._n(d.pm), ix = this._n('sensor.ac1715_cloud_innenraumluftindex'), fc = this._n('sensor.ac1715_cloud_filterreinigung_verbleibend'), fw = this._n('sensor.ac1715_cloud_filterwechsel_verbleibend');
+      facts.push(`Philips 1000i · Wohnzimmer${pm != null ? ' · PM2,5 ' + Math.round(pm) + ' µg/m³' : ''}${ix != null ? ' · Luftindex ' + ix : ''}`);
+      facts.push(`Vorfilter reinigen in ${fc != null ? Math.round(fc / 24) + ' Tagen' : '–'} · Filterwechsel in ${fw != null ? Math.round(fw / 24) + ' Tagen' : '–'}`); facts.push('Steuerung über die Philips-Cloud'); }
     if (d.k === 'mower') { const nx = this._s('sensor.m500p_nachster_zeitplan'); if (nx && !['unknown', 'unavailable'].includes(nx)) facts.push(`Nächster Plan ${dday(nx)} ${hhmm(nx)}`); const er = this._s('sensor.m500p_fehler'); if (er && er !== 'no_error') facts.push(`Letzte Fehlermeldung: ${MOW_ERR[er] || er}`); }
     const btn = (i, b, s, attr) => `<button class="act" ${attr}>${ic(i)}<b>${b}</b><small>${s}</small></button>`;
     let acts = '';
@@ -268,7 +278,7 @@ class HaushaltCard extends HTMLElement {
     else if (d.k === 'mova') { const k = 'vacuum|return_to_base|' + d.e, s = 'vacuum|start|' + d.e;
       acts = btn('play', this._arm === s ? 'Nochmal tippen' : 'Starten', 'ganze Wohnung', `data-svc="${s}"`) + btn('home', this._arm === k ? 'Nochmal tippen' : 'Zur Station', 'zurückfahren', `data-svc="${k}"`) + btn('vac', 'Saugroboter', 'Räume, Modi, Karte', 'data-nav="/dashboard-haushalt/saugroboter"'); }
     else if (d.k === 'mower') acts = btn('mow', 'Details', 'Mähroboter', `data-mi="${d.e}"`);
-    else acts = btn('bolt', ['on', 'heat'].includes(this._s(d.e)) ? 'Ausschalten' : 'Einschalten', d.k === 'kocher' ? `auf ${this._a(d.e, 'temperature')} °C` : d.k === 'kaffee' ? 'Steckdose' : 'Schlafzimmer', `data-tg="${d.e}"`) + btn('list', 'Details', 'Verlauf, Einstellungen', `data-mi="${d.e}"`);
+    else acts = btn('bolt', ['on', 'heat'].includes(this._s(d.e)) ? 'Ausschalten' : 'Einschalten', d.k === 'kocher' ? `auf ${this._a(d.e, 'temperature')} °C` : d.k === 'kaffee' ? 'Steckdose' : d.loc, `data-tg="${d.e}"`) + btn('list', 'Details', 'Verlauf, Einstellungen', `data-mi="${d.e}"`);
     return `<div class="scrim"><div class="sheet" role="dialog" aria-label="${d.n}" style="--c:${d.col}"><header>${ic(d.ic)}<h3>${d.n}</h3><button class="x" data-close aria-label="Schließen">${ic('x')}</button></header>
       ${head}${dots}${facts.length ? `<div class="facts">${facts.map((f) => `<div>${esc(f)}</div>`).join('')}</div>` : ''}<div class="acts">${acts}</div></div></div>`;
   }
@@ -294,7 +304,7 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .ch h3{font-size:14.5px}
 .sub{font-size:12px;color:var(--muted)}
 .lnk{border:0;background:none;cursor:pointer;padding:0}
-.devs{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px}
+.devs{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px}
 .dev{border:0;background:none;display:grid;justify-items:center;gap:6px;text-align:center;cursor:pointer;padding:6px 2px;border-radius:12px;min-width:0}
 .dev .orb{position:relative;width:62px;height:62px;border-radius:50%;display:grid;place-items:center;background:var(--sunk);color:var(--muted);transition:box-shadow .3s,background .3s}
 .dev .orb svg.i{width:26px;height:26px;stroke-width:1.7}
@@ -358,7 +368,7 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .act svg{grid-row:span 2;color:var(--accent)}
 .act b{font-size:13px;font-weight:600}
 .act small{font-size:11.5px;color:var(--muted)}
-@container (max-width:900px){.devs{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:12px}.s7,.s5{grid-column:1/-1}}
+@container (max-width:900px){.devs{grid-template-columns:repeat(5,minmax(0,1fr));row-gap:12px}.s7,.s5{grid-column:1/-1}}
 @container (max-width:620px){.view{padding:12px;gap:12px}.dev .orb{width:54px;height:54px}.dev .orb svg.i{width:23px;height:23px}}
 `;
   }

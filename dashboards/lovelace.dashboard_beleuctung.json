@@ -594,6 +594,22 @@
                 },
                 {
                   "type": "tile",
+                  "entity": "fan.ac1715_cloud_luftreiniger",
+                  "name": "Luftreiniger Wohnzimmer",
+                  "icon": "mdi:air-purifier",
+                  "features": [
+                    {
+                      "type": "fan-preset-modes",
+                      "style": "icons"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "tile",
                   "entity": "fan.luftreiniger_schlafzimmer",
                   "name": "Luftreiniger Schlafzimmer",
                   "features": [
@@ -642,6 +658,26 @@
                 },
                 {
                   "type": "tile",
+                  "entity": "sensor.ac1715_cloud_pm2_5",
+                  "name": "PM2,5 WZ",
+                  "icon": "mdi:blur",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.ac1715_cloud_innenraumluftindex",
+                  "name": "Luftindex WZ",
+                  "icon": "mdi:gauge",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
                   "entity": "sensor.0x348d13fffe52a975_pm25",
                   "name": "PM2,5 SZ",
                   "icon": "mdi:blur",
@@ -662,7 +698,7 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "Philips 1000i (Wohnzimmer) wird gerade eingebunden. CO₂ (ppm) folgt mit einem Sensor.",
+                  "content": "CO₂ (ppm) folgt mit einem Sensor.",
                   "text_only": true,
                   "grid_options": {
                     "columns": 12,
@@ -1638,6 +1674,10 @@
                   "hours_to_show": 24,
                   "entities": [
                     {
+                      "entity": "sensor.ac1715_cloud_pm2_5",
+                      "name": "PM2,5 Wohnzimmer"
+                    },
+                    {
                       "entity": "sensor.0x348d13fffe52a975_pm25",
                       "name": "PM2,5 Schlafzimmer"
                     }
@@ -1664,9 +1704,26 @@
                 },
                 {
                   "type": "statistics-graph",
-                  "title": "PM2,5 und VOC · 7 Tage",
+                  "title": "PM2,5 · 7 Tage",
                   "entities": [
-                    "sensor.0x348d13fffe52a975_pm25",
+                    "sensor.ac1715_cloud_pm2_5",
+                    "sensor.0x348d13fffe52a975_pm25"
+                  ],
+                  "days_to_show": 7,
+                  "period": "hour",
+                  "stat_types": [
+                    "mean"
+                  ],
+                  "chart_type": "line",
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "statistics-graph",
+                  "title": "VOC-Index · 7 Tage",
+                  "entities": [
                     "sensor.0x348d13fffe52a975_voc_index"
                   ],
                   "days_to_show": 7,

@@ -36,10 +36,12 @@ Reiter: **Übersicht** · Aufgaben · Geräte · Saugroboter · **Wartung** (ex 
 ## Pflege
 
 Karte ändern: Datei per Samba nach `/config/www/` kopieren und `?v=` der Ressource hochzählen.
-Philips 1000i (AC1715, Wohnzimmer): nur Cloud (FUSION), Integration Philips HomeID (renaudallard) installiert 24.11., Einrichtung per Philips-Konto steht aus.
+Philips 1000i (AC1715, Wohnzimmer): Integration Philips HomeID (renaudallard, Domain philips_homeid), Eintrag „AC1715 (Cloud)“, steuert über die Philips-Cloud (FUSION). Konto braucht ein HomeID-Profil (einmal in der App „HomeID“ von Versuni anmelden), sonst HTTP 401. Entitäten `fan.ac1715_cloud_luftreiniger`, `sensor.ac1715_cloud_pm2_5`, Filter-Timer + Reset-Buttons.
 
 ## Nachtrag 24.11. abends
 
 - Klima: Verlauf-Einstieg als 4 Tiles mit 24-h-Trendkurve (Tippen öffnet Klima-Verlauf).
 - Klima: Heizautomatik schaltet nur nach Bestätigungsdialog um (an und aus).
 - Medien: Nintendo Switch Schlafzimmer (`switch.nintendo_switch_schlafzimmer`) ergänzt.
+
+- Philips 1000i in zuhause-card (Wohnzimmer-Popup mit Modi), haushalt-card (Luft WZ / Luft SZ, Filter-Punkt), Klima (Tile + PM2,5/Luftindex, Verlauf), Geräte, Wartung (Filter, halten = Timer zurücksetzen). Ressourcen v=2.
