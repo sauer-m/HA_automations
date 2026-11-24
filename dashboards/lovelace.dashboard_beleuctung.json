@@ -662,7 +662,7 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "Philips 800i (Wohnzimmer) ist noch nicht in HA. CO₂ (ppm) folgt mit einem Sensor.",
+                  "content": "Philips 1000i (Wohnzimmer) wird gerade eingebunden. CO₂ (ppm) folgt mit einem Sensor.",
                   "text_only": true,
                   "grid_options": {
                     "columns": 12,
@@ -730,25 +730,149 @@
                   "grid_options": {
                     "columns": 12,
                     "rows": 1
+                  },
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "automation.toggle",
+                    "target": {
+                      "entity_id": "automation.heizung_nach_anwesenheit_hmip_urlaubsmodus"
+                    },
+                    "confirmation": {
+                      "text": "Achtung: Die Heizautomatik schickt die Heizung auf Urlaubsmodus (16 °C), sobald ihr beide weg seid und die Wohnungstür zu ist. Ausschalten: Kein Absenken mehr bei Abwesenheit. Einschalten: Absenken wieder aktiv. Wirklich umschalten?"
+                    }
+                  },
+                  "icon_tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "automation.toggle",
+                    "target": {
+                      "entity_id": "automation.heizung_nach_anwesenheit_hmip_urlaubsmodus"
+                    },
+                    "confirmation": {
+                      "text": "Achtung: Die Heizautomatik schickt die Heizung auf Urlaubsmodus (16 °C), sobald ihr beide weg seid und die Wohnungstür zu ist. Ausschalten: Kein Absenken mehr bei Abwesenheit. Einschalten: Absenken wieder aktiv. Wirklich umschalten?"
+                    }
+                  },
+                  "hold_action": {
+                    "action": "more-info"
                   }
                 },
                 {
                   "type": "heading",
-                  "heading": "Verlauf",
+                  "heading": "Verlauf 24 h",
                   "heading_style": "title",
-                  "icon": "mdi:chart-line"
-                },
-                {
-                  "type": "button",
-                  "name": "Kurven öffnen",
-                  "icon": "mdi:chart-bell-curve-cumulative",
-                  "show_state": false,
+                  "icon": "mdi:chart-timeline-variant",
                   "tap_action": {
                     "action": "navigate",
                     "navigation_path": "/dashboard-beleuctung/klima-verlauf"
                   },
+                  "badges": [
+                    {
+                      "type": "button",
+                      "icon": "mdi:arrow-right",
+                      "text": "alle Kurven",
+                      "tap_action": {
+                        "action": "navigate",
+                        "navigation_path": "/dashboard-beleuctung/klima-verlauf"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.wohnzimmerthermostat_temperature",
+                  "name": "Temp. WZ",
+                  "icon": "mdi:thermometer",
+                  "color": "deep-orange",
+                  "features": [
+                    {
+                      "type": "trend-graph",
+                      "hours_to_show": 24
+                    }
+                  ],
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-beleuctung/klima-verlauf"
+                  },
+                  "icon_tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-beleuctung/klima-verlauf"
+                  },
                   "grid_options": {
-                    "columns": 12,
+                    "columns": 6,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.heizkorperthermostat_schlafzimmer_temperature",
+                  "name": "Temp. SZ",
+                  "icon": "mdi:thermometer",
+                  "color": "deep-orange",
+                  "features": [
+                    {
+                      "type": "trend-graph",
+                      "hours_to_show": 24
+                    }
+                  ],
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-beleuctung/klima-verlauf"
+                  },
+                  "icon_tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-beleuctung/klima-verlauf"
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.wohnzimmerthermostat_humidity",
+                  "name": "Feuchte WZ",
+                  "icon": "mdi:water-percent",
+                  "color": "blue",
+                  "features": [
+                    {
+                      "type": "trend-graph",
+                      "hours_to_show": 24
+                    }
+                  ],
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-beleuctung/klima-verlauf"
+                  },
+                  "icon_tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-beleuctung/klima-verlauf"
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.0x348d13fffe52a975_pm25",
+                  "name": "PM2,5 SZ",
+                  "icon": "mdi:blur",
+                  "color": "teal",
+                  "features": [
+                    {
+                      "type": "trend-graph",
+                      "hours_to_show": 24
+                    }
+                  ],
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-beleuctung/klima-verlauf"
+                  },
+                  "icon_tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/dashboard-beleuctung/klima-verlauf"
+                  },
+                  "grid_options": {
+                    "columns": 6,
                     "rows": 2
                   }
                 }
@@ -893,6 +1017,29 @@
                   "icon": "mdi:projector-screen",
                   "color": "deep-purple",
                   "vertical": false,
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "tap_action": {
+                    "action": "toggle"
+                  },
+                  "hold_action": {
+                    "action": "more-info"
+                  },
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.nintendo_switch_schlafzimmer",
+                  "name": "Nintendo Switch",
+                  "icon": "mdi:nintendo-switch",
+                  "color": "red",
                   "features": [
                     {
                       "type": "toggle"

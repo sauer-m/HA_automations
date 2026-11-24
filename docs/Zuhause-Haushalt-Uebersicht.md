@@ -36,4 +36,10 @@ Reiter: **Übersicht** · Aufgaben · Geräte · Saugroboter · **Wartung** (ex 
 ## Pflege
 
 Karte ändern: Datei per Samba nach `/config/www/` kopieren und `?v=` der Ressource hochzählen.
-Offen: Philips 800i (Wohnzimmer) ist nur über Alexa eingebunden, nicht in HA.
+Philips 1000i (AC1715, Wohnzimmer): nur Cloud (FUSION), Integration Philips HomeID (renaudallard) installiert 24.11., Einrichtung per Philips-Konto steht aus.
+
+## Nachtrag 24.11. abends
+
+- Klima: Verlauf-Einstieg als 4 Tiles mit 24-h-Trendkurve (Tippen öffnet Klima-Verlauf).
+- Klima: Heizautomatik schaltet nur nach Bestätigungsdialog um (an und aus).
+- Medien: Nintendo Switch Schlafzimmer (`switch.nintendo_switch_schlafzimmer`) ergänzt.
