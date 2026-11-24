@@ -55,4 +55,4 @@ Philips 1000i (AC1715, Wohnzimmer): Integration Philips HomeID (renaudallard, Do
 ## Luftreiniger-Auswahl und Medien-Technik (25.11.)
 
 - Template-Selects (UI-Helfer): `select.luftreiniger_sz_stufe` (Aus, Auto, 1–5; Stufe n = %-Wert (2n-1)·100/9 → 11/33/56/78/100, Stufe 1 = Nachtmodus) und `select.luftreiniger_wz_modus` (Aus, Auto, Schlaf, Mittel, Schnell, Turbo). Alle Luftreiniger-Kacheln zeigen diese Auswahl.
-- Medien: „Technik (Notfall)“ je Kino eingeklappt; `input_boolean.medien_technik_{wz,sz}_anzeigen` steuert die Sichtbarkeit.
+- Medien: „Technik“ je Kino eingeklappt; `input_boolean.medien_technik_{wz,sz}_anzeigen` steuert die Sichtbarkeit.
