@@ -465,3 +465,216 @@ turen_nacheinander_offnen:
   - action: lock.open
     target:
       entity_id: lock.wohnungstur
+a1_mini_druckplatte_abraeumen:
+  alias: 'A1 Mini: Druckplatte abräumen'
+  description: 'Auto Clear mit Tilt-Kit-Schild: referenziert XY, misst Z im Sperrbereich
+    (X25 Y175) und schiebt die Teile in 4 Ebenen von der Platte. Startet sofort; die
+    Warnung bei Bett ab 30 °C kommt vom Dashboard-Button. Ablauf aus dem Infinity-Flow-Endcode
+    (A1 mini auto clear tilt kit).'
+  icon: mdi:broom
+  mode: single
+  sequence:
+  - alias: Nur wenn der Drucker nicht druckt
+    condition: state
+    entity_id: sensor.a1mini_0309da442500462_druckstatus
+    state:
+    - finish
+    - idle
+    - failed
+  - alias: 'G-Code: referenzieren und abräumen'
+    action: bambu_lab.send_command
+    data:
+      device_id: 33af39beafb25119fd89047b24f9fe31
+      command: 'M400
+
+        M140 S0
+
+        G90
+
+        M83
+
+        M17 X0.7 Y0.9 Z0.5
+
+        M211 S
+
+        M211 X0 Y0 Z0
+
+        G28 X
+
+        G0 X25 Y175 F20000
+
+        G28 Z P0 T300
+
+        G29.2 S0
+
+        G1 Z1 F600
+
+        M400 P100
+
+        G1 Y185 F10000
+
+        G1 X155 F10000
+
+        G1 Y135 F2000
+
+        G1 Y185 F10000
+
+        G1 X105 F10000
+
+        G1 Y135 F2000
+
+        G1 Y185 F10000
+
+        G1 X55 F10000
+
+        G1 Y135 F2000
+
+        G1 Y185 F10000
+
+        G1 X5 F10000
+
+        G1 Y135 F2000
+
+        G1 Y145 F10000
+
+        G1 X155 F10000
+
+        G1 Y85 F2000
+
+        G1 Y135 F10000
+
+        G1 X105 F10000
+
+        G1 Y85 F2000
+
+        G1 Y135 F10000
+
+        G1 X55 F10000
+
+        G1 Y85 F2000
+
+        G1 Y135 F10000
+
+        G1 X5 F10000
+
+        G1 Y85 F2000
+
+        G1 Y95 F10000
+
+        G1 X155 F10000
+
+        G1 Y35 F2000
+
+        G1 Y85 F10000
+
+        G1 X105 F10000
+
+        G1 Y35 F2000
+
+        G1 Y85 F10000
+
+        G1 X55 F10000
+
+        G1 Y35 F2000
+
+        G1 Y85 F10000
+
+        G1 X5 F10000
+
+        G1 Y35 F2000
+
+        G1 Y45 F10000
+
+        G1 X155 F10000
+
+        G1 Y-0.5 F2000
+
+        G1 Y35 F10000
+
+        G1 X105 F10000
+
+        G1 Y-0.5 F2000
+
+        G1 Y35 F10000
+
+        G1 X55 F10000
+
+        G1 Y-0.5 F2000
+
+        G1 Y35 F10000
+
+        G1 X5 F10000
+
+        G1 Y-0.5 F2000
+
+        G1 Y185 F10000
+
+        G91
+
+        G1 Z10 F600
+
+        G90
+
+        M211 R
+
+        M400
+
+        M18 X Y Z'
+gute_nacht:
+  alias: Gute Nacht
+  description: 'Aus der Zuhause-Übersicht: alle Lichter aus, laufendes Heimkino aus,
+    Wohnungstür abschließen. Heizung regeln die HmIP-Profile.'
+  icon: mdi:weather-night
+  mode: single
+  sequence:
+  - alias: Alle Lichter aus
+    action: light.turn_off
+    target:
+      entity_id:
+      - light.wohnzimmerlicht
+      - light.stehlampe
+      - light.ecklampe_wohnzimmer
+      - light.schlafzimmerlicht
+      - light.nachttischlampe
+      - light.badezimmerlicht
+      - light.badezimmerlicht_hintergrundbeleuchtung
+      - light.kuche_schaltausgang_kuchenlicht
+      - light.esszimmerlicht
+      - light.schalter_flurlicht
+      - light.ambilight_buro
+      - light.terrassenlicht
+      - light.teelichter_esszimmer
+      - light.teelichter_schlafzimmer
+    continue_on_error: true
+  - alias: Heimkino Wohnzimmer aus, falls an
+    if:
+    - condition: state
+      entity_id: switch.heimkino
+      state: 'on'
+    then:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.heimkino
+      continue_on_error: true
+  - alias: Heimkino Schlafzimmer aus, falls an
+    if:
+    - condition: state
+      entity_id: switch.heimkino_schlafzimmer
+      state: 'on'
+    then:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.heimkino_schlafzimmer
+      continue_on_error: true
+  - alias: Wohnungstür abschließen, falls offen
+    if:
+    - condition: not
+      conditions:
+      - condition: state
+        entity_id: lock.wohnungstur
+        state: locked
+    then:
+    - action: lock.lock
+      target:
+        entity_id: lock.wohnungstur
+      continue_on_error: true

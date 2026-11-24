@@ -1,0 +1,1690 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.dashboard_haushalt",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "title": "Übersicht",
+          "path": "uebersicht",
+          "icon": "mdi:home-outline",
+          "type": "panel",
+          "cards": [
+            {
+              "type": "custom:haushalt-card"
+            }
+          ]
+        },
+        {
+          "type": "sections",
+          "title": "Aufgaben",
+          "path": "aufgaben",
+          "icon": "mdi:broom",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "column_span": 2,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Haushaltsaufgaben",
+                  "heading_style": "title",
+                  "icon": "mdi:broom",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.haushalt_open_tasks",
+                      "show_state": true,
+                      "show_icon": true,
+                      "icon": "mdi:format-list-checks"
+                    },
+                    {
+                      "type": "entity",
+                      "entity": "binary_sensor.haushalt_overdue",
+                      "show_state": true,
+                      "show_icon": true,
+                      "icon": "mdi:alert-circle-outline",
+                      "color": "red"
+                    }
+                  ]
+                },
+                {
+                  "type": "custom:home-tasks-card",
+                  "columns": [
+                    {
+                      "list_id": "01M6W7GY8X9952HCVQ8T4MTP3J",
+                      "title": "Haushalt",
+                      "icon": "mdi:broom",
+                      "default_filter": "open",
+                      "default_sort": "due",
+                      "overdue_first": true,
+                      "show_due_soon_filter": true,
+                      "due_soon_days": 14,
+                      "confirm_complete": true,
+                      "show_images": false,
+                      "show_history": true
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": "auto"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Geräte",
+          "path": "geraete",
+          "icon": "mdi:washing-machine",
+          "type": "sections",
+          "max_columns": 3,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Waschmaschine",
+                  "icon": "mdi:washing-machine",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.waschmaschine_aktuelle_leistung",
+                      "show_state": true
+                    },
+                    {
+                      "type": "entity",
+                      "entity": "binary_sensor.hwr_waschmaschine_wartung_fallig",
+                      "show_state": false,
+                      "color": "red",
+                      "visibility": [
+                        {
+                          "condition": "state",
+                          "entity": "binary_sensor.hwr_waschmaschine_wartung_fallig",
+                          "state": "on"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "HWR · Shelly-Steckdose mit WashData-Erkennung"
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": "full"
+                  },
+                  "content": "{% set d = 'waschmaschine' %}{% set h = 'hwr_waschmaschine' %}{% set st = states('sensor.' ~ d ~ '_zustand') %}{% set m = {'off':'Aus','idle':'Bereit','starting':'Startet','running':'Läuft','paused':'Pausiert','user_paused':'Pausiert','ending':'Endet gleich','finished':'Fertig','anti_wrinkle':'Knitterschutz','delay_wait':'Startverzögerung','interrupted':'Unterbrochen','force_stopped':'Abgebrochen','clean':'Fertig, Tür noch zu','unknown':'Unbekannt','unavailable':'Offline'} %}{% set aktiv = is_state('binary_sensor.' ~ d ~ '_lauft','on') %}{% set p = states('sensor.' ~ d ~ '_programm') %}{% set pm = {'detecting...':'wird erkannt …','none':'–','off':'–','unknown':'–'} %}{% set w = states('sensor.' ~ d ~ '_aktuelle_leistung') | float(0) %}{% set rest = states('sensor.' ~ d ~ '_verbleibende_zeit') | float(-1) %}{% set lauf = (states('sensor.' ~ d ~ '_verstrichene_zeit') | float(0) / 60) | int %}{% set kc = 'sensor.' ~ h ~ '_kosten_des_letzten_zyklus' %}{% set ke = states('sensor.' ~ h ~ '_energie_des_letzten_zyklus') | float(0) %}{% macro eur(x) %}{{ ('%.2f' | format(x | float(0))) | replace('.', ',') }} €{% endmacro %}## {{ m.get(st, st) }}\n{% if aktiv %}**Programm:** {{ pm.get(p, p) }}{% set ph = states('sensor.' ~ d ~ '_aktuelle_phase') %}{{ ' · ' ~ ph if ph not in ['unknown','unavailable','none'] }}\n**Läuft seit** {{ '%d:%02d' | format(lauf // 60, lauf % 60) }} h · **{{ w | round(0) | int }} W**\n{% if rest >= 0 %}**Fertig ca. {{ (now() + timedelta(minutes=rest)).strftime('%H:%M') }} Uhr** (noch {{ rest | int }} min){% else %}*Restzeit noch unbekannt (Programm wird erkannt)*{% endif %}\n<sub>Letzter Lauf kostete {{ eur(states(kc)) }}</sub>\n{% else %}{% set a = states[kc].attributes if states[kc] is not none else {} %}{% if a.get('ended_at') %}Letzter Lauf: {{ (as_datetime(a.ended_at) | as_local).strftime('%d.%m. %H:%M') }} · {{ states('sensor.' ~ h ~ '_dauer_des_letzten_zyklus') | int(0) }} min · {{ ke | round(2) | string | replace('.', ',') }} kWh · **{{ eur(states(kc)) }}**{% endif %}\n{% endif %}{% if is_state('binary_sensor.' ~ h ~ '_wartung_fallig','on') %}⚠️ **Wartung fällig**{% endif %}"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.waschmaschine_fortschritt",
+                  "name": "Fortschritt",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "binary_sensor.waschmaschine_lauft",
+                      "state": "on"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.waschmaschine_aktuelle_leistung",
+                  "name": "Leistung",
+                  "features": [
+                    {
+                      "type": "trend-graph",
+                      "hours_to_show": 3
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.waschmaschine_zyklusanzahl",
+                  "name": "Läufe",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hwr_waschmaschine_kosten_des_letzten_zyklus",
+                  "name": "Letzter Lauf",
+                  "color": "green",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Trockner",
+                  "icon": "mdi:tumble-dryer",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.trockner_aktuelle_leistung",
+                      "show_state": true
+                    },
+                    {
+                      "type": "entity",
+                      "entity": "binary_sensor.hwr_trockner_wartung_fallig",
+                      "show_state": false,
+                      "color": "red",
+                      "visibility": [
+                        {
+                          "condition": "state",
+                          "entity": "binary_sensor.hwr_trockner_wartung_fallig",
+                          "state": "on"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "HWR · Shelly-Steckdose mit WashData-Erkennung"
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": "full"
+                  },
+                  "content": "{% set d = 'trockner' %}{% set h = 'hwr_trockner' %}{% set st = states('sensor.' ~ d ~ '_zustand') %}{% set m = {'off':'Aus','idle':'Bereit','starting':'Startet','running':'Läuft','paused':'Pausiert','user_paused':'Pausiert','ending':'Endet gleich','finished':'Fertig','anti_wrinkle':'Knitterschutz','delay_wait':'Startverzögerung','interrupted':'Unterbrochen','force_stopped':'Abgebrochen','clean':'Fertig, Tür noch zu','unknown':'Unbekannt','unavailable':'Offline'} %}{% set aktiv = is_state('binary_sensor.' ~ d ~ '_lauft','on') %}{% set p = states('sensor.' ~ d ~ '_programm') %}{% set pm = {'detecting...':'wird erkannt …','none':'–','off':'–','unknown':'–'} %}{% set w = states('sensor.' ~ d ~ '_aktuelle_leistung') | float(0) %}{% set rest = states('sensor.' ~ d ~ '_verbleibende_zeit') | float(-1) %}{% set lauf = (states('sensor.' ~ d ~ '_verstrichene_zeit') | float(0) / 60) | int %}{% set kc = 'sensor.' ~ h ~ '_kosten_des_letzten_zyklus' %}{% set ke = states('sensor.' ~ h ~ '_energie_des_letzten_zyklus') | float(0) %}{% macro eur(x) %}{{ ('%.2f' | format(x | float(0))) | replace('.', ',') }} €{% endmacro %}## {{ m.get(st, st) }}\n{% if aktiv %}**Programm:** {{ pm.get(p, p) }}{% set ph = states('sensor.' ~ d ~ '_aktuelle_phase') %}{{ ' · ' ~ ph if ph not in ['unknown','unavailable','none'] }}\n**Läuft seit** {{ '%d:%02d' | format(lauf // 60, lauf % 60) }} h · **{{ w | round(0) | int }} W**\n{% if rest >= 0 %}**Fertig ca. {{ (now() + timedelta(minutes=rest)).strftime('%H:%M') }} Uhr** (noch {{ rest | int }} min){% else %}*Restzeit noch unbekannt (Programm wird erkannt)*{% endif %}\n<sub>Letzter Lauf kostete {{ eur(states(kc)) }}</sub>\n{% else %}{% set a = states[kc].attributes if states[kc] is not none else {} %}{% if a.get('ended_at') %}Letzter Lauf: {{ (as_datetime(a.ended_at) | as_local).strftime('%d.%m. %H:%M') }} · {{ states('sensor.' ~ h ~ '_dauer_des_letzten_zyklus') | int(0) }} min · {{ ke | round(2) | string | replace('.', ',') }} kWh · **{{ eur(states(kc)) }}**{% endif %}\n{% endif %}{% if is_state('binary_sensor.' ~ h ~ '_wartung_fallig','on') %}⚠️ **Wartung fällig**{% endif %}"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.trockner_fortschritt",
+                  "name": "Fortschritt",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "binary_sensor.trockner_lauft",
+                      "state": "on"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.trockner_aktuelle_leistung",
+                  "name": "Leistung",
+                  "features": [
+                    {
+                      "type": "trend-graph",
+                      "hours_to_show": 3
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.trockner_zyklusanzahl",
+                  "name": "Läufe",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hwr_trockner_kosten_des_letzten_zyklus",
+                  "name": "Letzter Lauf",
+                  "color": "green",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Spülmaschine",
+                  "icon": "mdi:dishwasher",
+                  "badges": [
+                    {
+                      "type": "entity",
+                      "entity": "sensor.spulmaschine_aktuelle_leistung",
+                      "show_state": true
+                    },
+                    {
+                      "type": "entity",
+                      "entity": "binary_sensor.kuche_spulmaschine_wartung_fallig",
+                      "show_state": false,
+                      "color": "red",
+                      "visibility": [
+                        {
+                          "condition": "state",
+                          "entity": "binary_sensor.kuche_spulmaschine_wartung_fallig",
+                          "state": "on"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "Küche · Shelly-Steckdose mit WashData-Erkennung"
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": "full"
+                  },
+                  "content": "{% set d = 'spulmaschine' %}{% set h = 'kuche_spulmaschine' %}{% set st = states('sensor.' ~ d ~ '_zustand') %}{% set m = {'off':'Aus','idle':'Bereit','starting':'Startet','running':'Läuft','paused':'Pausiert','user_paused':'Pausiert','ending':'Endet gleich','finished':'Fertig','anti_wrinkle':'Knitterschutz','delay_wait':'Startverzögerung','interrupted':'Unterbrochen','force_stopped':'Abgebrochen','clean':'Fertig, Tür noch zu','unknown':'Unbekannt','unavailable':'Offline'} %}{% set aktiv = is_state('binary_sensor.' ~ d ~ '_lauft','on') %}{% set p = states('sensor.' ~ d ~ '_programm') %}{% set pm = {'detecting...':'wird erkannt …','none':'–','off':'–','unknown':'–'} %}{% set w = states('sensor.' ~ d ~ '_aktuelle_leistung') | float(0) %}{% set rest = states('sensor.' ~ d ~ '_verbleibende_zeit') | float(-1) %}{% set lauf = (states('sensor.' ~ d ~ '_verstrichene_zeit') | float(0) / 60) | int %}{% set kc = 'sensor.' ~ h ~ '_kosten_des_letzten_zyklus' %}{% set ke = states('sensor.' ~ h ~ '_energie_des_letzten_zyklus') | float(0) %}{% macro eur(x) %}{{ ('%.2f' | format(x | float(0))) | replace('.', ',') }} €{% endmacro %}## {{ m.get(st, st) }}\n{% if aktiv %}**Programm:** {{ pm.get(p, p) }}{% set ph = states('sensor.' ~ d ~ '_aktuelle_phase') %}{{ ' · ' ~ ph if ph not in ['unknown','unavailable','none'] }}\n**Läuft seit** {{ '%d:%02d' | format(lauf // 60, lauf % 60) }} h · **{{ w | round(0) | int }} W**\n{% if rest >= 0 %}**Fertig ca. {{ (now() + timedelta(minutes=rest)).strftime('%H:%M') }} Uhr** (noch {{ rest | int }} min){% else %}*Restzeit noch unbekannt (Programm wird erkannt)*{% endif %}\n<sub>Letzter Lauf kostete {{ eur(states(kc)) }}</sub>\n{% else %}{% set a = states[kc].attributes if states[kc] is not none else {} %}{% if a.get('ended_at') %}Letzter Lauf: {{ (as_datetime(a.ended_at) | as_local).strftime('%d.%m. %H:%M') }} · {{ states('sensor.' ~ h ~ '_dauer_des_letzten_zyklus') | int(0) }} min · {{ ke | round(2) | string | replace('.', ',') }} kWh · **{{ eur(states(kc)) }}**{% endif %}\n{% endif %}{% if is_state('binary_sensor.' ~ h ~ '_wartung_fallig','on') %}⚠️ **Wartung fällig**{% endif %}"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.spulmaschine_fortschritt",
+                  "name": "Fortschritt",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  },
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "binary_sensor.spulmaschine_lauft",
+                      "state": "on"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.spulmaschine_aktuelle_leistung",
+                  "name": "Leistung",
+                  "features": [
+                    {
+                      "type": "trend-graph",
+                      "hours_to_show": 3
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.spulmaschine_zyklusanzahl",
+                  "name": "Läufe",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.kuche_spulmaschine_kosten_des_letzten_zyklus",
+                  "name": "Letzter Lauf",
+                  "color": "green",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Kleingeräte",
+                  "heading_style": "title",
+                  "icon": "mdi:coffee-maker-outline"
+                },
+                {
+                  "type": "tile",
+                  "entity": "switch.kaffeemaschine",
+                  "name": "Kaffeemaschine",
+                  "icon": "mdi:coffee-maker",
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.kaffeemaschine_leistung",
+                  "name": "Leistung",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.kaffeemaschine_energie",
+                  "name": "Energie gesamt",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "climate.proficook_pc_wks_1167g_kettle",
+                  "name": "Wasserkocher",
+                  "icon": "mdi:kettle-steam",
+                  "features": [
+                    {
+                      "type": "climate-hvac-modes",
+                      "hvac_modes": [
+                        "off",
+                        "heat"
+                      ],
+                      "style": "icons"
+                    },
+                    {
+                      "type": "target-temperature"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 3
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "fan.luftreiniger_schlafzimmer",
+                  "name": "Luftreiniger Schlafzimmer",
+                  "features": [
+                    {
+                      "type": "fan-speed"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12,
+                    "rows": 1
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 3,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Stromverbrauch & Kosten",
+                  "icon": "mdi:cash-multiple"
+                },
+                {
+                  "type": "markdown",
+                  "grid_options": {
+                    "columns": "full"
+                  },
+                  "content": "{% set g = [['Waschmaschine','waschmaschine','hwr_waschmaschine','waschmaschine'],['Trockner','trockner','hwr_trockner','trockner'],['Spülmaschine','spulmaschine','kuche_spulmaschine','spuhlmaschine']] %}{% macro eur(x) %}{{ ('%.2f' | format(x | float(0))) | replace('.', ',') }} €{% endmacro %}{% set ns = namespace(k=0, e=0) %}{% for n in g %}{% set k = states('sensor.' ~ n[2] ~ '_kosten_des_letzten_zyklus') | float(0) %}{% set e = states('sensor.' ~ n[2] ~ '_energie_des_letzten_zyklus') | float(0) %}{% if k > 0 and e > 0 %}{% set ns.k = ns.k + k %}{% set ns.e = ns.e + e %}{% endif %}{% endfor %}{% set preis = states('input_number.energy_costs_electricity') | float(0) %}| Gerät | Status | Läufe | Ø kWh/Lauf | Letzter Lauf | Steckdose gesamt | ≈ Kosten gesamt |\n|:--|:--|--:|--:|--:|--:|--:|\n{% set ts = namespace(kwh=0) %}{% for n in g %}{% set z = states('sensor.' ~ n[1] ~ '_zyklusanzahl') | int(0) %}{% set eg = states('sensor.' ~ n[2] ~ '_energie_gesamt') | float(0) %}{% set sk = states('sensor.' ~ n[3] ~ '_energie') | float(0) %}{% set ts.kwh = ts.kwh + sk %}| **{{ n[0] }}** | {{ '▶ läuft' if is_state('binary_sensor.' ~ n[1] ~ '_lauft','on') else 'aus' }} | {{ z }} | {{ ((eg / z) | round(2) | string | replace('.', ',')) if z > 0 else '–' }} | {{ eur(states('sensor.' ~ n[2] ~ '_kosten_des_letzten_zyklus')) }} | {{ sk | round(1) | string | replace('.', ',') }} kWh | {{ eur(sk * preis) }} |\n{% endfor %}| **Summe** | | | | | **{{ ts.kwh | round(1) | string | replace('.', ',') }} kWh** | **{{ eur(ts.kwh * preis) }}** |\n\n<sub>Kosten pro Lauf von WashData. „Steckdose gesamt“ = Shelly-Zähler seit Messbeginn, Kosten daraus mit {{ ('%.3f' | format(preis)) | replace('.', ',') }} €/kWh (input_number.energy_costs_electricity, gilt auch für Energie-Dashboard und WashData) berechnet.</sub>"
+                },
+                {
+                  "type": "statistics-graph",
+                  "title": "Verbrauch pro Tag (30 Tage)",
+                  "entities": [
+                    {
+                      "entity": "sensor.waschmaschine_energie",
+                      "name": "Waschmaschine",
+                      "color": "#2196f3"
+                    },
+                    {
+                      "entity": "sensor.trockner_energie",
+                      "name": "Trockner",
+                      "color": "#ff9800"
+                    },
+                    {
+                      "entity": "sensor.spuhlmaschine_energie",
+                      "name": "Spülmaschine",
+                      "color": "#00bcd4"
+                    }
+                  ],
+                  "stat_types": [
+                    "change"
+                  ],
+                  "period": "day",
+                  "chart_type": "bar",
+                  "days_to_show": 30,
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": 5
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Saugroboter",
+          "path": "saugroboter",
+          "icon": "mdi:robot-vacuum",
+          "type": "sections",
+          "max_columns": 3,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Status & Steuerung",
+                  "icon": "mdi:robot-vacuum"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "entity": "vacuum.p50_pro_ultra",
+                  "primary": "Mova · {{ state_translated('vacuum.p50_pro_ultra') }}",
+                  "secondary": "{% if is_state('vacuum.p50_pro_ultra','cleaning') or is_state('vacuum.p50_pro_ultra','paused') %}Raum: {{ states('sensor.p50_pro_ultra_current_room') }} · {{ states('sensor.p50_pro_ultra_cleaned_area') }} m² · {{ states('sensor.p50_pro_ultra_cleaning_time') }} min{% else %}Station: {{ state_translated('sensor.p50_pro_ultra_state') }}{% endif %}{% if not is_state('sensor.p50_pro_ultra_error','no_error') %} · ⚠ {{ state_translated('sensor.p50_pro_ultra_error') }}{% endif %}",
+                  "icon": "{% set s = states('vacuum.p50_pro_ultra') %}{{ {'cleaning':'mdi:robot-vacuum','returning':'mdi:home-import-outline','paused':'mdi:pause-circle','error':'mdi:robot-vacuum-alert','docked':'mdi:home-battery'}.get(s,'mdi:robot-vacuum-variant') }}",
+                  "color": "{% set s = states('vacuum.p50_pro_ultra') %}{{ {'cleaning':'teal','returning':'blue','paused':'amber','error':'red','docked':'green','idle':'grey'}.get(s,'grey') }}",
+                  "badge_icon": "{{ 'mdi:battery-charging' if is_state('binary_sensor.p50_pro_ultra_charging_state','on') else 'mdi:battery' }}",
+                  "badge_text": "{{ states('sensor.p50_pro_ultra_battery_level') }}%",
+                  "badge_color": "{% set b = states('sensor.p50_pro_ultra_battery_level')|int(0) %}{{ 'green' if b > 50 else 'amber' if b > 20 else 'red' }}",
+                  "multiline_secondary": true,
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Start",
+                  "icon": "mdi:play",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') else 'grey' }}",
+                  "content_layout": "vertical",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.start",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 4,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Pause",
+                  "icon": "mdi:pause",
+                  "color": "{{ 'amber' if is_state('vacuum.p50_pro_ultra','paused') else 'grey' }}",
+                  "content_layout": "vertical",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.pause",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 4,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Stopp & Station",
+                  "icon": "mdi:home-import-outline",
+                  "color": "{{ 'blue' if is_state('vacuum.p50_pro_ultra','returning') else 'grey' }}",
+                  "content_layout": "vertical",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "vacuum.return_to_base",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "confirmation": {
+                      "text": "Reinigung abbrechen und Mova zur Station schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 4,
+                    "rows": 2
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_battery_level",
+                  "name": "Akku",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Karte",
+                  "icon": "mdi:map"
+                },
+                {
+                  "type": "picture-entity",
+                  "entity": "camera.p50_pro_ultra_map",
+                  "camera_view": "auto",
+                  "show_name": false,
+                  "show_state": false,
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Raum reinigen",
+                  "icon": "mdi:floor-plan"
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Flur",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Flur') else '' }}",
+                  "icon": "mdi:foot-print",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Flur') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 5
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Flur schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Wohnzimmer",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Wohnzimmer') else '' }}",
+                  "icon": "mdi:sofa-outline",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Wohnzimmer') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 8
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Wohnzimmer schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Esszimmer",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Esszimmer') else '' }}",
+                  "icon": "mdi:silverware-fork-knife",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Esszimmer') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 7
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Esszimmer schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Büro",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Büro') else '' }}",
+                  "icon": "mdi:monitor-shimmer",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Büro') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 6
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Büro schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Schlafzimmer",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Schlafzimmer') else '' }}",
+                  "icon": "mdi:bed-outline",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Schlafzimmer') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 4
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Schlafzimmer schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Bad",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Bad') else '' }}",
+                  "icon": "mdi:shower-head",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Bad') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 1
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Bad schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Küche",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Küche') else '' }}",
+                  "icon": "mdi:chef-hat",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Küche') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 10
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Küche schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "custom:mushroom-template-card",
+                  "primary": "Abstellkammer",
+                  "secondary": "{{ 'reinigt gerade' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Abstellkammer') else '' }}",
+                  "icon": "mdi:door",
+                  "color": "{{ 'teal' if is_state('vacuum.p50_pro_ultra','cleaning') and is_state('sensor.p50_pro_ultra_current_room','Abstellkammer') else 'disabled' }}",
+                  "content_layout": "horizontal",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "dreame_vacuum.vacuum_clean_segment",
+                    "target": {
+                      "entity_id": "vacuum.p50_pro_ultra"
+                    },
+                    "data": {
+                      "segments": 9
+                    },
+                    "confirmation": {
+                      "text": "Mova jetzt in Abstellkammer schicken?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Reinigungsmodus",
+                  "icon": "mdi:tune-variant"
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_cleangenius",
+                  "name": "CleanGenius",
+                  "icon": "mdi:brain",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_cleangenius",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_cleangenius_mode",
+                  "name": "CleanGenius-Modus",
+                  "icon": "mdi:broom",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_cleangenius_mode",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_cleaning_mode",
+                  "name": "Reinigungsart",
+                  "icon": "mdi:broom",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_cleaning_mode",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_suction_level",
+                  "name": "Saugstärke",
+                  "icon": "mdi:fan",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_suction_level",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_mop_pad_humidity",
+                  "name": "Wischfeuchte",
+                  "icon": "mdi:water-percent",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_mop_pad_humidity",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "select.p50_pro_ultra_water_temperature",
+                  "name": "Wassertemperatur",
+                  "icon": "mdi:thermometer-water",
+                  "features": [
+                    {
+                      "type": "select-options"
+                    }
+                  ],
+                  "features_position": "inline",
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "select.p50_pro_ultra_water_temperature",
+                      "state_not": "unavailable"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Station",
+                  "icon": "mdi:wrench-cog"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_self_wash_base_status",
+                  "name": "Station",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_low_water_warning",
+                  "name": "Wasser",
+                  "icon": "mdi:water-alert",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_scale_inhibitor_left",
+                  "name": "Kalkschutz",
+                  "icon": "mdi:water-outline",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Wartung",
+          "path": "wartung",
+          "type": "sections",
+          "max_columns": 3,
+          "sections": [
+            {
+              "type": "grid",
+              "column_span": 3,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Überfällig",
+                  "heading_style": "title",
+                  "icon": "mdi:alert-circle-outline"
+                },
+                {
+                  "type": "entity-filter",
+                  "entities": [
+                    "binary_sensor.werkstatt_prusa_xl_schienen_und_wellen_schmieren_uberfallig",
+                    "binary_sensor.a1mini_0309da442500462_ams_1_trockenmittel_ersetzen_uberfallig",
+                    "binary_sensor.a1mini_0309da442500462_schienen_und_wellen_schmieren_uberfallig",
+                    "binary_sensor.a1mini_0309da442500462_purge_wiper_ersetzen_uberfallig",
+                    "binary_sensor.batterie_flotte_schwache_batterien_ersetzen_uberfallig",
+                    "binary_sensor.io_series_4c27_burstenkopf_wechseln_uberfallig",
+                    "binary_sensor.flur_wohnungstur_zylinder_schmieren_uberfallig",
+                    "binary_sensor.hwr_waschmaschine_entkalken_uberfallig",
+                    "binary_sensor.hwr_waschmaschine_filter_reinigen_uberfallig",
+                    "binary_sensor.hwr_waschmaschine_trommel_reinigen_uberfallig",
+                    "binary_sensor.kuche_spulmaschine_entkalken_uberfallig",
+                    "binary_sensor.kuche_spulmaschine_filter_reinigen_uberfallig",
+                    "binary_sensor.kuche_spulmaschine_trommel_reinigen_uberfallig",
+                    "binary_sensor.hwr_trockner_trommel_reinigen_uberfallig",
+                    "binary_sensor.hwr_trockner_filter_reinigen_uberfallig",
+                    "binary_sensor.flur_p50_pro_ultra_seitenburste_ersetzen_uberfallig",
+                    "binary_sensor.flur_p50_pro_ultra_kalkschutzmodul_ersetzen_uberfallig",
+                    "binary_sensor.flur_p50_pro_ultra_hauptburste_ersetzen_uberfallig",
+                    "binary_sensor.flur_p50_pro_ultra_sensoren_reinigen_uberfallig",
+                    "binary_sensor.flur_p50_pro_ultra_filter_ersetzen_uberfallig",
+                    "binary_sensor.flur_p50_pro_ultra_rader_reinigen_uberfallig"
+                  ],
+                  "state_filter": [
+                    "on"
+                  ],
+                  "show_empty": false,
+                  "card": {
+                    "type": "entities",
+                    "state_color": true
+                  },
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": "auto"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "text_only": true,
+                  "content": "Gedrückt halten markiert eine Wartung als erledigt.",
+                  "grid_options": {
+                    "columns": "full",
+                    "rows": "auto"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Wäsche & Küche",
+                  "heading_style": "title",
+                  "icon": "mdi:washing-machine"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hwr_waschmaschine_entkalken",
+                  "name": "WM Entkalken",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.hwr_waschmaschine_entkalken_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "WM Entkalken: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hwr_waschmaschine_filter_reinigen",
+                  "name": "WM Filter",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.hwr_waschmaschine_filter_reinigen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "WM Filter: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hwr_waschmaschine_trommel_reinigen",
+                  "name": "WM Trommel",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.hwr_waschmaschine_trommel_reinigen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "WM Trommel: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hwr_trockner_filter_reinigen",
+                  "name": "Trockner Filter",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.hwr_trockner_filter_reinigen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Trockner Filter: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.hwr_trockner_trommel_reinigen",
+                  "name": "Trockner Trommel",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.hwr_trockner_trommel_reinigen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Trockner Trommel: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.kuche_spulmaschine_entkalken",
+                  "name": "Spüler Entkalken",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.kuche_spulmaschine_entkalken_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Spüler Entkalken: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.kuche_spulmaschine_filter_reinigen",
+                  "name": "Spüler Filter",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.kuche_spulmaschine_filter_reinigen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Spüler Filter: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.kuche_spulmaschine_trommel_reinigen",
+                  "name": "Spüler Trommel",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.kuche_spulmaschine_trommel_reinigen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Spüler Trommel: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.luftreiniger_schlafzimmer_replace_filter",
+                  "name": "Luftreiniger Filter",
+                  "icon": "mdi:air-filter",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.luftreiniger_schlafzimmer_filter_age",
+                  "name": "Filteralter",
+                  "icon": "mdi:air-filter",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Mova",
+                  "heading_style": "title",
+                  "icon": "mdi:robot-vacuum"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.flur_p50_pro_ultra_seitenburste_ersetzen",
+                  "name": "Seitenbürste",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.flur_p50_pro_ultra_seitenburste_ersetzen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Seitenbürste: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.flur_p50_pro_ultra_hauptburste_ersetzen",
+                  "name": "Hauptbürste",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.flur_p50_pro_ultra_hauptburste_ersetzen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Hauptbürste: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.flur_p50_pro_ultra_filter_ersetzen",
+                  "name": "Filter",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.flur_p50_pro_ultra_filter_ersetzen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Filter: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.flur_p50_pro_ultra_sensoren_reinigen",
+                  "name": "Sensoren",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.flur_p50_pro_ultra_sensoren_reinigen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Sensoren: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.flur_p50_pro_ultra_rader_reinigen",
+                  "name": "Räder",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.flur_p50_pro_ultra_rader_reinigen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Räder: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.flur_p50_pro_ultra_kalkschutzmodul_ersetzen",
+                  "name": "Kalkschutz",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.flur_p50_pro_ultra_kalkschutzmodul_ersetzen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Kalkschutz: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "heading",
+                  "heading": "Restlebensdauer",
+                  "heading_style": "subtitle"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_main_brush_left",
+                  "name": "Hauptbürste",
+                  "icon": "mdi:brush",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_side_brush_left",
+                  "name": "Seitenbürste",
+                  "icon": "mdi:pinwheel-outline",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_filter_left",
+                  "name": "Filter",
+                  "icon": "mdi:air-filter",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_sensor_dirty_left",
+                  "name": "Sensoren",
+                  "icon": "mdi:eye-outline",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.p50_pro_ultra_wheel_dirty_left",
+                  "name": "Räder",
+                  "icon": "mdi:tire",
+                  "features": [
+                    {
+                      "type": "bar-gauge",
+                      "min": 0,
+                      "max": 100
+                    }
+                  ],
+                  "features_position": "inline",
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "column_span": 1,
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Bad, Werkstatt, Sonstiges",
+                  "heading_style": "title",
+                  "icon": "mdi:toolbox-outline"
+                },
+                {
+                  "type": "custom:toothbrush-card",
+                  "device_id": "833e091ecb86671792406d0408044a45",
+                  "grid_options": {
+                    "columns": "full"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.io_series_4c27_burstenkopf_wechseln",
+                  "name": "Bürstenkopf",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.io_series_4c27_burstenkopf_wechseln_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Bürstenkopf: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.batterie_flotte_schwache_batterien_ersetzen",
+                  "name": "Batterien",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.batterie_flotte_schwache_batterien_ersetzen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Batterien: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.flur_wohnungstur_zylinder_schmieren",
+                  "name": "Türzylinder",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.flur_wohnungstur_zylinder_schmieren_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Türzylinder: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.werkstatt_prusa_xl_schienen_und_wellen_schmieren",
+                  "name": "Prusa Schienen",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.werkstatt_prusa_xl_schienen_und_wellen_schmieren_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "Prusa Schienen: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_schienen_und_wellen_schmieren",
+                  "name": "A1 mini Schienen",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.a1mini_0309da442500462_schienen_und_wellen_schmieren_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "A1 mini Schienen: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_purge_wiper_ersetzen",
+                  "name": "A1 mini Wiper",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.a1mini_0309da442500462_purge_wiper_ersetzen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "A1 mini Wiper: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.a1mini_0309da442500462_ams_1_trockenmittel_ersetzen",
+                  "name": "AMS Trockenmittel",
+                  "icon": "mdi:wrench-clock",
+                  "hold_action": {
+                    "action": "perform-action",
+                    "perform_action": "button.press",
+                    "target": {
+                      "entity_id": "button.a1mini_0309da442500462_ams_1_trockenmittel_ersetzen_abschliessen"
+                    },
+                    "confirmation": {
+                      "text": "AMS Trockenmittel: als erledigt markieren?"
+                    }
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "todo.maintenance",
+                  "name": "Wartungsliste",
+                  "icon": "mdi:clipboard-list-outline",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/todo?entity_id=todo.maintenance"
+                  },
+                  "grid_options": {
+                    "columns": 6,
+                    "rows": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "icon": "mdi:wrench-clock"
+        }
+      ]
+    }
+  }
+}

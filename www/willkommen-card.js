@@ -160,7 +160,7 @@ class WillkommenCard extends HTMLElement {
     this._arm = null; clearTimeout(this._armT);
     if (k === 'lights') h.callService('light', 'turn_off', { entity_id: LIGHTS });
     if (k === 'away') h.callService('input_boolean', 'toggle', { entity_id: 'input_boolean.abwesenheit' });
-    if (k === 'cinema') h.callService('switch', 'toggle', { entity_id: 'switch.heimkino' });
+    if (k === 'preheat') h.callService('input_boolean', 'toggle', { entity_id: 'input_boolean.heizung_anheizen' });
     if (k === 'door') h.callService('lock', 'unlock', { entity_id: 'lock.haustur' });
     this._render();
   }
@@ -272,14 +272,14 @@ class WillkommenCard extends HTMLElement {
       <span class="chip lock ${hd ? 'ok' : 'bad'}" data-mi="lock.haustur">${ic(hd ? 'lock' : 'unlock')}Haustür ${hd ? 'zu' : 'offen'}</span></div></div>`;
 
     const lightsOn = LIGHTS.filter((l) => this._s(l) === 'on').length;
-    const awayOn = this._s('input_boolean.abwesenheit') === 'on', cinOn = this._s('switch.heimkino') === 'on';
+    const awayOn = this._s('input_boolean.abwesenheit') === 'on', heatOn = this._s('input_boolean.heizung_anheizen') === 'on';
     const bothOn = this._bothActive();
     if (bothOn && !this._tk) this._tick(); // auch wenn das Skript woanders gestartet wurde
     const cancelled = this._cancelled && Date.now() - this._cancelled < 3000;
     const QA = [
       ['lights', 'light', 'Alle Lichter aus', this._arm === 'lights' ? 'Nochmal tippen zum Ausschalten' : lightsOn ? `${lightsOn} von 14 an` : 'alle aus', false],
       ['away', 'away', 'Abwesend', awayOn ? 'an · Heizung auf Urlaub' : 'aus', awayOn],
-      ['cinema', 'film', 'Heimkino', cinOn ? 'läuft' : 'aus', cinOn],
+      ['preheat', 'thermo', 'Vorheizen', heatOn ? 'an · Urlaubsmodus aus' : 'aus', heatOn],
       bothOn ? ['door', 'door', 'ABBRUCH', `Wohnungstür öffnet in ${this._bothLeft()} s`, false, 'abort']
         : cancelled ? ['door', 'door', 'Abgebrochen', 'Wohnungstür bleibt zu', false]
         : ['door', 'door', 'Haustür öffnen', this._arm === 'door' ? 'Nochmal tippen zum Öffnen' : 'Tippen · lang: beide Türen', false],
@@ -309,12 +309,12 @@ class WillkommenCard extends HTMLElement {
 
     const plantsN = Object.keys(h.states).filter((id) => id.startsWith('binary_sensor.simple_plant_todo_')).length;
     const plantsDue = Object.keys(h.states).filter((id) => id.startsWith('binary_sensor.simple_plant_todo_') && this._s(id) === 'on').length;
-    const einkauf = this._n('todo.einkaufsliste');
+    const einkauf = this._n('todo.einkaufsliste_2');
     const termine = (td.rows.find((r) => r[0] === 'cal') || [])[1];
     const NAV = [
       ['home', 'Zuhause', 'Licht, Klima, Kameras', '/dashboard-beleuctung'],
       ['wash', 'Haushalt', `${this._n('sensor.haushalt_open_tasks') ?? '–'} offen`, '/dashboard-haushalt'],
-      ['list', 'To-do', einkauf ? `Einkauf: ${einkauf}` : 'Einkauf leer', '/todo?entity_id=todo.einkaufsliste'],
+      ['list', 'To-do', einkauf ? `Einkauf: ${einkauf}` : 'Einkauf leer', '/todo?entity_id=todo.einkaufsliste_2'],
       ['bolt', 'Energie', `${ck != null ? fmt(ck, 2) : '–'} € heute`, '/dashboard-energie/overview'],
       ['cube', 'Werkstatt', `Prusa XL ${plug === 'off' ? 'aus' : PRUSA[pr] || 'offline'}`, '/dashboard-fabrication'],
       ['leaf', 'Pflanzen', plantsDue ? `${plantsDue} gießen` : `${plantsN} Pflanzen`, '/dashboard-pflanzen'],
