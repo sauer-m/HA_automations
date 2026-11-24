@@ -54,10 +54,10 @@ const LN = {
 };
 const LIGHTS = Object.keys(LN);
 const ROOMS = [
-  { id: 'wz', n: 'Wohnzimmer', ic: 'sofa', t: 'sensor.wohnzimmerthermostat_temperature', h: 'sensor.wohnzimmerthermostat_humidity', cl: 'climate.wohnzimmer', v: 'sensor.heizkorperthermostat_wohnzimmer_heating', w: 'binary_sensor.wohnzimmerfenster', L: ['light.wohnzimmerlicht', 'light.stehlampe', 'light.ecklampe_wohnzimmer'], kino: 'switch.heimkino', fan: 'fan.ac1715_cloud_luftreiniger', pm: 'sensor.ac1715_cloud_pm2_5' },
+  { id: 'wz', n: 'Wohnzimmer', ic: 'sofa', t: 'sensor.wohnzimmerthermostat_temperature', h: 'sensor.wohnzimmerthermostat_humidity', cl: 'climate.wohnzimmer', v: 'sensor.heizkorperthermostat_wohnzimmer_heating', w: 'binary_sensor.wohnzimmerfenster', L: ['light.wohnzimmerlicht', 'light.stehlampe', 'light.ecklampe_wohnzimmer'], kino: 'switch.heimkino', fan: 'fan.ac1715_cloud_luftreiniger', fsel: 'select.luftreiniger_wz_modus', pm: 'sensor.ac1715_cloud_pm2_5' },
   { id: 'ez', n: 'Esszimmer', ic: 'fork', t: 'sensor.heizkorperthermostat_esszimmer_temperature', v: 'sensor.heizkorperthermostat_esszimmer_heating', w: 'binary_sensor.esszimmerfenster', L: ['light.esszimmerlicht', 'light.teelichter_esszimmer'], sel: 'input_select.teelichter_esszimmer_modus' },
   { id: 'ku', n: 'Küche', ic: 'chef', L: ['light.kuche_schaltausgang_kuchenlicht'], dev: [['switch.kaffeemaschine', 'Kaffeemaschine', 'coffee'], ['climate.proficook_pc_wks_1167g_kettle', 'Wasserkocher', 'kettle']] },
-  { id: 'sz', n: 'Schlafzimmer', ic: 'bed', t: 'sensor.heizkorperthermostat_schlafzimmer_temperature', h: 'sensor.0x348d13fffe52a975_humidity', cl: 'climate.schlafzimmer', v: 'sensor.heizkorperthermostat_schlafzimmer_heating', w: 'binary_sensor.schlafzimmerfenster', L: ['light.schlafzimmerlicht', 'light.nachttischlampe', 'light.teelichter_schlafzimmer'], sel: 'input_select.teelichter_schlafzimmer_modus', cover: 'cover.rollo_schlafzimmer', fan: 'fan.luftreiniger_schlafzimmer', pm: 'sensor.0x348d13fffe52a975_pm25', kino: 'switch.heimkino_schlafzimmer' },
+  { id: 'sz', n: 'Schlafzimmer', ic: 'bed', t: 'sensor.heizkorperthermostat_schlafzimmer_temperature', h: 'sensor.0x348d13fffe52a975_humidity', cl: 'climate.schlafzimmer', v: 'sensor.heizkorperthermostat_schlafzimmer_heating', w: 'binary_sensor.schlafzimmerfenster', L: ['light.schlafzimmerlicht', 'light.nachttischlampe', 'light.teelichter_schlafzimmer'], sel: 'input_select.teelichter_schlafzimmer_modus', cover: 'cover.rollo_schlafzimmer', fan: 'fan.luftreiniger_schlafzimmer', fsel: 'select.luftreiniger_sz_stufe', pm: 'sensor.0x348d13fffe52a975_pm25', kino: 'switch.heimkino_schlafzimmer' },
   { id: 'bz', n: 'Bad', ic: 'shower', t: 'sensor.heizkorperthermostat_badezimmer_temperature', cl: 'climate.badezimmer', v: 'sensor.heizkorperthermostat_badezimmer_heating', w: 'binary_sensor.badezimmerfenster', L: ['light.badezimmerlicht', 'light.badezimmerlicht_hintergrundbeleuchtung'], dev: [['switch.badezimmerlufter', 'Lüfter', 'fan']] },
   { id: 'fl', n: 'Flur', ic: 'coat', L: ['light.schalter_flurlicht'], lock: 'lock.wohnungstur' },
   { id: 'bu', n: 'Büro', ic: 'desk', L: ['light.ambilight_buro'] },
@@ -104,7 +104,7 @@ class ZuhauseCard extends HTMLElement {
   _nav(p) { history.pushState(null, '', p); window.dispatchEvent(new CustomEvent('location-changed', { detail: { replace: false } })); }
   _flash(k, ms = 2500) { this._busy[k] = Date.now() + ms; setTimeout(() => this._render(true), ms + 50); }
   _isBusy(k) { return (this._busy[k] || 0) > Date.now(); }
-  _fanTxt(id) { const m = this._a(id, 'preset_mode'); return m ? (FANM[m] || m) : (this._a(id, 'percentage') || 0) + ' %'; }
+  _fanTxt(id) { const r = ROOMS.find((x) => x.fan === id); const v = r && r.fsel ? this._s(r.fsel) : ''; if (v && !['unknown', 'unavailable'].includes(v)) return /^\d$/.test(v) ? 'Stufe ' + v : v; const m = this._a(id, 'preset_mode'); return m ? (FANM[m] || m) : (this._a(id, 'percentage') || 0) + ' %'; }
   _filter(id) {
     if (id === 'fan.luftreiniger_schlafzimmer') return this._on('binary_sensor.luftreiniger_schlafzimmer_replace_filter') ? 'Filter wechseln' : '';
     const c = this._n('sensor.ac1715_cloud_filterreinigung_verbleibend'), w = this._n('sensor.ac1715_cloud_filterwechsel_verbleibend');
@@ -141,7 +141,7 @@ class ZuhauseCard extends HTMLElement {
       this._svc('climate', 'set_temperature', { entity_id: id, temperature: Math.round((cur + (dir === '+' ? step : -step)) * 10) / 10 }); return;
     }
     if (d.fm) { const [id, m] = d.fm.split('|'); this._svc('fan', 'set_preset_mode', { entity_id: id, preset_mode: m }); return; }
-    if (d.sel) { const [id, opt] = d.sel.split('|'); this._svc('input_select', 'select_option', { entity_id: id, option: opt }); return; }
+    if (d.sel) { const [id, opt] = d.sel.split('|'); this._svc(id.split('.')[0], 'select_option', { entity_id: id, option: opt }); return; }
     if (d.cv) { const [id, s] = d.cv.split('|'); this._svc('cover', s, { entity_id: id }); return; }
     if (d.tg) {
       const id = d.tg, dom = id.split('.')[0];
@@ -296,7 +296,8 @@ class ZuhauseCard extends HTMLElement {
       const modes = this._a(r.fan, 'preset_modes') || [], cur = this._a(r.fan, 'preset_mode');
       extra.push(`<div class="drow ${on ? 'on' : ''}" style="--c:var(--air)">${ic('fan')}<button class="lname" data-mi="${r.fan}">Luftreiniger<small>${on ? this._fanTxt(r.fan) : 'aus'}${pm != null ? ' · PM2,5 ' + Math.round(pm) : ''}${filt ? ' · ' + filt : ''}</small></button><button class="tog ${on ? 'on' : ''}" data-tg="${r.fan}" aria-label="Luftreiniger schalten"></button></div>`);
       const zp = this._on(`input_boolean.luftreiniger_${r.id}_zeitplan`);
-      extra.push(`<div class="chips">${modes.length > 1 ? modes.map((m) => `<button class="chip ${on && m === cur ? 'on' : ''}" data-fm="${r.fan}|${m}">${FANM[m] || m}</button>`).join('') : ''}<button class="chip" data-nav="/dashboard-beleuctung/luftreiniger">${ic('moon')}Zeitplan ${zp ? 'an' : 'aus'}</button></div>`);
+      const fopts = r.fsel ? (this._a(r.fsel, 'options') || []).filter((o) => o !== 'Aus') : [], fcur = r.fsel ? this._s(r.fsel) : '';
+      extra.push(`<div class="chips">${fopts.map((o) => `<button class="chip ${on && o === fcur ? 'on' : ''}" data-sel="${r.fsel}|${o}">${/^\d$/.test(o) ? 'Stufe ' + o : o}</button>`).join('')}<button class="chip" data-nav="/dashboard-beleuctung/luftreiniger">${ic('moon')}Zeitplan ${zp ? 'an' : 'aus'}</button></div>`);
     }
     (r.dev || []).forEach(([did, n, i]) => {
       const st = this._s(did), on = st === 'on' || st === 'heat';

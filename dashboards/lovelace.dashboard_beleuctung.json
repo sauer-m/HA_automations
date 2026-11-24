@@ -609,15 +609,19 @@
                 },
                 {
                   "type": "tile",
-                  "entity": "fan.ac1715_cloud_luftreiniger",
+                  "entity": "select.luftreiniger_wz_modus",
                   "name": "Luftreiniger Wohnzimmer",
                   "icon": "mdi:air-purifier",
+                  "color": "indigo",
                   "features": [
                     {
-                      "type": "fan-preset-modes",
-                      "style": "dropdown"
+                      "type": "select-options"
                     }
                   ],
+                  "features_position": "bottom",
+                  "hold_action": {
+                    "action": "more-info"
+                  },
                   "grid_options": {
                     "columns": 12,
                     "rows": 2
@@ -625,17 +629,22 @@
                 },
                 {
                   "type": "tile",
-                  "entity": "fan.luftreiniger_schlafzimmer",
+                  "entity": "select.luftreiniger_sz_stufe",
                   "name": "Luftreiniger Schlafzimmer",
+                  "icon": "mdi:air-purifier",
+                  "color": "indigo",
                   "features": [
                     {
-                      "type": "fan-speed"
+                      "type": "select-options"
                     }
                   ],
-                  "features_position": "inline",
+                  "features_position": "bottom",
+                  "hold_action": {
+                    "action": "more-info"
+                  },
                   "grid_options": {
                     "columns": 12,
-                    "rows": 1
+                    "rows": 2
                   }
                 },
                 {
@@ -1016,8 +1025,60 @@
                   }
                 },
                 {
+                  "type": "heading",
+                  "heading": "Technik (Notfall)",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:tools",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "input_boolean.toggle",
+                    "target": {
+                      "entity_id": "input_boolean.medien_technik_wz_anzeigen"
+                    }
+                  },
+                  "badges": [
+                    {
+                      "type": "button",
+                      "icon": "mdi:chevron-down",
+                      "text": "einblenden",
+                      "tap_action": {
+                        "action": "perform-action",
+                        "perform_action": "input_boolean.turn_on",
+                        "target": {
+                          "entity_id": "input_boolean.medien_technik_wz_anzeigen"
+                        }
+                      },
+                      "visibility": [
+                        {
+                          "condition": "state",
+                          "entity": "input_boolean.medien_technik_wz_anzeigen",
+                          "state_not": "on"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "button",
+                      "icon": "mdi:chevron-up",
+                      "text": "ausblenden",
+                      "tap_action": {
+                        "action": "perform-action",
+                        "perform_action": "input_boolean.turn_off",
+                        "target": {
+                          "entity_id": "input_boolean.medien_technik_wz_anzeigen"
+                        }
+                      },
+                      "visibility": [
+                        {
+                          "condition": "state",
+                          "entity": "input_boolean.medien_technik_wz_anzeigen",
+                          "state": "on"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
                   "type": "entities",
-                  "title": "Technik",
                   "show_header_toggle": false,
                   "entities": [
                     {
@@ -1047,7 +1108,14 @@
                       "name": "Fire TV Cube"
                     }
                   ],
-                  "state_color": true
+                  "state_color": true,
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "input_boolean.medien_technik_wz_anzeigen",
+                      "state": "on"
+                    }
+                  ]
                 }
               ]
             },
@@ -1144,8 +1212,60 @@
                   }
                 },
                 {
+                  "type": "heading",
+                  "heading": "Technik (Notfall)",
+                  "heading_style": "subtitle",
+                  "icon": "mdi:tools",
+                  "tap_action": {
+                    "action": "perform-action",
+                    "perform_action": "input_boolean.toggle",
+                    "target": {
+                      "entity_id": "input_boolean.medien_technik_sz_anzeigen"
+                    }
+                  },
+                  "badges": [
+                    {
+                      "type": "button",
+                      "icon": "mdi:chevron-down",
+                      "text": "einblenden",
+                      "tap_action": {
+                        "action": "perform-action",
+                        "perform_action": "input_boolean.turn_on",
+                        "target": {
+                          "entity_id": "input_boolean.medien_technik_sz_anzeigen"
+                        }
+                      },
+                      "visibility": [
+                        {
+                          "condition": "state",
+                          "entity": "input_boolean.medien_technik_sz_anzeigen",
+                          "state_not": "on"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "button",
+                      "icon": "mdi:chevron-up",
+                      "text": "ausblenden",
+                      "tap_action": {
+                        "action": "perform-action",
+                        "perform_action": "input_boolean.turn_off",
+                        "target": {
+                          "entity_id": "input_boolean.medien_technik_sz_anzeigen"
+                        }
+                      },
+                      "visibility": [
+                        {
+                          "condition": "state",
+                          "entity": "input_boolean.medien_technik_sz_anzeigen",
+                          "state": "on"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
                   "type": "entities",
-                  "title": "Technik",
                   "show_header_toggle": false,
                   "entities": [
                     {
@@ -1184,7 +1304,14 @@
                       "icon": "mdi:lightbulb-auto"
                     }
                   ],
-                  "state_color": true
+                  "state_color": true,
+                  "visibility": [
+                    {
+                      "condition": "state",
+                      "entity": "input_boolean.medien_technik_sz_anzeigen",
+                      "state": "on"
+                    }
+                  ]
                 }
               ]
             }
@@ -2901,15 +3028,19 @@
                 },
                 {
                   "type": "tile",
-                  "entity": "fan.ac1715_cloud_luftreiniger",
+                  "entity": "select.luftreiniger_wz_modus",
                   "name": "Philips 1000i",
                   "icon": "mdi:air-purifier",
+                  "color": "indigo",
                   "features": [
                     {
-                      "type": "fan-preset-modes",
-                      "style": "dropdown"
+                      "type": "select-options"
                     }
                   ],
+                  "features_position": "bottom",
+                  "hold_action": {
+                    "action": "more-info"
+                  },
                   "grid_options": {
                     "columns": 12,
                     "rows": 2
@@ -3004,14 +3135,19 @@
                 },
                 {
                   "type": "tile",
-                  "entity": "fan.luftreiniger_schlafzimmer",
+                  "entity": "select.luftreiniger_sz_stufe",
                   "name": "IKEA Starkvind",
                   "icon": "mdi:air-purifier",
+                  "color": "indigo",
                   "features": [
                     {
-                      "type": "fan-speed"
+                      "type": "select-options"
                     }
                   ],
+                  "features_position": "bottom",
+                  "hold_action": {
+                    "action": "more-info"
+                  },
                   "grid_options": {
                     "columns": 12,
                     "rows": 2

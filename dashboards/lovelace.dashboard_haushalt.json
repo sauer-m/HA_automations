@@ -436,30 +436,39 @@
                 },
                 {
                   "type": "tile",
-                  "entity": "fan.luftreiniger_schlafzimmer",
+                  "entity": "select.luftreiniger_sz_stufe",
                   "name": "Luftreiniger Schlafzimmer",
+                  "icon": "mdi:air-purifier",
+                  "color": "indigo",
                   "features": [
                     {
-                      "type": "fan-speed"
+                      "type": "select-options"
                     }
                   ],
-                  "features_position": "inline",
+                  "features_position": "bottom",
+                  "hold_action": {
+                    "action": "more-info"
+                  },
                   "grid_options": {
                     "columns": 12,
-                    "rows": 1
+                    "rows": 2
                   }
                 },
                 {
                   "type": "tile",
-                  "entity": "fan.ac1715_cloud_luftreiniger",
+                  "entity": "select.luftreiniger_wz_modus",
                   "name": "Luftreiniger Wohnzimmer",
                   "icon": "mdi:air-purifier",
+                  "color": "indigo",
                   "features": [
                     {
-                      "type": "fan-preset-modes",
-                      "style": "dropdown"
+                      "type": "select-options"
                     }
                   ],
+                  "features_position": "bottom",
+                  "hold_action": {
+                    "action": "more-info"
+                  },
                   "grid_options": {
                     "columns": 12,
                     "rows": 2

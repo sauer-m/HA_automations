@@ -86,12 +86,12 @@
       },
       {
         "id": "9928a35baf1b4f4684a4475ca068beda",
-        "url": "/local/zuhause-card.js?v=3",
+        "url": "/local/zuhause-card.js?v=4",
         "type": "module"
       },
       {
         "id": "653a5e65d01e4d029e2019f5a86bfbec",
-        "url": "/local/haushalt-card.js?v=3",
+        "url": "/local/haushalt-card.js?v=4",
         "type": "module"
       }
     ]

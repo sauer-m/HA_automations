@@ -39,8 +39,8 @@ const DEVS = [
   { k: 'mova', h: 'flur_p50_pro_ultra', n: 'Mova', ic: 'vac', c: ['#16a085', '#33c09f'], kw: /mova|saugroboter/i, e: 'vacuum.p50_pro_ultra' },
   { k: 'kaffee', n: 'Kaffee', ic: 'coffee', c: ['#8b5a3c', '#c48a63'], kw: /kaffee|kapsel|siebträger|espresso/i, e: 'switch.kaffeemaschine' },
   { k: 'kocher', n: 'Wasserkocher', ic: 'kettle', c: ['#d1492e', '#f06a4c'], kw: /wasserkocher/i, e: 'climate.proficook_pc_wks_1167g_kettle' },
-  { k: 'luftwz', n: 'Luft WZ', ic: 'fan', c: ['#5f7ee0', '#8aa2f2'], kw: /luftreiniger wohnzimmer|philips/i, e: 'fan.ac1715_cloud_luftreiniger', pm: 'sensor.ac1715_cloud_pm2_5', loc: 'Wohnzimmer' },
-  { k: 'luft', n: 'Luft SZ', ic: 'fan', c: ['#5f7ee0', '#8aa2f2'], kw: /luftreiniger schlafzimmer|starkvind/i, e: 'fan.luftreiniger_schlafzimmer', pm: 'sensor.0x348d13fffe52a975_pm25', loc: 'Schlafzimmer' },
+  { k: 'luftwz', n: 'Luft WZ', ic: 'fan', c: ['#5f7ee0', '#8aa2f2'], kw: /luftreiniger wohnzimmer|philips/i, e: 'fan.ac1715_cloud_luftreiniger', fsel: 'select.luftreiniger_wz_modus', pm: 'sensor.ac1715_cloud_pm2_5', loc: 'Wohnzimmer' },
+  { k: 'luft', n: 'Luft SZ', ic: 'fan', c: ['#5f7ee0', '#8aa2f2'], kw: /luftreiniger schlafzimmer|starkvind/i, e: 'fan.luftreiniger_schlafzimmer', fsel: 'select.luftreiniger_sz_stufe', pm: 'sensor.0x348d13fffe52a975_pm25', loc: 'Schlafzimmer' },
   { k: 'mower', n: 'Landroid', ic: 'mow', c: ['#4c9a2a', '#79c255'], kw: /landroid|mähroboter|rasenmäher/i, e: 'lawn_mower.m500p' },
 ];
 
@@ -137,7 +137,8 @@ class HaushaltCard extends HTMLElement {
       else if (v === 'unavailable') { st = 'idle'; txt = 'offline'; } else txt = `aus · ${Math.round(cur || 0)} °C`;
     } else if (d.k === 'luft' || d.k === 'luftwz') {
       const v = this._s(d.e), pm = this._n(d.pm), m = this._a(d.e, 'preset_mode');
-      if (v === 'on') { st = 'run'; txt = `${m ? (FANM[m] || m) : (this._a(d.e, 'percentage') || 0) + ' %'}${pm != null ? ' · PM2,5 ' + Math.round(pm) : ''}`; }
+      const fs = this._s(d.fsel);
+      if (v === 'on') { st = 'run'; txt = `${/^\d$/.test(fs) ? 'Stufe ' + fs : fs && !['unknown', 'unavailable'].includes(fs) ? fs : m ? (FANM[m] || m) : (this._a(d.e, 'percentage') || 0) + ' %'}${pm != null ? ' · PM2,5 ' + Math.round(pm) : ''}`; }
       else if (v === 'unavailable') { st = 'idle'; txt = 'offline'; } else txt = `aus · ${d.loc}`;
       if (d.k === 'luft' && this._on('binary_sensor.luftreiniger_schlafzimmer_replace_filter')) dots.push({ n: 'Filter wechseln' });
       if (d.k === 'luftwz') {

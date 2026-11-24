@@ -51,3 +51,8 @@ Philips 1000i (AC1715, Wohnzimmer): Integration Philips HomeID (renaudallard, Do
 - Unterseite `/dashboard-beleuctung/luftreiniger` (Link: Klima → Luft „Zeitplan“, Raum-Popups, Haushalt-Gerätefenster).
 - Helfer je Reiniger (wz/sz): `input_boolean.luftreiniger_<r>_zeitplan`, `input_datetime.luftreiniger_<r>_nacht_so_do` (21:00), `_nacht_fr_sa` (23:00), `_morgens_auto` (07:00). Ohne `initial`, damit Neustarts nichts überschreiben.
 - `automation.luftreiniger_zeitplan_nachtmodus`: abends WZ Preset `sleep`, SZ Stufe 1 (11 %), nur wenn Zeitplan an und Reiniger an; morgens zurück auf `auto`, nur wenn noch im Nachtmodus.
+
+## Luftreiniger-Auswahl und Medien-Technik (25.11.)
+
+- Template-Selects (UI-Helfer): `select.luftreiniger_sz_stufe` (Aus, Auto, 1–5; Stufe n = %-Wert (2n-1)·100/9 → 11/33/56/78/100, Stufe 1 = Nachtmodus) und `select.luftreiniger_wz_modus` (Aus, Auto, Schlaf, Mittel, Schnell, Turbo). Alle Luftreiniger-Kacheln zeigen diese Auswahl.
+- Medien: „Technik (Notfall)“ je Kino eingeklappt; `input_boolean.medien_technik_{wz,sz}_anzeigen` steuert die Sichtbarkeit.

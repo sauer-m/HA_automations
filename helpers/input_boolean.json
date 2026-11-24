@@ -58,6 +58,16 @@
         "id": "luftreiniger_sz_zeitplan",
         "name": "Luftreiniger SZ Zeitplan",
         "icon": "mdi:calendar-clock"
+      },
+      {
+        "id": "medien_technik_wz_anzeigen",
+        "name": "Medien Technik WZ anzeigen",
+        "icon": "mdi:tools"
+      },
+      {
+        "id": "medien_technik_sz_anzeigen",
+        "name": "Medien Technik SZ anzeigen",
+        "icon": "mdi:tools"
       }
     ]
   }
