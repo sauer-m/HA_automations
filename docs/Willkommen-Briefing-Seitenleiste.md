@@ -32,6 +32,7 @@ Zusammengelegt am 18./19.11.: Mova, Tools, Listen, Briefing und Info sind gelös
 
 [`www/willkommen-card.js`](../www/willkommen-card.js), Ressource `/local/willkommen-card.js?v=N`. Bei Änderungen die Datei kopieren und `?v=` hochzählen.
 
+- **Wohnungstür offen** ist nur dann ein dringender Hinweis, wenn niemand zu Hause ist (`person.sauerm` und `person.sarah` nicht `home`). Ist jemand da, gibt es keinen Hinweis, der Tür-Chip bleibt neutral und der Satz oben sagt nur „die Wohnungstür ist nicht abgeschlossen“ (seit 25.11.2026). `sensor.hinweise_anzahl` zählt genauso, siehe [`helpers/willkommen-template-sensoren.md`](../helpers/willkommen-template-sensoren.md).
 - `BRIEFING` ordnet jedem Benutzer seinen Briefing-Sensor zu. Wer keinen Eintrag hat, sieht keine Briefing-Zeilen.
 - **Haustür-Knopf (Schnellaktionen):**
   - Tippen, dann nochmal tippen: Haustür öffnen.

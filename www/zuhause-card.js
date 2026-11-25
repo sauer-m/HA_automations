@@ -198,7 +198,7 @@ class ZuhauseCard extends HTMLElement {
     const pills = [
       `<button class="pill ${home.length ? 'ok' : ''}" data-mi="${PERSONS[0]}">${ic('people')}<span>${ppl}</span></button>`,
       wt === 'locked' ? `<button class="pill ok" data-mi="lock.wohnungstur">${ic('lock')}Wohnungstür zu</button>`
-        : `<button class="pill ${wt === 'open' ? 'crit' : 'warn'}" data-lock="lock.wohnungstur">${ic('unlock')}${this._arm === 'lock' ? '<b>Nochmal tippen: abschließen</b>' : this._isBusy('lock') ? 'schließt ab …' : `Wohnungstür <b>${wt === 'open' ? 'offen' : 'nicht abgeschlossen'}</b>`}</button>`,
+        : `<button class="pill ${home.length ? '' : 'crit'}" data-lock="lock.wohnungstur">${ic('unlock')}${this._arm === 'lock' ? '<b>Nochmal tippen: abschließen</b>' : this._isBusy('lock') ? 'schließt ab …' : `Wohnungstür <b>${wt === 'open' ? 'offen' : 'nicht abgeschlossen'}</b>`}</button>`,
       `<button class="pill ${ht === 'locked' ? 'ok' : 'warn'}" data-mi="lock.haustur">${ic(ht === 'locked' ? 'lock' : 'unlock')}Haustür ${ht === 'locked' ? 'zu' : '<b>offen</b>'}</button>`,
       winOpen.length ? `<button class="pill crit" data-room="${winOpen[0].id}">${ic('window')}<b>${winOpen.length === 1 ? (winOpen[0].wn || winOpen[0].n + 'fenster') + ' offen' : winOpen.length + ' Fenster offen'}</b></button>` : `<span class="pill ok">${ic('window')}Fenster zu</span>`,
       `<button class="pill ${al === 'triggered' ? 'crit' : ''}" data-mi="alarm_control_panel.hmip_alarm_control_panel">${ic('shield')}Alarm ${ALARM[al] || al}</button>`,

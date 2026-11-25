@@ -7,7 +7,7 @@ Mockup: https://claude.ai/artifact/PjTdVWtvjrdK1hwRLiAfTP (mit Codex-Review).
 Reiter: **Übersicht** · Licht · Klima · Medien · Sicherheit. Unterseiten: `klima-verlauf`, `fernbedienung-wohnzimmer`, `fernbedienung-schlafzimmer`.
 
 - **Übersicht** = Panel-View mit `custom:zuhause-card` (`www/zuhause-card.js`, Ressource `/local/zuhause-card.js?v=N`).
-  - Statuszeile: Personen, Wohnungstür (zweimal tippen = abschließen), Haustür, Fenster, Alarm, Innentemperatur, Lichter an.
+  - Statuszeile: Personen, Wohnungstür (zweimal tippen = abschließen; rot nur, wenn niemand zu Hause ist, sonst neutral), Haustür, Fenster, Alarm, Innentemperatur, Lichter an.
   - Aktionen: Alle Lichter aus · Gute Nacht (`script.gute_nacht`, zweimal tippen) · Kino Wohnzimmer (`switch.heimkino`) · Kino Schlafzimmer (`switch.heimkino_schlafzimmer`). Vorheizen und Abwesend liegen auf Willkommen und in Klima.
   - 8 Raumkacheln: links Popup (Thermostat ±, Lichter mit Helligkeit, Teelichter-Modus, Rollo, Luftreiniger, Geräte, Kino), rechts Lichtknopf.
   - „Läuft gerade“ nur bei Bedarf: Prusa, Waschmaschine/Trockner/Spülmaschine, Mova, Kino, Luftreiniger, Kaffee, Wasserkocher.

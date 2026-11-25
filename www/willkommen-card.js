@@ -172,8 +172,9 @@ class WillkommenCard extends HTMLElement {
       if (this._s(id) === 'on') A.push({ sev: 'crit', ic: id.includes('terrasse') ? 'door' : 'window', t: `${label} offen`, s: this._ago(id), go: ['Klima', '/dashboard-beleuctung/klima'] });
     });
     const lk = this._s('lock.wohnungstur');
-    if (lk !== 'locked' && lk !== 'unavailable' && lk !== 'unknown')
-      A.push({ sev: 'crit', ic: 'unlock', t: 'Wohnungstür nicht abgeschlossen', s: `${nobody ? 'niemand zu Hause · ' : ''}${this._ago('lock.wohnungstur')}`, go: ['Tür', null, 'lock.wohnungstur'] });
+    // Nur kritisch, wenn niemand zu Hause ist; mit jemandem daheim ist eine offene Wohnungstür okay.
+    if (nobody && lk !== 'locked' && lk !== 'unavailable' && lk !== 'unknown')
+      A.push({ sev: 'crit', ic: 'unlock', t: 'Wohnungstür nicht abgeschlossen', s: `niemand zu Hause · ${this._ago('lock.wohnungstur')}`, go: ['Tür', null, 'lock.wohnungstur'] });
 
     if (this._s('binary_sensor.batterie_flotte_schwache_batterien_ersetzen_uberfallig') === 'on') {
       const low = Object.entries(this._hass.states).filter(([id, o]) => o.attributes.device_class === 'battery' && id.startsWith('sensor.') && !id.startsWith('sensor.p50') && isFinite(parseFloat(o.state)) && parseFloat(o.state) < 20)
@@ -246,6 +247,7 @@ class WillkommenCard extends HTMLElement {
       people = people.charAt(0).toUpperCase() + people.slice(1);
     }
     const locked = this._s('lock.wohnungstur') === 'locked';
+    const doorBad = !locked && PERSONS.every((p) => this._s(p) !== 'home');
     const al = this._alerts();
     const nCrit = al.filter((a) => a.sev === 'crit').length;
     const tail = !al.length ? 'Nichts zu tun.' : nCrit ? `<b>${al.length} ${al.length === 1 ? 'Hinweis' : 'Hinweise'}</b>, davon ${nCrit} dringend.` : al.length === 1 ? '<b>1 Ding</b> für heute.' : `<b>${al.length} Dinge</b> für heute.`;
@@ -257,18 +259,18 @@ class WillkommenCard extends HTMLElement {
     const sunT = this._hhmm(this._a('sun.sun', up ? 'next_setting' : 'next_rising'));
 
     const hello = `<div class="hello"><div class="eyebrow">${TAGE[now.getDay()]}, ${now.getDate()}. ${MON[now.getMonth()]} · ${this._hhmm(now)} Uhr</div><h2>${esc(greet)}</h2>
-      <div class="sum">${people}, ${locked ? 'alles ist abgeschlossen' : 'die <b>Wohnungstür ist offen</b>'}. ${tail}</div>
+      <div class="sum">${people}, ${locked ? 'alles ist abgeschlossen' : doorBad ? 'die <b>Wohnungstür ist offen</b>' : 'die Wohnungstür ist nicht abgeschlossen'}. ${tail}</div>
       <div class="meta"><span data-mi="${WEATHER}">${ic(WXI[ws] || 'cloud')}Lübeck ${temp != null ? fmt(temp, 1) : '–'} °C · ${WX[ws] || ws}</span>${wind != null ? `<span>Wind ${Math.round(wind)} km/h</span>` : ''}<span>${up ? 'Sonnenuntergang' : 'Sonnenaufgang'} ${sunT}</span></div></div>`;
 
     const goAttr = (g) => g[1] ? `data-nav="${g[1]}"` : `data-mi="${g[2]}"`;
     const attention = `<div class="att" aria-label="Hinweise">${al.length
       ? al.map((a) => `<div class="alert ${a.sev}" ${goAttr(a.go)} role="button" tabindex="0"><div class="ic">${ic(a.ic)}</div><div class="tx"><b><span class="sev">${SEVTXT[a.sev]}</span>${esc(a.t)}</b><small>${esc(a.s)}</small></div><span class="go">${a.go[0]} →</span></div>`).join('')
-      : `<div class="alert ok"><div class="ic">${ic('check')}</div><div class="tx"><b>Alles in Ordnung</b><small>Fenster zu, Türen abgeschlossen, keine Geräte fertig, keine Aufgaben fällig.</small></div><span></span></div>`}</div>`;
+      : `<div class="alert ok"><div class="ic">${ic('check')}</div><div class="tx"><b>Alles in Ordnung</b><small>Fenster zu, ${locked ? 'Türen abgeschlossen' : 'Türen in Ordnung'}, keine Geräte fertig, keine Aufgaben fällig.</small></div><span></span></div>`}</div>`;
 
     const chip = (p) => `<span class="chip ${p.st === 'home' ? 'home' : ''}" data-mi="${p.id}"><span class="av">${esc(p.name[0] || '?')}</span>${esc(p.name)} <span class="st">· ${where(p)}</span></span>`;
     const hd = this._s('lock.haustur') === 'locked';
     const who = `<div class="card who"><div class="ch"><h3>Wer ist da</h3></div><div class="chips">${P.map(chip).join('')}
-      <span class="chip lock ${locked ? 'ok' : 'bad'}" data-mi="lock.wohnungstur">${ic(locked ? 'lock' : 'unlock')}Wohnungstür ${locked ? 'zu' : 'offen'}</span>
+      <span class="chip lock ${locked ? 'ok' : doorBad ? 'bad' : ''}" data-mi="lock.wohnungstur">${ic(locked ? 'lock' : 'unlock')}Wohnungstür ${locked ? 'zu' : 'offen'}</span>
       <span class="chip lock ${hd ? 'ok' : 'bad'}" data-mi="lock.haustur">${ic(hd ? 'lock' : 'unlock')}Haustür ${hd ? 'zu' : 'offen'}</span></div></div>`;
 
     const lightsOn = LIGHTS.filter((l) => this._s(l) === 'on').length;
