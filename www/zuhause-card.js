@@ -1,7 +1,8 @@
 // zuhause-card: Reiter "Übersicht" im Dashboard Zuhause (dashboard-beleuctung), nach Mockup
 // claude.ai/artifact/PjTdVWtvjrdK1hwRLiAfTP (24.11.2026). Quelle: Smarthome/ha/zuhause-card.js
 const I = {
-  sofa: 'M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3M2 11h20v6H2zM4 17v3M20 17v3',
+  alarm: 'M12 21a8 8 0 1 0 0-16a8 8 0 0 0 0 16M12 9v4l2.5 2M5 3 2 6M19 3l3 3',
+  sofa:'M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3M2 11h20v6H2zM4 17v3M20 17v3',
   bed: 'M3 7v13M3 14h18v6M21 14v-3a3 3 0 0 0-3-3h-7v6M7 11a1.5 1.5 0 1 0 0-.01',
   shower: 'M4 20V8a4 4 0 0 1 8 0M10 8h6M12 12v.01M14 14v.01M16 12v.01M12 16v.01M16 16v.01',
   fork: 'M7 3v8a2 2 0 0 0 2 2v8M11 3v8M17 3c-2 2-2 6 0 8v10',
@@ -105,6 +106,20 @@ class ZuhauseCard extends HTMLElement {
   _flash(k, ms = 2500) { this._busy[k] = Date.now() + ms; setTimeout(() => this._render(true), ms + 50); }
   _isBusy(k) { return (this._busy[k] || 0) > Date.now(); }
   _fanTxt(id) { const r = ROOMS.find((x) => x.fan === id); const v = r && r.fsel ? this._s(r.fsel) : ''; if (v && !['unknown', 'unavailable'].includes(v)) return /^\d$/.test(v) ? 'Stufe ' + v : v; const m = this._a(id, 'preset_mode'); return m ? (FANM[m] || m) : (this._a(id, 'percentage') || 0) + ' %'; }
+  // Nächster Alexa-Wecker: frühester Zeitpunkt aller Sensoren "…_nachster_wecker" (Garmin ausgenommen), max. 7 Tage voraus
+  _wecker() {
+    const now = Date.now(); let best = null;
+    Object.keys(this._hass.states).forEach((id) => {
+      if (!id.startsWith('sensor.') || !id.endsWith('_nachster_wecker') || id.includes('garmin')) return;
+      const t = Date.parse(this._s(id));
+      if (isFinite(t) && t > now - 60000 && (!best || t < best.t)) best = { id, t };
+    });
+    if (!best || best.t - now > 7 * 864e5) return null;
+    const d0 = new Date(best.t); d0.setHours(0, 0, 0, 0);
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    const days = Math.round((d0 - t0) / 864e5);
+    return { id: best.id, txt: `${days === 0 ? 'heute' : days === 1 ? 'morgen' : ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][new Date(best.t).getDay()]} ${hhmm(best.t)}` };
+  }
   _filter(id) {
     if (id === 'fan.luftreiniger_schlafzimmer') return this._on('binary_sensor.luftreiniger_schlafzimmer_replace_filter') ? 'Filter wechseln' : '';
     const c = this._n('sensor.ac1715_cloud_filterreinigung_verbleibend'), w = this._n('sensor.ac1715_cloud_filterwechsel_verbleibend');
@@ -117,7 +132,11 @@ class ZuhauseCard extends HTMLElement {
     const el = t.closest('[data-room],[data-rl],[data-act],[data-mi],[data-nav],[data-lt],[data-br],[data-th],[data-sel],[data-cv],[data-tg],[data-lock],[data-fm]');
     if (!el) return;
     const d = el.dataset, h = this._hass;
-    if (d.room) { this._room = d.room; this._render(true); return; }
+    if (d.room) {
+      // "Lichter an": Liste beim Öffnen merken, damit ausgeschaltete Lichter nicht sofort verschwinden
+      if (d.room === 'on') this._onList = LIGHTS.filter((l) => this._on(l));
+      this._room = d.room; this._render(true); return;
+    }
     if (d.mi) { this._mi(d.mi); return; }
     if (d.nav) { this._room = null; this._nav(d.nav); return; }
     if (d.rl) {
@@ -189,6 +208,7 @@ class ZuhauseCard extends HTMLElement {
     const winOpen = ROOMS.filter((r) => info[r.id].win);
     const temps = ROOMS.filter((r) => r.t && r.id !== 'te').map((r) => info[r.id].t).filter((v) => v != null);
     const avg = temps.length ? temps.reduce((a, b) => a + b, 0) / temps.length : null;
+    const wk = this._wecker();
 
     // Statuszeile
     const P = PERSONS.map((id) => ({ n: (this._a(id, 'friendly_name') || id).split(' ')[0], home: this._s(id) === 'home' }));
@@ -203,7 +223,9 @@ class ZuhauseCard extends HTMLElement {
       winOpen.length ? `<button class="pill crit" data-room="${winOpen[0].id}">${ic('window')}<b>${winOpen.length === 1 ? (winOpen[0].wn || winOpen[0].n + 'fenster') + ' offen' : winOpen.length + ' Fenster offen'}</b></button>` : `<span class="pill ok">${ic('window')}Fenster zu</span>`,
       `<button class="pill ${al === 'triggered' ? 'crit' : ''}" data-mi="alarm_control_panel.hmip_alarm_control_panel">${ic('shield')}Alarm ${ALARM[al] || al}</button>`,
       avg != null ? `<span class="pill">${ic('thermo')}Innen <b>${de(avg)} °C</b></span>` : '',
-      lightsOn.length ? `<button class="pill lamp" data-act="alloff">${ic('light')}<b>${lightsOn.length} ${lightsOn.length === 1 ? 'Licht' : 'Lichter'} an</b></button>` : `<span class="pill">${ic('light')}Alle Lichter aus</span>`,
+      // Antippen zeigt die eingeschalteten Lichter (Ausschalten aller Lichter: Aktion "Alle Lichter aus")
+      lightsOn.length ? `<button class="pill lamp" data-room="on">${ic('light')}<b>${lightsOn.length} ${lightsOn.length === 1 ? 'Licht' : 'Lichter'} an</b></button>` : `<button class="pill" data-nav="/dashboard-beleuctung/licht">${ic('light')}Alle Lichter aus</button>`,
+      wk ? `<button class="pill" data-mi="${wk.id}">${ic('alarm')}Wecker <b>${wk.txt}</b></button>` : '',
     ];
 
     // Aktionen
@@ -274,15 +296,19 @@ class ZuhauseCard extends HTMLElement {
   }
 
   _sheet(id, info) {
-    const r = ROOMS.find((x) => x.id === id), x = info[id];
+    const isOn = id === 'on';
+    const r = isOn ? { id: 'on', n: 'Lichter an', ic: 'light', L: LIGHTS.filter((l) => (this._onList || []).includes(l) || this._on(l)) } : ROOMS.find((q) => q.id === id);
+    const x = isOn ? {} : info[id];
+    const roomOf = (l) => (isOn ? ((ROOMS.find((q) => q.L.includes(l)) || {}).n || '') : '');
     const th = r.cl && x.soll != null ? `<div class="thermo"><button class="tbtn" data-th="${r.cl}|-" aria-label="kälter">−</button><div class="mid" data-mi="${r.cl}"><b>${de(x.soll)} °C</b><small>Ist ${x.t != null ? de(x.t) + ' °C' : '–'}${x.valve != null ? ' · Ventil ' + Math.round(x.valve) + ' %' : ''}${x.hum != null ? ' · ' + Math.round(x.hum) + ' % Feuchte' : ''}</small></div><button class="tbtn" data-th="${r.cl}|+" aria-label="wärmer">+</button></div>`
       : x.t != null ? `<div class="thermo one"><div class="mid"><b>${de(x.t)} °C</b><small>${x.valve != null ? 'Ventil ' + Math.round(x.valve) + ' % · ' : ''}kein Thermostat-Sollwert</small></div></div>` : '';
     const lights = r.L.map((l) => {
       const on = this._on(l), br = on ? Math.round(((this._a(l, 'brightness') || 255) / 255) * 100) : 0;
       const dim = (this._a(l, 'supported_color_modes') || []).some((m) => m !== 'onoff');
-      return `<div class="lrow ${on ? 'on' : ''}"><button class="lic" data-mi="${l}" aria-label="${LN[l]} Einstellungen">${ic(l.includes('teelicht') ? 'candle' : 'light')}</button><button class="lname" data-lt="${l}">${LN[l]}<small>${this._s(l) === 'unavailable' ? 'nicht erreichbar' : on ? (dim ? br + ' %' : 'an') : 'aus'}</small></button><button class="tog ${on ? 'on' : ''}" data-lt="${l}" aria-label="${LN[l]} schalten"></button>${dim ? `<button class="bar" data-br="${l}" aria-label="${LN[l]} Helligkeit"><i style="width:${br}%"></i></button>` : ''}</div>`;
+      return `<div class="lrow ${on ? 'on' : ''}"><button class="lic" data-mi="${l}" aria-label="${LN[l]} Einstellungen">${ic(l.includes('teelicht') ? 'candle' : 'light')}</button><button class="lname" data-lt="${l}">${LN[l]}<small>${roomOf(l) ? roomOf(l) + ' · ' : ''}${this._s(l) === 'unavailable' ? 'nicht erreichbar' : on ? (dim ? br + ' %' : 'an') : 'aus'}</small></button><button class="tog ${on ? 'on' : ''}" data-lt="${l}" aria-label="${LN[l]} schalten"></button>${dim ? `<button class="bar" data-br="${l}" aria-label="${LN[l]} Helligkeit"><i style="width:${br}%"></i></button>` : ''}</div>`;
     }).join('');
     const extra = [];
+    if (isOn) extra.push(`${r.L.length ? '' : '<div class="blk"><div class="lbl">Alle Lichter sind aus.</div></div>'}<div class="chips"><button class="chip" data-nav="/dashboard-beleuctung/licht">${ic('light')}Alle Lichter · Licht-Seite</button></div>`);
     if (r.sel) {
       const opts = this._a(r.sel, 'options') || [], cur = this._s(r.sel);
       extra.push(`<div class="blk"><div class="lbl">${ic('candle')}Teelichter-Modus</div><div class="chips">${opts.map((o) => `<button class="chip ${o === cur ? 'on' : ''}" data-sel="${r.sel}|${esc(o)}">${esc(o)}</button>`).join('')}</div></div>`);

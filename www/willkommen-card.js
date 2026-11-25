@@ -1,7 +1,8 @@
 // willkommen-card: Startseite nach Mockup (claude.ai/artifact/5ajiW5xn2K2hW4iuHzEmN9), Live-Daten aus HA.
 // Quelle: Smarthome/ha/willkommen-card.js · Repo sauer-m/HA_automations www/
 const I = {
-  home: 'M3 10.5 12 3l9 7.5V21H3z',
+  alarm: 'M12 21a8 8 0 1 0 0-16a8 8 0 0 0 0 16M12 9v4l2.5 2M5 3 2 6M19 3l3 3',
+  home:'M3 10.5 12 3l9 7.5V21H3z',
   wash: 'M4 2h16v20H4zM12 9a5 5 0 1 0 0 10a5 5 0 1 0 0-10M8 5h.01M11 5h.01',
   list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
   trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
@@ -121,6 +122,20 @@ class WillkommenCard extends HTMLElement {
     }, 250);
   }
   _hhmm(t) { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); }
+  // Nächster Alexa-Wecker: frühester Zeitpunkt aller Sensoren "…_nachster_wecker" (Garmin ausgenommen), max. 7 Tage voraus
+  _wecker() {
+    const now = Date.now(); let best = null;
+    Object.keys(this._hass.states).forEach((id) => {
+      if (!id.startsWith('sensor.') || !id.endsWith('_nachster_wecker') || id.includes('garmin')) return;
+      const t = Date.parse(this._s(id));
+      if (isFinite(t) && t > now - 60000 && (!best || t < best.t)) best = { id, t };
+    });
+    if (!best || best.t - now > 7 * 864e5) return null;
+    const d0 = new Date(best.t); d0.setHours(0, 0, 0, 0);
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    const days = Math.round((d0 - t0) / 864e5);
+    return { id: best.id, txt: `${days === 0 ? 'heute' : days === 1 ? 'morgen' : TAGK[new Date(best.t).getDay()]} ${this._hhmm(best.t)}` };
+  }
 
   _click(e) {
     if (this._lp) { this._lp = false; return; } // Klick nach Langdruck schlucken
@@ -279,10 +294,11 @@ class WillkommenCard extends HTMLElement {
     const temp = this._a(WEATHER, 'temperature'), wind = this._a(WEATHER, 'wind_speed');
     const up = this._s('sun.sun') === 'above_horizon';
     const sunT = this._hhmm(this._a('sun.sun', up ? 'next_setting' : 'next_rising'));
+    const wk = this._wecker();
 
     const hello = `<div class="hello"><div class="eyebrow">${TAGE[now.getDay()]}, ${now.getDate()}. ${MON[now.getMonth()]} · ${this._hhmm(now)} Uhr</div><h2>${esc(greet)}</h2>
       <div class="sum">${people}, ${locked ? 'alles ist abgeschlossen' : doorBad ? 'die <b>Wohnungstür ist offen</b>' : 'die Wohnungstür ist nicht abgeschlossen'}. ${tail}</div>
-      <div class="meta"><span data-mi="${WEATHER}">${ic(WXI[ws] || 'cloud')}Lübeck ${temp != null ? fmt(temp, 1) : '–'} °C · ${WX[ws] || ws}</span>${wind != null ? `<span>Wind ${Math.round(wind)} km/h</span>` : ''}<span>${up ? 'Sonnenuntergang' : 'Sonnenaufgang'} ${sunT}</span></div></div>`;
+      <div class="meta">${wk ? `<span data-mi="${wk.id}">${ic('alarm')}Wecker ${wk.txt}</span>` : ''}<span data-mi="${WEATHER}">${ic(WXI[ws] || 'cloud')}Lübeck ${temp != null ? fmt(temp, 1) : '–'} °C · ${WX[ws] || ws}</span>${wind != null ? `<span>Wind ${Math.round(wind)} km/h</span>` : ''}<span>${up ? 'Sonnenuntergang' : 'Sonnenaufgang'} ${sunT}</span></div></div>`;
 
     const goAttr = (g) => g[1] ? `data-nav="${g[1]}"` : `data-mi="${g[2]}"`;
     const attention = `<div class="att" aria-label="Hinweise">${al.length
