@@ -1858,3 +1858,52 @@
         data:
           preset_mode: auto
   mode: queued
+- id: '1795601973089'
+  alias: 'Abfall: Erinnerung am Vorabend'
+  description: '18 Uhr Push an Marcel, wenn morgen Restmüll, Biotonne, Papier oder
+    Gelber Sack abgeholt wird. Quellen: Waste Collection Schedule (insert-it Lübeck
+    ICS, Gelber Sack Bezirk J statisch). Angelegt 25.11.2026.'
+  triggers:
+  - trigger: time
+    at: '18:00:00'
+  conditions:
+  - condition: or
+    conditions:
+    - condition: numeric_state
+      entity_id: sensor.abfall_restmull
+      attribute: daysTo
+      above: 0
+      below: 2
+    - condition: numeric_state
+      entity_id: sensor.abfall_biotonne
+      attribute: daysTo
+      above: 0
+      below: 2
+    - condition: numeric_state
+      entity_id: sensor.abfall_papier
+      attribute: daysTo
+      above: 0
+      below: 2
+    - condition: numeric_state
+      entity_id: sensor.abfall_gelber_sack
+      attribute: daysTo
+      above: 0
+      below: 2
+  actions:
+  - variables:
+      tonnen:
+        sensor.abfall_restmull: Restmüll
+        sensor.abfall_biotonne: Biotonne
+        sensor.abfall_papier: Papier
+        sensor.abfall_gelber_sack: Gelber Sack
+      morgen: '{% set ns = namespace(l=[]) %}{% for e, n in tonnen.items() if is_state_attr(e,
+        ''daysTo'', 1) %}{% set ns.l = ns.l + [n] %}{% endfor %}{{ ns.l }}'
+  - action: notify.mobile_app_sm_f741b
+    data:
+      title: 'Morgen Abfuhr: {{ morgen | join('' + '') }}'
+      message: Heute Abend rausstellen.{% if 'Gelber Sack' in morgen %} Gelbe Säcke
+        müssen bis 6 Uhr am Straßenrand stehen.{% endif %}
+      data:
+        tag: abfall-morgen
+        clickAction: /dashboard-haushalt/uebersicht
+  mode: single
