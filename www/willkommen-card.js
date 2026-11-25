@@ -4,6 +4,7 @@ const I = {
   home: 'M3 10.5 12 3l9 7.5V21H3z',
   wash: 'M4 2h16v20H4zM12 9a5 5 0 1 0 0 10a5 5 0 1 0 0-10M8 5h.01M11 5h.01',
   list: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01',
+  trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3',
   bolt: 'M13 2 4 14h7l-1 8 9-12h-7z',
   cube: 'M12 2 3 7v10l9 5 9-5V7zM3 7l9 5 9-5M12 12v10',
   leaf: 'M5 21c0-9 5-15 15-16c0 10-6 15-15 16zM5 21l8-8',
@@ -48,6 +49,10 @@ const GERAETE = [['sensor.waschmaschine_zustand', 'Waschmaschine', 'hwr_waschmas
 const LIGHTS = ['light.wohnzimmerlicht', 'light.stehlampe', 'light.ecklampe_wohnzimmer', 'light.schlafzimmerlicht', 'light.nachttischlampe', 'light.badezimmerlicht', 'light.badezimmerlicht_hintergrundbeleuchtung', 'light.kuche_schaltausgang_kuchenlicht', 'light.esszimmerlicht', 'light.schalter_flurlicht', 'light.ambilight_buro', 'light.terrassenlicht', 'light.teelichter_esszimmer', 'light.teelichter_schlafzimmer'];
 // Briefing-Sensor je Benutzer (user.id). Wer keinen hat, sieht keine Briefing-Inhalte.
 const BRIEFING = { d2389a10564e41eb9bd0bed86ae20b40: 'sensor.briefing', c9575fe71bdd4630abbd97185a784bfa: 'sensor.briefing_sarah' };
+// Persönliche Home-Tasks-Listen je Benutzer (user.id): nur dieser Benutzer sieht ihre Hinweise.
+// Schlüssel k ergibt todo.<k>, calendar.<k>_calendar, binary_sensor.<k>_overdue, sensor.<k>_open_tasks.
+const PERSONAL = { d2389a10564e41eb9bd0bed86ae20b40: [['korperpflege', 'Körperpflege', '/dashboard-haushalt/aufgaben']] };
+const ABFALL = [['sensor.abfall_restmull', 'Restmüll'], ['sensor.abfall_biotonne', 'Biotonne'], ['sensor.abfall_papier', 'Papier'], ['sensor.abfall_gelber_sack', 'Gelber Sack']];
 const BOTH = 'script.turen_nacheinander_offnen'; // Haustür sofort, Wohnungstür nach 5 s
 const SEVTXT ={ crit: 'Kritisch', warn: 'Achtung', info: 'Info' };
 
@@ -187,6 +192,23 @@ class WillkommenCard extends HTMLElement {
       const msg = this._a('calendar.haushalt_calendar', 'message');
       const st = new Date(this._a('calendar.haushalt_calendar', 'start_time'));
       A.push({ sev: 'warn', ic: 'list', t: 'Haushalt: Aufgaben überfällig', s: `${this._n('sensor.haushalt_open_tasks') ?? '–'} offen${msg ? ` · nächster Termin: ${msg}, ${TAGK[st.getDay()]} ${st.getDate()}.${st.getMonth() + 1}.` : ''}`, go: ['Aufgaben', '/dashboard-haushalt/aufgaben'] });
+    }
+    // Persönliche Listen nur für den angemeldeten Benutzer: überfällig oder heute fällig
+    const u = this._hass.user && this._hass.user.id;
+    (PERSONAL[u] || []).forEach(([k, name, nav]) => {
+      const od = this._o(`binary_sensor.${k}_overdue`), cal = `calendar.${k}_calendar`;
+      const titles = ((od && od.attributes.overdue_tasks) || []).map((t) => (typeof t === 'string' ? t : t.title || t.summary)).filter(Boolean);
+      const st = this._a(cal, 'start_time'), msg = this._a(cal, 'message');
+      const today = st && new Date(st.replace(' ', 'T')) <= new Date() && msg && !titles.includes(msg);
+      if (today) titles.push(msg);
+      if (titles.length) A.push({ sev: 'warn', ic: 'list', t: `${name}: ${titles.length === 1 ? titles[0] : titles.length + ' Aufgaben fällig'}`, s: titles.length > 1 ? titles.slice(0, 3).join(', ') : od && od.state === 'on' ? 'überfällig · nur für dich sichtbar' : 'heute fällig · nur für dich sichtbar', go: [name, nav] });
+    });
+    // Abfall: morgen oder heute
+    const abf = ABFALL.filter(([id]) => [0, 1].includes(this._a(id, 'daysTo')));
+    if (abf.length) {
+      const d = this._a(abf[0][0], 'daysTo');
+      const names = abf.filter(([id]) => this._a(id, 'daysTo') === d).map(([, n]) => n);
+      A.push({ sev: 'info', ic: 'trash', t: `${d ? 'Morgen' : 'Heute'} Abfuhr: ${names.join(' + ')}`, s: d ? 'heute Abend rausstellen' + (names.includes('Gelber Sack') ? ' · Gelbe Säcke bis 6 Uhr an die Straße' : '') : 'bis 6 Uhr an der Straße', go: ['Abfall', '/dashboard-haushalt'] });
     }
     const plants = Object.keys(this._hass.states).filter((id) => id.startsWith('binary_sensor.simple_plant_todo_') && this._s(id) === 'on')
       .map((id) => id.replace('binary_sensor.simple_plant_todo_', '').split('_').map((w) => w[0].toUpperCase() + w.slice(1)).join(' '));

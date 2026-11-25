@@ -24,6 +24,13 @@ const dday = (t) => { const d = new Date(t); return isNaN(d) ? '' : `${TAGK[d.ge
 const ring = (p, w = 3) => { const r = 28, c = 2 * Math.PI * r;
   return `<svg class="ring" viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="${r}" fill="none" stroke="var(--line)" stroke-width="${w}"/><circle cx="31" cy="31" r="${r}" fill="none" stroke="var(--c)" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="${(c * Math.max(0, Math.min(100, p)) / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 31 31)"/></svg>`; };
 
+I.trash = 'M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3';
+I.bio = 'M5 19c0-8 6-14 15-14c0 9-6 15-14 15M5 19l7-7';
+I.paper = 'M6 3h9l4 4v14H6zM14 3v5h5M9 13h7M9 17h7';
+I.bag = 'M6 8h12l-1 13H7zM9 8V6a3 3 0 0 1 6 0v2';
+// Abfall (Waste Collection Schedule, Attribut daysTo, weitere Attribute "TT.MM.JJJJ": Typ)
+const ABFALL = [['sensor.abfall_restmull', 'Restmüll', 'trash', '#7a7f87'], ['sensor.abfall_biotonne', 'Biotonne', 'bio', '#5a9a2e'],
+  ['sensor.abfall_papier', 'Papier', 'paper', '#2f6fd1'], ['sensor.abfall_gelber_sack', 'Gelber Sack', 'bag', '#d9a400']];
 const TODO = 'todo.haushalt';
 const LISTS = [['todo.einkaufsliste_2', 'Einkaufsliste'], ['todo.hl', 'HL'], ['todo.rossmann', 'Rossmann'], ['todo.mealprep', 'Mealprep'], ['todo.baumarkt', 'Baumarkt']];
 const RUN = ['running', 'starting', 'ending', 'paused', 'user_paused', 'delay_wait'];
@@ -229,11 +236,20 @@ class HaushaltCard extends HTMLElement {
     const wrows = maint.map((m) => `<div class="wrow">${ic('wrench')}<span>${esc(m.n)}</span>${this._o(m.btn) ? `<button class="go" data-btn="${m.btn}">${this._busy[m.btn] ? 'erledigt' : 'Erledigt'}</button>` : '<span class="v">überfällig</span>'}</div>`).join('')
       + (nMaint ? `<button class="wrow lnk" data-nav="/todo?entity_id=todo.maintenance">${ic('list')}<span>Wartungsliste</span><span class="v">${nMaint} offen →</span></button>` : '');
 
+    const abf = ABFALL.map(([id, n, i, c]) => {
+      const o = this._o(id); if (!o) return null;
+      const dt = Object.keys(o.attributes).find((k) => /^\d{2}\.\d{2}\.\d{4}$/.test(k));
+      const d = dt ? new Date(+dt.slice(6), +dt.slice(3, 5) - 1, +dt.slice(0, 2)) : null;
+      return { id, n, i, c, days: o.attributes.daysTo, d };
+    }).filter((x) => x && x.d).sort((a, b) => a.days - b.days);
+    const abfRows = abf.map((x) => `<button class="wrow lnk abf ${x.days <= 1 ? 'soon' : ''}" style="--c:${x.c}" data-mi="${x.id}">${ic(x.i)}<span>${x.n}</span><span class="v">${x.days === 0 ? '<b>heute</b>' : x.days === 1 ? '<b>morgen</b>' : `${TAGK[x.d.getDay()]} ${x.d.getDate()}.${x.d.getMonth() + 1}. · ${x.days} Tage`}</span></button>`).join('');
+    const abfNext = abf.length && abf[0].days <= 1 ? `${abf.filter((x) => x.days === abf[0].days).map((x) => x.n).join(' + ')} ${abf[0].days ? 'morgen' : 'heute'} rausstellen` : 'Abfuhr Brockesstr.';
     const body = `
       ${alerts.length ? `<div class="alerts">${alerts.join('')}</div>` : ''}
       <div class="card s12"><div class="ch"><h3>Geräte</h3><span class="sub">${nRun ? nRun + (nRun === 1 ? ' läuft' : ' laufen') : 'alles aus'} · leuchtet = läuft · Ring = Fortschritt · Punkt = Pflege fällig</span></div><div class="devs">${devRow}</div></div>
       <div class="card s7"><div class="ch"><h3>Fällig</h3><span class="sub">${late.length} überfällig · ${soon.length} bis Sonntag · ${open.length} offen gesamt</span></div>${tasks}</div>
       <div class="s5 col">
+        ${abf.length ? `<div class="card"><div class="ch"><h3>Abfall</h3><span class="sub">${esc(abfNext)}</span></div><div class="wrows">${abfRows}</div></div>` : ''}
         <div class="card"><div class="ch"><h3>Einkaufen</h3><span class="sub">${total} Artikel</span></div><div class="lists">${lists}</div></div>
         <div class="card"><div class="ch"><h3>Pflege & Verschleiß</h3><button class="lnk sub" data-nav="/dashboard-haushalt/wartung">alles →</button></div>
           ${maint.length || nMaint ? `<div class="wrows">${wrows}</div>` : `<div class="quiet">${ic('check')}Alles gepflegt.</div>`}</div>
@@ -352,6 +368,10 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .wrow.lnk{border-left:0;border-right:0;border-bottom:0;padding:7px 0}
 .wrow svg{color:var(--warn)}
 .wrow .v{font-size:12px;color:var(--muted)}
+.wrow.abf{cursor:pointer}
+.wrow.abf svg{color:var(--c)}
+.wrow.abf.soon{background:color-mix(in srgb,var(--c) 12%,transparent);border-radius:8px;padding-left:6px;padding-right:6px}
+.wrow.abf.soon .v{color:var(--ink)}
 .quiet{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .quiet svg{color:var(--good)}
 .scrim{position:fixed;inset:0;background:rgba(10,12,15,.45);display:grid;place-items:center;z-index:9;padding:16px;font-family:var(--fb);font-size:14px;line-height:1.5;color:var(--ink)}
