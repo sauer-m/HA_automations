@@ -694,7 +694,7 @@
   description: Öffnet die Tür bei einem im Pepper C1 hinterlegten NFC-Tag
   triggers:
   - trigger: webhook
-    webhook_id: cCBgtiyK47PX45772vxUw6s
+    webhook_id: !secret REDACTED_webhook_id  # im Repo geschwärzt
     allowed_methods:
     - POST
     local_only: true
@@ -1223,6 +1223,7 @@
   description: Jeden Morgen um 9 Uhr Push an Marcel mit allen heute fälligen und überfälligen
     Aufgaben der Home-Tasks-Liste „Haushalt“. Aufgaben mit dem Tag „saison“ werden
     von November bis März auf den 1. April verschoben statt gemeldet (Marcel, 08.11.2026).
+    Seit 25.11.2026 auch die Liste „Körperpflege“ (todo.korperpflege).
   triggers:
   - trigger: time
     at: 09:00:00
@@ -1232,13 +1233,18 @@
       list_name: Haushalt
       due: today_or_overdue
     response_variable: faellig
+  - action: home_tasks.get_tasks
+    data:
+      list_name: Körperpflege
+      due: today_or_overdue
+    response_variable: pflege
   - variables:
       winterpause: '{{ now().month in [11, 12, 1, 2, 3] }}'
       saisonstart: '{{ (now().year + (1 if now().month > 3 else 0)) ~ ''-04-01'' }}'
       pausieren: '{{ (faellig.tasks | selectattr(''tags'', ''contains'', ''saison'')
         | list) if winterpause else [] }}'
-      melden: '{{ (faellig.tasks | rejectattr(''tags'', ''contains'', ''saison'')
-        | list) if winterpause else faellig.tasks }}'
+      melden: '{{ ((faellig.tasks | rejectattr(''tags'', ''contains'', ''saison'')
+        | list) if winterpause else faellig.tasks) + pflege.tasks }}'
   - repeat:
       for_each: '{{ pausieren }}'
       sequence:
@@ -1253,8 +1259,8 @@
     value_template: '{{ melden | count > 0 }}'
   - action: notify.mobile_app_sm_f741b
     data:
-      title: 'Haushalt: {{ melden | count }} {{ ''Aufgabe'' if melden | count == 1
-        else ''Aufgaben'' }} fällig'
+      title: 'Heute fällig: {{ melden | count }} {{ ''Aufgabe'' if melden | count
+        == 1 else ''Aufgaben'' }}'
       message: '{% for t in melden %}• {{ t.title }}{% if t.due_date and t.due_date
         < now().date() | string %} (seit {{ as_datetime(t.due_date).strftime(''%d.%m.'')
         }}){% endif %}
@@ -1262,7 +1268,7 @@
         {% endfor %}'
       data:
         tag: haushalt-faellig
-        clickAction: /dashboard-beleuctung/haushalt
+        clickAction: /dashboard-haushalt/aufgaben
   mode: single
 - id: '1794305831938'
   alias: Prusa XL - Druckenergie bei Druckstart zurücksetzen
@@ -1607,7 +1613,7 @@
     plus HA-Glocke. Ersetzt die OMV-Mails seit 17.11.2026. Angelegt von NetOps.
   triggers:
   - trigger: webhook
-    webhook_id: netops-omv-66fb359adc4ae83850de2ec19e787946
+    webhook_id: !secret REDACTED_webhook_id  # im Repo geschwärzt
     allowed_methods:
     - POST
     local_only: true
