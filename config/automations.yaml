@@ -1907,3 +1907,95 @@
         tag: abfall-morgen
         clickAction: /dashboard-haushalt/uebersicht
   mode: single
+- id: '1795625170478'
+  alias: Wecker bei Abwesenheit pausieren
+  description: 'Echo-Spot-Wecker (Alexa Media Player) aus, wenn Marcel und Sarah beide
+    ausdrücklich nicht zu Hause sind (unknown zählt nicht) und die Wohnungstür seit
+    30 min abgeschlossen ist; in der Zeit neu gestellte Wecker ebenso. Jemand kommt
+    heim oder Tür wird aufgeschlossen: gemerkte Wecker wieder an. Anzeige: wecker-card,
+    zuhause-card, willkommen-card.'
+  triggers:
+  - trigger: template
+    id: weg
+    value_template: '{{ states(''person.sauerm'') not in [''home'',''unknown'',''unavailable'']
+      and states(''person.sarah'') not in [''home'',''unknown'',''unavailable''] and
+      is_state(''lock.wohnungstur'',''locked'') }}'
+    for: 00:30:00
+  - trigger: state
+    id: neu
+    entity_id: sensor.echo_spot_schlafzimmer_nachster_alarm
+    attribute: total_active
+  - trigger: state
+    id: da
+    entity_id:
+    - person.sauerm
+    - person.sarah
+    to: home
+  - trigger: state
+    id: da
+    entity_id: lock.wohnungstur
+    from: locked
+  - trigger: homeassistant
+    event: start
+    id: start
+  conditions: []
+  actions:
+  - variables:
+      weg: '{{ states(''person.sauerm'') not in [''home'',''unknown'',''unavailable'']
+        and states(''person.sarah'') not in [''home'',''unknown'',''unavailable'']
+        and is_state(''lock.wohnungstur'',''locked'') }}'
+      aktive: '{{ (state_attr(sensor,''sorted_active'') or []) | selectattr(''type'',''eq'',''Alarm'')
+        | map(attribute=''id'') | list }}'
+      gemerkt: '{{ states(store).split('','') | map(''trim'') | select(''search'',''-'')
+        | list }}'
+  - choose:
+    - alias: 'Beide weg, Tür zu: aktive Wecker ausschalten und merken'
+      conditions:
+      - condition: template
+        value_template: '{{ weg and aktive | count > 0 and (trigger.id in [''weg'',''start'']
+          or is_state(flag,''on'')) }}'
+      sequence:
+      - repeat:
+          for_each: '{{ aktive }}'
+          sequence:
+          - action: alexa_media.disable_alarm
+            continue_on_error: true
+            data:
+              entity_id: '{{ mp }}'
+              alarm_id: '{{ repeat.item }}'
+      - action: input_text.set_value
+        target:
+          entity_id: '{{ store }}'
+        data:
+          value: '{{ (gemerkt + aktive) | unique | join('','') }}'
+      - action: input_boolean.turn_on
+        target:
+          entity_id: '{{ flag }}'
+    - alias: 'Jemand da oder Tür auf: gemerkte Wecker wieder an'
+      conditions:
+      - condition: template
+        value_template: '{{ not weg and is_state(flag,''on'') }}'
+      sequence:
+      - repeat:
+          for_each: '{{ gemerkt }}'
+          sequence:
+          - action: alexa_media.enable_alarm
+            continue_on_error: true
+            data:
+              entity_id: '{{ mp }}'
+              alarm_id: '{{ repeat.item }}'
+      - action: input_text.set_value
+        target:
+          entity_id: '{{ store }}'
+        data:
+          value: ''
+      - action: input_boolean.turn_off
+        target:
+          entity_id: '{{ flag }}'
+  mode: queued
+  max: 10
+  variables:
+    mp: media_player.echo_spot_schlafzimmer
+    sensor: sensor.echo_spot_schlafzimmer_nachster_alarm
+    flag: input_boolean.wecker_abwesenheit_pausiert
+    store: input_text.wecker_pausierte_ids

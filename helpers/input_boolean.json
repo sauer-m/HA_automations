@@ -68,6 +68,11 @@
         "id": "medien_technik_sz_anzeigen",
         "name": "Medien Technik SZ anzeigen",
         "icon": "mdi:tools"
+      },
+      {
+        "id": "wecker_abwesenheit_pausiert",
+        "name": "Wecker Abwesenheit pausiert",
+        "icon": "mdi:alarm-off"
       }
     ]
   }

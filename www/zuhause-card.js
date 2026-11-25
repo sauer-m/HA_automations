@@ -1,6 +1,7 @@
 // zuhause-card: Reiter "Übersicht" im Dashboard Zuhause (dashboard-beleuctung), nach Mockup
 // claude.ai/artifact/PjTdVWtvjrdK1hwRLiAfTP (24.11.2026). Quelle: Smarthome/ha/zuhause-card.js
 const I = {
+  alarmoff: 'M12 21a8 8 0 1 0 0-16a8 8 0 0 0 0 16M12 9v4l2.5 2M5 3 2 6M19 3l3 3M3 3l18 18',
   alarm: 'M12 21a8 8 0 1 0 0-16a8 8 0 0 0 0 16M12 9v4l2.5 2M5 3 2 6M19 3l3 3',
   sofa:'M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3M2 11h20v6H2zM4 17v3M20 17v3',
   bed: 'M3 7v13M3 14h18v6M21 14v-3a3 3 0 0 0-3-3h-7v6M7 11a1.5 1.5 0 1 0 0-.01',
@@ -42,6 +43,25 @@ const ic = (k, cls = 'i') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidde
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const de = (v, d = 1) => Number(v).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
 const hhmm = (t) => { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); };
+// Wecker Echo Spot Schlafzimmer (Alexa Media Player, sorted_all): Logik wie wecker-card.js
+const WKS = 'sensor.echo_spot_schlafzimmer_nachster_alarm', WKP = 'input_boolean.wecker_abwesenheit_pausiert', WKI = 'input_text.wecker_pausierte_ids', WKNAV = '/dashboard-beleuctung/wecker';
+const wkDays = (a) => { const p = a.recurringPattern, rr = a.rRuleData && (a.rRuleData.byWeekDays || a.rRuleData.byDay), R = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
+  if (Array.isArray(rr) && rr.length) return rr.map((d) => R[String(d).slice(0, 2).toUpperCase()]).filter((d) => d != null);
+  if (!p) return null; if (p === 'P1D' || p === 'XXXX-WXX') return [0, 1, 2, 3, 4, 5, 6]; if (p === 'XXXX-WD') return [1, 2, 3, 4, 5]; if (p === 'XXXX-WE') return [0, 6];
+  const m = p.match(/^XXXX-WXX-([1-7](?:,[1-7])*)$/); return m ? m[1].split(',').map((n) => +n % 7) : []; };
+const wkNext = (a, from) => { const [H, M] = String(a.originalTime || '').split(':').map(Number), days = wkDays(a);
+  if (!isFinite(H) || (days && !days.length)) { const t = Date.parse(a.date_time); return isFinite(t) && t >= from ? t : null; }
+  if (days === null) { const [y, mo, d] = String(a.originalDate || '').split('-').map(Number); const t = new Date(y, mo - 1, d, H, M).getTime(); return isFinite(t) && t >= from ? t : null; }
+  const b = new Date(from); for (let i = 0; i < 8; i++) { const c = new Date(b.getFullYear(), b.getMonth(), b.getDate() + i, H, M); if (days.includes(c.getDay()) && c.getTime() >= from) return c.getTime(); } return null; };
+// st: 'on' (grün) | 'off' (wegen Abwesenheit pausiert: rot, durchgestrichen) | 'none' (grau); nur heute/morgen
+const wkTile = (states) => { const o = states[WKS], g = (id) => (states[id] ? states[id].state : '');
+  const pz = g(WKP) === 'on' ? g(WKI).split(',').map((x) => x.trim()).filter(Boolean) : [], from = Date.now() - 60000; let best = null;
+  ((o && o.attributes.sorted_all) || []).forEach((a) => { if (!a || a.type !== 'Alarm') return; const p = a.status !== 'ON' && pz.includes(a.id); if (a.status !== 'ON' && !p) return;
+    const t = wkNext(a, from); if (t && (!best || t < best.t || (t === best.t && !p))) best = { t, p }; });
+  if (!best) return { st: 'none', txt: 'kein Wecker' };
+  const d0 = new Date(best.t); d0.setHours(0, 0, 0, 0); const t0 = new Date(); t0.setHours(0, 0, 0, 0); const n = Math.round((d0 - t0) / 864e5);
+  if (n > 1) return { st: 'none', txt: 'kein Wecker' };
+  return { st: best.p ? 'off' : 'on', txt: `${n === 0 ? 'heute' : 'morgen'} ${new Date(best.t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` }; };
 const ring = (p, col, w = 5) => { const r = 28, c = 2 * Math.PI * r;
   return `<svg class="ring" viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="${r}" fill="none" stroke="var(--line)" stroke-width="${w}"/><circle cx="31" cy="31" r="${r}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-dasharray="${(c * Math.max(0, Math.min(100, p)) / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 31 31)"/></svg>`; };
 
@@ -106,20 +126,7 @@ class ZuhauseCard extends HTMLElement {
   _flash(k, ms = 2500) { this._busy[k] = Date.now() + ms; setTimeout(() => this._render(true), ms + 50); }
   _isBusy(k) { return (this._busy[k] || 0) > Date.now(); }
   _fanTxt(id) { const r = ROOMS.find((x) => x.fan === id); const v = r && r.fsel ? this._s(r.fsel) : ''; if (v && !['unknown', 'unavailable'].includes(v)) return /^\d$/.test(v) ? 'Stufe ' + v : v; const m = this._a(id, 'preset_mode'); return m ? (FANM[m] || m) : (this._a(id, 'percentage') || 0) + ' %'; }
-  // Nächster Alexa-Wecker: frühester Zeitpunkt aller Sensoren "…_nachster_wecker" (Garmin ausgenommen), max. 7 Tage voraus
-  _wecker() {
-    const now = Date.now(); let best = null;
-    Object.keys(this._hass.states).forEach((id) => {
-      if (!id.startsWith('sensor.') || !id.endsWith('_nachster_wecker') || id.includes('garmin')) return;
-      const t = Date.parse(this._s(id));
-      if (isFinite(t) && t > now - 60000 && (!best || t < best.t)) best = { id, t };
-    });
-    if (!best || best.t - now > 7 * 864e5) return null;
-    const d0 = new Date(best.t); d0.setHours(0, 0, 0, 0);
-    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-    const days = Math.round((d0 - t0) / 864e5);
-    return { id: best.id, txt: `${days === 0 ? 'heute' : days === 1 ? 'morgen' : ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'][new Date(best.t).getDay()]} ${hhmm(best.t)}` };
-  }
+  _wecker() { return wkTile(this._hass.states); }
   _filter(id) {
     if (id === 'fan.luftreiniger_schlafzimmer') return this._on('binary_sensor.luftreiniger_schlafzimmer_replace_filter') ? 'Filter wechseln' : '';
     const c = this._n('sensor.ac1715_cloud_filterreinigung_verbleibend'), w = this._n('sensor.ac1715_cloud_filterwechsel_verbleibend');
@@ -225,7 +232,7 @@ class ZuhauseCard extends HTMLElement {
       avg != null ? `<span class="pill">${ic('thermo')}Innen <b>${de(avg)} °C</b></span>` : '',
       // Antippen zeigt die eingeschalteten Lichter (Ausschalten aller Lichter: Aktion "Alle Lichter aus")
       lightsOn.length ? `<button class="pill lamp" data-room="on">${ic('light')}<b>${lightsOn.length} ${lightsOn.length === 1 ? 'Licht' : 'Lichter'} an</b></button>` : `<button class="pill" data-nav="/dashboard-beleuctung/licht">${ic('light')}Alle Lichter aus</button>`,
-      wk ? `<button class="pill" data-mi="${wk.id}">${ic('alarm')}Wecker <b>${wk.txt}</b></button>` : '',
+      `<button class="pill wk-${wk.st}" data-nav="${WKNAV}">${ic(wk.st === 'off' ? 'alarmoff' : 'alarm')}${wk.st === 'none' ? 'kein Wecker' : wk.st === 'off' ? `<s>Wecker ${wk.txt}</s>` : `Wecker <b>${wk.txt}</b>`}</button>`,
     ];
 
     // Aktionen
@@ -374,6 +381,7 @@ button.pill{cursor:pointer}
 .pill.ok svg{color:var(--good)}
 .pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.warn b{color:var(--warn)}
 .pill.crit{background:var(--crit-soft);color:var(--crit)}.pill.crit b{color:var(--crit)}
+.pill.wk-on svg{color:var(--good)}.pill.wk-off{color:var(--crit)}.pill.wk-off svg{color:var(--crit)}.pill.wk-off s{text-decoration-thickness:1.5px}.pill.wk-none{opacity:.75}
 .pill.lamp{background:var(--lamp-soft)}.pill.lamp svg{color:var(--lamp)}
 .acts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .act{border:1px solid var(--line);background:var(--sunk);border-radius:12px;padding:11px 12px;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center;text-align:left;cursor:pointer;min-height:58px}

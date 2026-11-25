@@ -1,6 +1,7 @@
 // willkommen-card: Startseite nach Mockup (claude.ai/artifact/5ajiW5xn2K2hW4iuHzEmN9), Live-Daten aus HA.
 // Quelle: Smarthome/ha/willkommen-card.js · Repo sauer-m/HA_automations www/
 const I = {
+  alarmoff: 'M12 21a8 8 0 1 0 0-16a8 8 0 0 0 0 16M12 9v4l2.5 2M5 3 2 6M19 3l3 3M3 3l18 18',
   alarm: 'M12 21a8 8 0 1 0 0-16a8 8 0 0 0 0 16M12 9v4l2.5 2M5 3 2 6M19 3l3 3',
   home:'M3 10.5 12 3l9 7.5V21H3z',
   wash: 'M4 2h16v20H4zM12 9a5 5 0 1 0 0 10a5 5 0 1 0 0-10M8 5h.01M11 5h.01',
@@ -36,6 +37,25 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 const fmt = (v, d = 1) => (isFinite(v) ? v : 0).toLocaleString('de-DE', { minimumFractionDigits: d, maximumFractionDigits: d });
 
 const TAGE = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+// Wecker Echo Spot Schlafzimmer (Alexa Media Player, sorted_all): Logik wie wecker-card.js
+const WKS = 'sensor.echo_spot_schlafzimmer_nachster_alarm', WKP = 'input_boolean.wecker_abwesenheit_pausiert', WKI = 'input_text.wecker_pausierte_ids', WKNAV = '/dashboard-beleuctung/wecker';
+const wkDays = (a) => { const p = a.recurringPattern, rr = a.rRuleData && (a.rRuleData.byWeekDays || a.rRuleData.byDay), R = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
+  if (Array.isArray(rr) && rr.length) return rr.map((d) => R[String(d).slice(0, 2).toUpperCase()]).filter((d) => d != null);
+  if (!p) return null; if (p === 'P1D' || p === 'XXXX-WXX') return [0, 1, 2, 3, 4, 5, 6]; if (p === 'XXXX-WD') return [1, 2, 3, 4, 5]; if (p === 'XXXX-WE') return [0, 6];
+  const m = p.match(/^XXXX-WXX-([1-7](?:,[1-7])*)$/); return m ? m[1].split(',').map((n) => +n % 7) : []; };
+const wkNext = (a, from) => { const [H, M] = String(a.originalTime || '').split(':').map(Number), days = wkDays(a);
+  if (!isFinite(H) || (days && !days.length)) { const t = Date.parse(a.date_time); return isFinite(t) && t >= from ? t : null; }
+  if (days === null) { const [y, mo, d] = String(a.originalDate || '').split('-').map(Number); const t = new Date(y, mo - 1, d, H, M).getTime(); return isFinite(t) && t >= from ? t : null; }
+  const b = new Date(from); for (let i = 0; i < 8; i++) { const c = new Date(b.getFullYear(), b.getMonth(), b.getDate() + i, H, M); if (days.includes(c.getDay()) && c.getTime() >= from) return c.getTime(); } return null; };
+// st: 'on' (grün) | 'off' (wegen Abwesenheit pausiert: rot, durchgestrichen) | 'none' (grau); nur heute/morgen
+const wkTile = (states) => { const o = states[WKS], g = (id) => (states[id] ? states[id].state : '');
+  const pz = g(WKP) === 'on' ? g(WKI).split(',').map((x) => x.trim()).filter(Boolean) : [], from = Date.now() - 60000; let best = null;
+  ((o && o.attributes.sorted_all) || []).forEach((a) => { if (!a || a.type !== 'Alarm') return; const p = a.status !== 'ON' && pz.includes(a.id); if (a.status !== 'ON' && !p) return;
+    const t = wkNext(a, from); if (t && (!best || t < best.t || (t === best.t && !p))) best = { t, p }; });
+  if (!best) return { st: 'none', txt: 'kein Wecker' };
+  const d0 = new Date(best.t); d0.setHours(0, 0, 0, 0); const t0 = new Date(); t0.setHours(0, 0, 0, 0); const n = Math.round((d0 - t0) / 864e5);
+  if (n > 1) return { st: 'none', txt: 'kein Wecker' };
+  return { st: best.p ? 'off' : 'on', txt: `${n === 0 ? 'heute' : 'morgen'} ${new Date(best.t).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}` }; };
 const TAGK = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 const MON = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 const WX = { 'clear-night': 'klar', cloudy: 'bewölkt', exceptional: 'Unwetter', fog: 'Nebel', hail: 'Hagel', lightning: 'Gewitter', 'lightning-rainy': 'Gewitter', partlycloudy: 'teils bewölkt', pouring: 'Starkregen', rainy: 'Regen', snowy: 'Schnee', 'snowy-rainy': 'Schneeregen', sunny: 'sonnig', windy: 'windig', 'windy-variant': 'windig' };
@@ -122,20 +142,7 @@ class WillkommenCard extends HTMLElement {
     }, 250);
   }
   _hhmm(t) { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }); }
-  // Nächster Alexa-Wecker: frühester Zeitpunkt aller Sensoren "…_nachster_wecker" (Garmin ausgenommen), max. 7 Tage voraus
-  _wecker() {
-    const now = Date.now(); let best = null;
-    Object.keys(this._hass.states).forEach((id) => {
-      if (!id.startsWith('sensor.') || !id.endsWith('_nachster_wecker') || id.includes('garmin')) return;
-      const t = Date.parse(this._s(id));
-      if (isFinite(t) && t > now - 60000 && (!best || t < best.t)) best = { id, t };
-    });
-    if (!best || best.t - now > 7 * 864e5) return null;
-    const d0 = new Date(best.t); d0.setHours(0, 0, 0, 0);
-    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-    const days = Math.round((d0 - t0) / 864e5);
-    return { id: best.id, txt: `${days === 0 ? 'heute' : days === 1 ? 'morgen' : TAGK[new Date(best.t).getDay()]} ${this._hhmm(best.t)}` };
-  }
+  _wecker() { return wkTile(this._hass.states); }
 
   _click(e) {
     if (this._lp) { this._lp = false; return; } // Klick nach Langdruck schlucken
@@ -298,7 +305,7 @@ class WillkommenCard extends HTMLElement {
 
     const hello = `<div class="hello"><div class="eyebrow">${TAGE[now.getDay()]}, ${now.getDate()}. ${MON[now.getMonth()]} · ${this._hhmm(now)} Uhr</div><h2>${esc(greet)}</h2>
       <div class="sum">${people}, ${locked ? 'alles ist abgeschlossen' : doorBad ? 'die <b>Wohnungstür ist offen</b>' : 'die Wohnungstür ist nicht abgeschlossen'}. ${tail}</div>
-      <div class="meta">${wk ? `<span data-mi="${wk.id}">${ic('alarm')}Wecker ${wk.txt}</span>` : ''}<span data-mi="${WEATHER}">${ic(WXI[ws] || 'cloud')}Lübeck ${temp != null ? fmt(temp, 1) : '–'} °C · ${WX[ws] || ws}</span>${wind != null ? `<span>Wind ${Math.round(wind)} km/h</span>` : ''}<span>${up ? 'Sonnenuntergang' : 'Sonnenaufgang'} ${sunT}</span></div></div>`;
+      <div class="meta"><span class="wk-${wk.st}" data-nav="${WKNAV}">${ic(wk.st === 'off' ? 'alarmoff' : 'alarm')}${wk.st === 'none' ? 'kein Wecker' : wk.st === 'off' ? `<s>Wecker ${wk.txt}</s>` : `Wecker ${wk.txt}`}</span><span data-mi="${WEATHER}">${ic(WXI[ws] || 'cloud')}Lübeck ${temp != null ? fmt(temp, 1) : '–'} °C · ${WX[ws] || ws}</span>${wind != null ? `<span>Wind ${Math.round(wind)} km/h</span>` : ''}<span>${up ? 'Sonnenuntergang' : 'Sonnenaufgang'} ${sunT}</span></div></div>`;
 
     const goAttr = (g) => g[1] ? `data-nav="${g[1]}"` : `data-mi="${g[2]}"`;
     const attention = `<div class="att" aria-label="Hinweise">${al.length
@@ -392,6 +399,7 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .hello .sum b{color:var(--ink);font-weight:600}
 .meta{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--ink2);font-size:13px;margin-top:6px}
 .meta span{display:inline-flex;align-items:center;gap:6px}
+.meta .wk-on svg{color:var(--good)}.meta .wk-off,.meta .wk-off svg{color:var(--crit)}.meta .wk-none{opacity:.7}
 .att{grid-column:1/-1;display:grid;gap:8px}
 .alert{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
 .alert[data-nav]:hover,.alert[data-mi]:hover,.tile:hover,.row:hover{border-color:var(--accent)}
