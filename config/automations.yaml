@@ -1999,3 +1999,24 @@
     sensor: sensor.echo_spot_schlafzimmer_nachster_alarm
     flag: input_boolean.wecker_abwesenheit_pausiert
     store: input_text.wecker_pausierte_ids
+- id: '1795731883371'
+  alias: Bilderrahmen – nach Verbindung neu laden
+  description: 'Kiosk OSS meldet sich per MQTT online (nach WLAN-Rückkehr oder Neustart):
+    Seite neu laden und Diashow starten. Nutzt nur MQTT-Topics, unabhängig von Entity-IDs.
+    Gerät device_id 65d78e53.'
+  mode: single
+  triggers:
+  - trigger: mqtt
+    topic: kioskoss/65d78e53/availability
+    payload: online
+  actions:
+  - delay: 00:00:10
+  - action: mqtt.publish
+    data:
+      topic: kioskoss/65d78e53/cmd/reload
+      payload: ''
+  - delay: 00:00:15
+  - action: mqtt.publish
+    data:
+      topic: kioskoss/65d78e53/cmd/screensaver
+      payload: 'ON'
