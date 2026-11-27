@@ -58,9 +58,21 @@ const GERAETE = [['sensor.waschmaschine_zustand', 'Waschmaschine'], ['sensor.tro
 const EINKAUF = [['todo.einkaufsliste_2', 'AHR'], ['todo.hl', 'HL'], ['todo.rossmann', 'Rossmann'], ['todo.baumarkt', 'Baumarkt']];
 // Abfall: Sensor, Name, Farbe; Kalender-Termine werden über das Stichwort derselben Farbe zugeordnet
 const ABFALL = [['sensor.abfall_restmull', 'Restmüll', '#9aa3ad', /rest/i], ['sensor.abfall_biotonne', 'Biotonne', '#8fbf6a', /bio/i], ['sensor.abfall_papier', 'Papier', '#6aa9ff', /papier|pappe/i], ['sensor.abfall_gelber_sack', 'Gelber Sack', '#f2c94c', /gelb|wertstoff|verpack/i]];
-const CAL_DEFAULT = ['calendar.abfall_lubeck', 'calendar.abfall_gelber_sack', 'calendar.haushalt_calendar'];
-const CAL_COLOR = { 'calendar.haushalt_calendar': '#5ec4b6' };
+const CAL_DEFAULT = ['calendar.smaudex', 'calendar.abfall_lubeck', 'calendar.abfall_gelber_sack', 'calendar.haushalt_calendar'];
+const CAL_COLOR = { 'calendar.haushalt_calendar': '#5ec4b6', 'calendar.smaudex': '#ff8fb1' };
 const NIGHT = [22, 6]; // 22–6 Uhr gedimmt
+// Hintergrund nach Tageszeit: [Basis oben, Basis unten, Glühen unten links, Glühen oben rechts, Glühen Mitte]
+const SKY = {
+  dawn:  ['#0d1230', '#2a1838', 'rgba(255,138,76,.34)', 'rgba(255,196,120,.14)', 'rgba(120,90,200,.10)'],
+  day:   ['#071d2e', '#0d3248', 'rgba(56,168,222,.30)', 'rgba(86,224,196,.17)', 'rgba(120,160,255,.08)'],
+  dusk:  ['#160c2a', '#2c0f30', 'rgba(255,92,128,.28)', 'rgba(146,96,255,.24)', 'rgba(255,170,90,.08)'],
+  night: ['#04060d', '#0a0e1f', 'rgba(64,86,210,.20)', 'rgba(124,64,190,.14)', 'rgba(40,120,160,.06)'],
+  grey:  ['#0b1218', '#18232c', 'rgba(120,150,178,.22)', 'rgba(150,170,190,.12)', 'rgba(90,120,150,.06)'],
+};
+const skyOf = (hr, wx) => {
+  const p = hr >= 22 || hr < 6 ? 'night' : hr < 10 ? 'dawn' : hr < 17 ? 'day' : 'dusk';
+  return p === 'day' && WET.concat(['cloudy', 'fog']).indexOf(wx) >= 0 ? 'grey' : p;
+};
 
 class SpiegelCard extends HTMLElement {
   setConfig(c) { this._c = Object.assign({ calendars: CAL_DEFAULT, fullscreen: 'auto' }, c || {}); this._ev = null; this._fc = null; }
@@ -209,7 +221,9 @@ class SpiegelCard extends HTMLElement {
   // --- Darstellung --------------------------------------------------------
   _render() {
     if (!this._hass || !this.shadowRoot) return;
-    const now = new Date(), hr = now.getHours();
+    const now = new Date(), hr = this._c.test_hour != null ? this._c.test_hour : now.getHours();
+    const sk = SKY[skyOf(hr, this._s(WEATHER))];
+    const bg = `background:radial-gradient(ellipse 70% 60% at 8% 100%, ${sk[2]}, transparent 70%),radial-gradient(ellipse 60% 55% at 95% 0%, ${sk[3]}, transparent 70%),radial-gradient(ellipse 50% 40% at 55% 45%, ${sk[4]}, transparent 75%),linear-gradient(165deg, ${sk[0]} 0%, ${sk[1]} 100%)`;
     const night = this._c.night_dim !== false && (hr >= NIGHT[0] || hr < NIGHT[1]);
     const fs = this._c.fullscreen === true || (this._c.fullscreen === 'auto' && /[?&]kiosk\b/.test(location.search));
 
@@ -273,11 +287,11 @@ class SpiegelCard extends HTMLElement {
     }).join('');
 
     this.shadowRoot.innerHTML = `<style>${CSS}</style>
-      <div class="m${fs ? ' fs' : ''}${night ? ' night' : ''}">
+      <div class="m${fs ? ' fs' : ''}${night ? ' night' : ''}" style="${bg}">
         <section class="a">${colA}</section>
         <section class="b">${colB}</section>
         <section class="c">${colC}</section>
-        <footer>${ic('trash', 'fi')}${bar}</footer>
+        <footer>${ic('trash', 'i fi')}${bar}</footer>
       </div>`;
   }
 }

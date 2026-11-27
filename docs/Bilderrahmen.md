@@ -24,10 +24,12 @@ Ausführliche Doku (Gerät, ADB, WebView-Update): Projektordner `Smarthome/Doku/
 `/dashboard-spiegel/start?kiosk` (`?kiosk` = Vollbild über Kopfzeile und Seitenleiste).
 
 Inhalt, nur gemeinsame Infos: Uhr, Datum, Wetter mit 4-Tage-Vorhersage, Innenklima, Sonne;
-Termine 7 Tage aus `calendars:` (Standard: Abfall Lübeck, Gelber Sack, Haushalt); Hinweise
+Termine 7 Tage aus `calendars:` (Standard: Smäudex, Abfall Lübeck, Gelber Sack, Haushalt;
+`calendar.smaudex` erscheint, sobald der Google-Kalender per Remote Calendar eingebunden ist); Hinweise
 (Post, Klingel in Abwesenheit, Abfall heute/morgen, Fenster offen, Gerät fertig, Pflanzen,
 Haushalt überfällig, Saugroboter-Fehler); Wohnung (Türen, Fenster, laufende Geräte, Einkauf);
-Abfall-Leiste. 22–6 Uhr gedimmt.
+Abfall-Leiste. 22–6 Uhr gedimmt. Hintergrund: farbiger Verlauf nach Tageszeit
+(Morgen Dämmerung, Tag Blau, bei Wolken/Regen Grau, Abend Violett, Nacht fast schwarz).
 
 Optionen: `calendars`, `post_entity`, `doorbell_missed_entity`, `fullscreen` (auto/true/false),
 `night_dim`. Für WebView 106 geschrieben (kein CSS-Nesting, kein dvh, kein color-mix).
