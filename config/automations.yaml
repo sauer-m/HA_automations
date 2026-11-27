@@ -2040,3 +2040,14 @@
     target:
       entity_id: switch.bilderrahmen_screensaver
   mode: restart
+- id: '1795789352841'
+  alias: Smäudex – Kalender alle 30 min neu laden
+  description: Remote Calendar holt die iCal-Adresse von Google sonst nur selten. Termine, die im Google Kalender neu angelegt oder geändert werden, erscheinen so spätestens nach 30 min im Spiegel. Entry Smäudex (remote_calendar).
+  triggers:
+  - trigger: time_pattern
+    minutes: /30
+  actions:
+  - action: homeassistant.reload_config_entry
+    data:
+      entry_id: 01M8E9M7G16H13G5AVGC9Y7NBG
+  mode: single
