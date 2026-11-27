@@ -2001,22 +2001,22 @@
     store: input_text.wecker_pausierte_ids
 - id: '1795731883371'
   alias: Bilderrahmen – nach Verbindung neu laden
-  description: 'Kiosk OSS meldet sich per MQTT online (nach WLAN-Rückkehr oder Neustart):
+  description: 'Frameware meldet sich per MQTT online (nach WLAN-Rückkehr oder Neustart):
     Seite neu laden und Diashow starten. Nutzt nur MQTT-Topics, unabhängig von Entity-IDs.
-    Gerät device_id 65d78e53.'
+    Gerät device_id 430728fb (Frameware 0.2.0, seit 27.11.2026; vorher Kiosk OSS kioskoss/65d78e53).'
   mode: single
   triggers:
   - trigger: mqtt
-    topic: kioskoss/65d78e53/availability
+    topic: frameware/430728fb/availability
     payload: online
   actions:
   - delay: 00:00:10
   - action: mqtt.publish
     data:
-      topic: kioskoss/65d78e53/cmd/reload
+      topic: frameware/430728fb/cmd/reload
       payload: ''
   - delay: 00:00:15
   - action: mqtt.publish
     data:
-      topic: kioskoss/65d78e53/cmd/screensaver
+      topic: frameware/430728fb/cmd/screensaver
       payload: 'ON'

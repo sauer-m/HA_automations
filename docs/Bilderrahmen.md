@@ -1,9 +1,9 @@
 # Bilderrahmen (Aimor PF1007, Kiosk OSS)
 
-Rahmen im LAN mit KioskBrowser-OSS (`io.github.kioskoss`) als Home-App: Startseite = HA-Dashboard
+Rahmen im LAN mit Frameware 0.2.0 (`io.github.sauerm.frameware`, vorher KioskBrowser-OSS) als Home-App: Startseite = HA-Dashboard
 `dashboard-willkommen/start`, Bildschirmschoner = Immich Kiosk (Unraid, Port 3010), Berührung → Dashboard.
 
-Anbindung an HA per MQTT (Mosquitto), Discovery-Präfix `homeassistant`, Geräte-Topic `kioskoss/65d78e53/…`.
+Anbindung an HA per MQTT (Mosquitto), Discovery-Präfix `homeassistant`, Geräte-Topic `frameware/430728fb/…`.
 Die IP des Rahmens wechselt bei jedem Start (WLAN-Chip ohne feste MAC), darum MQTT statt REST.
 
 Erwartete Entities nach dem ersten MQTT-Connect (im Gerät prüfen, ggf. `_2`):
