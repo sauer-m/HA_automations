@@ -134,10 +134,12 @@ class SpiegelCard extends HTMLElement {
     this._render();
   }
   _subFc() {
-    if (!this._hass || !this._hass.connection || this._unsub || !this._o(WEATHER)) return;
+    // Vorhersage von Met.no (weather.forecast_home): die Homematic-Station liefert nur aktuelle Werte.
+    const fcEnt = this._c.forecast_entity || 'weather.forecast_home';
+    if (!this._hass || !this._hass.connection || this._unsub || !this._o(fcEnt)) return;
     try {
       this._unsub = this._hass.connection.subscribeMessage((m) => { this._fc = m && m.forecast; this._render(); },
-        { type: 'weather/subscribe_forecast', forecast_type: 'daily', entity_id: WEATHER });
+        { type: 'weather/subscribe_forecast', forecast_type: 'daily', entity_id: fcEnt });
       Promise.resolve(this._unsub).catch(() => { this._unsub = null; });
     } catch (err) { this._unsub = null; }
   }
@@ -237,7 +239,7 @@ class SpiegelCard extends HTMLElement {
       <div class="date">${TAGE[now.getDay()]}, ${now.getDate()}. ${MON[now.getMonth()]}</div>
       <div class="wx">
         <div class="wxnow">${ic(WXI[wx] || 'cloud', 'wxi')}<div class="wxt">${isFinite(tout) ? fmt(tout, 0) + '°' : '–'}</div></div>
-        <div class="wxd">${esc(WX[wx] || wx)}${today ? ` · ${fmt(today.temperature, 0)}° / ${fmt(today.templow, 0)}°` : ''}${today && today.precipitation_probability != null ? ` · ${today.precipitation_probability} % Regen` : ''}</div>
+        <div class="wxd">${esc(WX[wx] || wx)}${today ? ` · ${fmt(today.temperature, 0)}° / ${fmt(today.templow, 0)}°` : ''}${today && today.precipitation_probability != null ? ` · ${Math.round(today.precipitation_probability)} % Regen` : ''}</div>
         <div class="fc">${fc.filter((f) => f !== today).slice(0, 4).map((f) => { const d = new Date(f.datetime); return `
           <div class="fcd"><div class="fcn">${TAGK[d.getDay()]}</div>${ic(WXI[f.condition] || 'cloud', 'fci')}<div class="fct">${fmt(f.temperature, 0)}°<span>${f.templow != null ? fmt(f.templow, 0) + '°' : ''}</span></div></div>`; }).join('')}</div>
       </div>
