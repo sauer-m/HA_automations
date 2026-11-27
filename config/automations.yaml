@@ -2020,3 +2020,23 @@
     data:
       topic: frameware/430728fb/cmd/screensaver
       payload: 'ON'
+- id: '1795785059902'
+  alias: Bilderrahmen – nach 10 s zurück zur Diashow
+  description: 'Berührung zeigt den Spiegel (Frameware beendet dabei den Schoner, switch.bilderrahmen_screensaver
+    geht auf off). Nach 10 s ohne erneuten Wechsel wird die Diashow (Immich Kiosk) wieder eingeschaltet.
+    Ersetzt den Leerlauf-Timer der App (nur in Minuten, in 0.2.1 außerdem defekt). Nur wenn das Display an ist.'
+  triggers:
+  - trigger: state
+    entity_id: switch.bilderrahmen_screensaver
+    to: 'off'
+    for:
+      seconds: 10
+  conditions:
+  - condition: state
+    entity_id: switch.bilderrahmen_screen
+    state: 'on'
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.bilderrahmen_screensaver
+  mode: restart
